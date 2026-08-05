@@ -1,0 +1,661 @@
+{
+  "screens": [
+    {
+      "id": 0,
+      "key": "Screen0Hero",
+      "file": "src/screens/Screen0Hero.tsx",
+      "image": "onboard_0.jpeg",
+      "type": "hero",
+      "bubble": {
+        "text": "Chào cô chú! Pika đây!\nPika muốn kể một câu chuyện nhỏ về việc học tiếng Anh của bạn nhỏ nhà mình",
+        "position": "default"
+      },
+      "content": {
+        "tag": "COMIC JOURNEY",
+        "title": "Hành trình cùng Pika",
+        "subtitle": "14 panel ngắn — Pika kiểm tra tiếng Anh của bạn nhỏ, vẽ bản đồ cột mốc, và chỉ ra khoa học đằng sau việc nói mỗi ngày."
+      },
+      "actions": [
+        { "label": "Bắt đầu khám phá", "type": "primary", "navigateTo": 1 },
+        { "label": "Trải nghiệm ngay", "type": "ghost", "navigateTo": "home" }
+      ],
+      "dataCollected": null
+    },
+    {
+      "id": 1,
+      "key": "Screen1NameAge",
+      "file": "src/screens/Screen1NameAge.tsx",
+      "image": "onboard_1.jpeg",
+      "type": "form",
+      "bubble": {
+        "text": "Trước tiên, cho Pika biết tên bạn nhỏ và bạn nhỏ bao nhiêu tuổi nhé!",
+        "position": "right"
+      },
+      "content": {
+        "fields": [
+          {
+            "key": "kid.name",
+            "type": "text",
+            "label": "Tên bạn nhỏ là gì?",
+            "placeholder": "VD: Bin, Bống, An…",
+            "maxLength": 20,
+            "required": true
+          },
+          {
+            "key": "kid.age",
+            "type": "segmented",
+            "label": "Bạn nhỏ bao nhiêu tuổi?",
+            "options": ["4-5", "6-7", "8-9", "10+"],
+            "required": true
+          }
+        ]
+      },
+      "actions": [
+        { "label": "Tiếp tục", "type": "primary", "navigateTo": 2, "requiresValidation": true }
+      ],
+      "dataCollected": ["kid.name", "kid.age"]
+    },
+    {
+      "id": 2,
+      "key": "Screen2Assessment",
+      "file": "src/screens/Screen2Assessment.tsx",
+      "image": "onboard_2.jpeg",
+      "type": "form-multi-phase",
+      "phases": [
+        {
+          "phase": 1,
+          "bubble": {
+            "text": "Trải nghiệm học tiếng Anh hiện tại của {kid.name}",
+            "position": "right"
+          },
+          "fields": [
+            {
+              "key": "kid.duration",
+              "type": "segmented",
+              "label": "Bạn nhỏ học tiếng Anh được bao lâu rồi ạ?",
+              "options": [
+                { "value": "<6m", "label": "< 6 tháng" },
+                { "value": "6-12m", "label": "6–12 tháng" },
+                { "value": "1-2y", "label": "1–2 năm" },
+                { "value": "2y+", "label": "> 2 năm" }
+              ]
+            },
+            {
+              "key": "kid.extra",
+              "type": "segmented",
+              "label": "Đang học thêm ở đâu?",
+              "options": [
+                { "value": "center", "label": "Trung tâm" },
+                { "value": "online", "label": "App / Online" },
+                { "value": "none", "label": "Chỉ ở trường" }
+              ]
+            }
+          ],
+          "action": { "label": "Tiếp tục", "goToPhase": 2 }
+        },
+        {
+          "phase": 2,
+          "bubble": {
+            "text": "Cô chú tự đánh giá kỹ năng của {kid.name} nhé",
+            "position": "right"
+          },
+          "fields": [
+            { "key": "kid.speaking", "type": "starRating", "label": "Nói (Speaking)", "maxStars": 5 },
+            { "key": "kid.vocab", "type": "starRating", "label": "Từ vựng (Vocabulary)", "maxStars": 5 },
+            { "key": "kid.grammar", "type": "starRating", "label": "Ngữ pháp (Grammar)", "maxStars": 5 }
+          ],
+          "action": { "label": "Xem kết quả khám", "navigateTo": 3 }
+        }
+      ],
+      "dataCollected": ["kid.duration", "kid.extra", "kid.speaking", "kid.vocab", "kid.grammar"]
+    },
+    {
+      "id": 3,
+      "key": "Screen3Diagnostic",
+      "file": "src/screens/Screen3Diagnostic.tsx",
+      "image": "onboard_3.jpeg",
+      "type": "diagnostic",
+      "bubble": {
+        "text": "Cùng overview lại trình độ của {kid.name} nhé ạ",
+        "position": "default"
+      },
+      "content": {
+        "patientCard": {
+          "title": "Bé {kid.name} — {kid.age} tuổi",
+          "subtitle": "Học {kid.duration} · {kid.extra}"
+        },
+        "stats": [
+          { "key": "vocab", "label": "Từ vựng", "gradient": "gradientPrimary", "delay": 700 },
+          { "key": "grammar", "label": "Ngữ pháp", "gradient": "gradientForest", "delay": 1200 },
+          { "key": "speaking", "label": "Kỹ năng Nói", "gradient": "gradientWarm", "delay": 1900, "highlight": true, "displayValue": "⚠️ Rất thiếu" }
+        ],
+        "verdict": {
+          "delay": 2800,
+          "template": "🩺 Đánh giá: {kid.name} có nền tảng từ vựng và ngữ pháp {vocabLabel}, nhưng kỹ năng nói đang thiếu thời lượng luyện tập đáng kể. Cần tăng cường luyện nói mỗi ngày!"
+        }
+      },
+      "actions": [
+        { "label": "Cột mốc cần đạt", "type": "primary", "navigateTo": 5, "delay": 3400 }
+      ],
+      "dataCollected": null
+    },
+    {
+      "id": 4,
+      "key": "Screen4Proof",
+      "file": "src/screens/Screen4Proof.tsx",
+      "image": "onboard_4.jpeg",
+      "type": "proof",
+      "bubble": {
+        "text": "Đây là kết quả thật của 1 bạn nhỏ sau 1 tháng với Pika — nếu {kid.name} bắt đầu hôm nay cũng được như vậy!",
+        "position": "default"
+      },
+      "content": {
+        "bigNumber": {
+          "value": 3195,
+          "label": "lượt mở miệng nói tiếng Anh / 1 tháng",
+          "animated": true,
+          "duration": 1800
+        },
+        "miniStats": [
+          { "value": "20", "label": "ngày học" },
+          { "value": "13.441", "label": "từ đã nói" },
+          { "value": "115", "label": "từ mới học" },
+          { "value": "23'", "label": "TB/buổi" }
+        ]
+      },
+      "actions": [
+        { "label": "Pika làm gì để được vậy?", "type": "primary", "navigateTo": 8, "delay": 2500 }
+      ],
+      "dataCollected": null
+    },
+    {
+      "id": 5,
+      "key": "Screen5Milestones",
+      "file": "src/screens/Screen5Milestones.tsx",
+      "image": "onboard_5.jpeg",
+      "type": "milestones",
+      "bubble": {
+        "text": "{kid.name} nói 30 phút mỗi ngày — đây là 2 cột mốc kỳ diệu sẽ xảy ra!",
+        "position": "default"
+      },
+      "content": {
+        "timeline": {
+          "nodes": [
+            { "value": "0", "label": "Bắt đầu", "time": "hôm nay", "gradient": "gradientPrimary" },
+            { "value": "100h", "label": "Bật phản xạ", "time": "~6.5 tháng", "gradient": "gradientOcean" },
+            { "value": "400h", "label": "Nói lưu loát", "time": "~2 năm", "gradient": "gradientForest" }
+          ]
+        },
+        "callouts": [
+          {
+            "milestone": "100h",
+            "text": "Phản xạ tiếng Anh bật lên — bạn nhỏ bắt đầu trả lời thẳng không cần dịch trong đầu nữa",
+            "delay": 2000
+          },
+          {
+            "milestone": "400h",
+            "text": "Nói lưu loát tự nhiên — bạn nhỏ tự kể chuyện, đặt câu hỏi, tự tin trò chuyện không nghĩ ngợi",
+            "delay": 3800
+          }
+        ],
+        "hint": "30 phút/ngày · không bỏ ngày nào"
+      },
+      "actions": [
+        { "label": "Ở trường thì sao?", "type": "primary", "navigateTo": 6, "delay": 4400 }
+      ],
+      "dataCollected": null
+    },
+    {
+      "id": 6,
+      "key": "Screen6SchoolGap",
+      "file": "src/screens/Screen6SchoolGap.tsx",
+      "image": "onboard_6.jpeg",
+      "type": "comparison",
+      "bubble": {
+        "text": "Đi học thêm 2-3 buổi/tuần, Pika lấp đầy khoảng trống 5/7 ngày còn lại — để ngày nào cũng nói!",
+        "position": "default"
+      },
+      "content": {
+        "weekCalendar": {
+          "days": ["T2", "T3", "T4", "T5", "T6", "T7", "CN"],
+          "schoolDays": [true, false, true, false, true, false, false],
+          "pikaDays": [true, true, true, true, true, true, true]
+        },
+        "comparison": {
+          "schoolOnly": { "value": "~15p", "label": "nói/tuần" },
+          "withPika": { "value": "3h 30p", "label": "nói/tuần" }
+        }
+      },
+      "actions": [
+        { "label": "Nếu ngắt quãng?", "type": "primary", "navigateTo": 7, "delay": 3500 }
+      ],
+      "dataCollected": null
+    },
+    {
+      "id": 7,
+      "key": "Screen7Regression",
+      "file": "src/screens/Screen7Regression.tsx",
+      "image": "onboard_7.jpeg",
+      "type": "chart",
+      "bubble": {
+        "text": "Còn một bí mật quan trọng về {kid.name} mà cô chú cần biết trước cột mốc 400 giờ",
+        "position": "default"
+      },
+      "content": {
+        "chart": {
+          "title": "Kỹ năng nói theo thời gian",
+          "type": "svg-line",
+          "lines": [
+            { "id": "good", "label": "Có Pika hàng ngày", "color": "mint", "path": "upward" },
+            { "id": "bad", "label": "Ngắt quãng", "color": "accent", "path": "downward-after-break", "dashed": true }
+          ]
+        },
+        "warning": {
+          "delay": 3600,
+          "text": "Trước cột mốc 400 giờ, nếu ngừng nói vài tuần thì phản xạ tụt nhanh. Đây là lý do luyện hàng ngày quan trọng hơn nhiều việc học dồn cuối tuần."
+        }
+      },
+      "actions": [
+        { "label": "Cùng xem giải pháp của Pika", "type": "primary", "navigateTo": 4, "delay": 4200 }
+      ],
+      "dataCollected": null
+    },
+    {
+      "id": 8,
+      "key": "Screen8PikaBrain",
+      "file": "src/screens/Screen8PikaBrain.tsx",
+      "image": "onboard_8.jpeg",
+      "type": "features-intro",
+      "bubble": {
+        "text": "Pika không phải 1 chatbot — phía sau là một bộ não có kế hoạch. Mỗi sáng Pika tự \"lập trình\" hôm nay nên làm gì với {kid.name}",
+        "position": "default"
+      },
+      "content": {
+        "planCard": {
+          "title": "Hôm nay Pika quyết định:",
+          "items": [
+            { "time": "7:30", "text": "Khởi động bằng chủ đề siêu anh hùng — bạn nhỏ thích nhất tuần qua" },
+            { "time": "7:35", "text": "Ôn 3 từ fly, save, hero — bạn nhỏ còn yếu thứ 5" },
+            { "time": "7:42", "text": "Nhập vai bảo vệ thành phố — luyện câu dài hơn 8 từ" }
+          ]
+        },
+        "features": [
+          { "emoji": "", "title": "Trò chuyện", "gradient": "gradientPrimary", "delay": 800 },
+          { "emoji": "", "title": "Bài học", "gradient": "gradientForest", "delay": 1000 },
+          { "emoji": "", "title": "Đồng hành trường", "gradient": "gradientWarm", "delay": 1200 }
+        ],
+        "adaptive": {
+          "title": "Pika hiểu bạn nhỏ hơn mỗi ngày",
+          "marks": [
+            { "day": "Ngày 1", "desc": "Học tên & sở thích" },
+            { "day": "Tuần 2", "desc": "Nhớ điểm yếu" },
+            { "day": "Tháng 3+", "desc": "Tự chọn bài tối ưu" }
+          ]
+        }
+      },
+      "actions": [
+        { "label": "Xem từng tính năng", "type": "primary", "navigateTo": 9, "delay": 2500 }
+      ],
+      "dataCollected": null
+    },
+    {
+      "id": 9,
+      "key": "Screen9FeatureChat",
+      "file": "src/screens/Screen9FeatureChat.tsx",
+      "image": "onboard_9.jpeg",
+      "type": "feature-demo",
+      "bubble": {
+        "text": "Tính năng 1: Pika trò chuyện với {kid.name} như 2 người bạn — về phim, game, sở thích. Càng nói càng hiểu bạn nhỏ hơn",
+        "position": "default"
+      },
+      "content": {
+        "chatDemo": [
+          { "sender": "pika", "text": "Hey {kid.name}! Hôm qua xem Spider-Man chưa? 🕷️", "delay": 300 },
+          { "sender": "kid", "text": "Yes! Spider-Man saved a cat from a tree!", "delay": 600 },
+          { "sender": "pika", "text": "Cool! \"Saved\" là quá khứ của save đó. Kể tiếp đi!", "delay": 900 },
+          { "sender": "kid", "text": "He climbed the building and... umm...", "delay": 1200 },
+          { "sender": "pika", "text": "\"Climbed the building\" hay quá! Rồi sao nữa? 🤩", "delay": 1500 }
+        ],
+        "memory": {
+          "delay": 2500,
+          "text": "Pika nhớ: {kid.name} mê siêu anh hùng, hơi nhút nhát lúc đầu, thích kể chuyện trước khi đi ngủ. Tuần sau Pika sẽ hỏi về Iron Man!"
+        },
+        "topics": ["🎬 Phim", "🎮 Game", "🏫 Trường", "👨‍👩‍👧 Gia đình", "⚽ Thể thao", "🍕 Đồ ăn", "🐶 Thú cưng"]
+      },
+      "actions": [
+        { "label": "Bài học có cấu trúc", "type": "primary", "navigateTo": 10, "delay": 3200 }
+      ],
+      "dataCollected": null
+    },
+    {
+      "id": 10,
+      "key": "Screen10FeatureLessons",
+      "file": "src/screens/Screen10FeatureLessons.tsx",
+      "image": "onboard_10.jpeg",
+      "type": "feature-demo",
+      "bubble": {
+        "text": "Tính năng 2: Khi cần học có cấu trúc, Pika có sẵn 4 kiểu bài luyện — tap để xem nhé!",
+        "position": "default"
+      },
+      "content": {
+        "lessons": [
+          {
+            "id": "pronunciation",
+            "emoji": "",
+            "title": "Luyện phát âm",
+            "subtitle": "Nghe mẫu → nói lại → sửa từng âm",
+            "gradient": "gradientOcean",
+            "example": "\"ship\" /ʃɪp/ vs \"sheep\" /ʃiːp/\nPika đọc mẫu → bạn nhỏ nhắc lại → AI nghe → khen hoặc gợi ý sửa rất nhẹ."
+          },
+          {
+            "id": "phrases",
+            "emoji": "",
+            "title": "Học cụm từ thông dụng",
+            "subtitle": "Cụm dùng hàng ngày, không học rời",
+            "gradient": "gradientForest",
+            "example": "\"Could you please…\", \"What if…?\", \"I'd love to…\"\nPika dùng cụm trong nhiều tình huống khác nhau để bạn nhỏ nhớ tự nhiên."
+          },
+          {
+            "id": "roleplay",
+            "emoji": "",
+            "title": "Nhập vai xử lý tình huống",
+            "subtitle": "Tình huống thật, xử bằng tiếng Anh",
+            "gradient": "gradientWarm",
+            "example": "SCENE: \"Bạn nhỏ đang mua đồ thì phát hiện làm rơi tiền — phải nói gì với cô bán hàng?\"\nPika đóng vai cô bán hàng, dắt bạn nhỏ qua cuộc thoại thật."
+          },
+          {
+            "id": "presentation",
+            "emoji": "",
+            "title": "Luyện thuyết trình",
+            "subtitle": "Nói liền 30s–1p về 1 chủ đề",
+            "gradient": "gradientSunset",
+            "example": "\"Kể về môn học mình yêu thích nhất trong 1 phút\"\nPika ghi âm, đếm câu, gợi ý cách mở rộng."
+          }
+        ]
+      },
+      "actions": [
+        { "label": "Đồng hành trường", "type": "primary", "navigateTo": 11 }
+      ],
+      "dataCollected": null
+    },
+    {
+      "id": 11,
+      "key": "Screen11SchoolCompanion",
+      "file": "src/screens/Screen11SchoolCompanion.tsx",
+      "image": "onboard_11.jpeg",
+      "type": "feature-demo",
+      "bubble": {
+        "text": "Pika theo dõi chương trình trên trường của {kid.name} — tối là ôn lại + luyện nói đúng chủ đề hôm đó",
+        "position": "default"
+      },
+      "content": {
+        "schedule": [
+          { "day": "T2", "topic": "🐘", "pika": "+15 từ" },
+          { "day": "T3", "topic": "🍎", "pika": "Story" },
+          { "day": "T4", "topic": "⛅", "pika": "Roleplay" },
+          { "day": "T5", "topic": "👨‍👩‍👧", "pika": "Quiz" },
+          { "day": "T6", "topic": "🎨", "pika": "Show & Tell" }
+        ],
+        "pairing": [
+          "Ôn tập, củng cố cấu trúc, từ vựng.",
+          "Luyện nói, nghe và giao tiếp cho các chủ đề đó."
+        ],
+        "hint": "Con không quá tải — ôn đúng nhịp trường"
+      },
+      "actions": [
+        { "label": "An toàn cho bạn nhỏ?", "type": "primary", "navigateTo": 12, "delay": 2500 }
+      ],
+      "dataCollected": null
+    },
+    {
+      "id": 12,
+      "key": "Screen12Safety",
+      "file": "src/screens/Screen12Safety.tsx",
+      "image": "onboard_12.jpeg",
+      "type": "safety",
+      "bubble": {
+        "text": "\"AI có an toàn cho {kid.name} không?\" Pika được thiết kế như lan can cầu thang — giữ bạn nhỏ đi an toàn hơn rất nhiều",
+        "position": "default"
+      },
+      "content": {
+        "safetyLayers": [
+          {
+            "emoji": "",
+            "title": "Lọc nội dung trước phản hồi",
+            "desc": "Mọi câu trả lời được kiểm tra — không có nội dung không phù hợp",
+            "bgColor": "accentLight"
+          },
+          {
+            "emoji": "",
+            "title": "Luôn bám mục tiêu học",
+            "desc": "Biết kéo bạn nhỏ về học khi đi lạc chủ đề",
+            "bgColor": "mintLight"
+          },
+          {
+            "emoji": "",
+            "title": "Sửa nhẹ nhàng theo tuổi",
+            "desc": "Không phủ nhận toàn câu — chỉ nhắc nhẹ từng điểm",
+            "bgColor": "purpleLight"
+          },
+          {
+            "emoji": "",
+            "title": "Dashboard cho cô chú",
+            "desc": "Cô chú xem được bạn nhỏ tương tác, luyện gì, chủ đề nào",
+            "bgColor": "primarySoft"
+          }
+        ],
+        "parentTips": [
+          { "text": "Đồng hành 2–3 ngày đầu để bạn nhỏ quen Pika", "bold": "2–3 ngày đầu" },
+          { "text": "Nhắc nhẹ mỗi tối: \"Hôm nay nói với Pika chưa?\"", "bold": null },
+          { "text": "Khen khi thấy bạn nhỏ tự chủ động — dù chỉ 5 phút", "bold": "dù chỉ 5 phút" },
+          { "text": "Cô chú không cần giỏi tiếng Anh — Pika lo phần đó", "bold": "không cần giỏi tiếng Anh" }
+        ]
+      },
+      "actions": [
+        { "label": "Pika hợp với bạn nhỏ?", "type": "primary", "navigateTo": 13, "delay": 2800 }
+      ],
+      "dataCollected": null
+    },
+    {
+      "id": 13,
+      "key": "Screen13FitCheck",
+      "file": "src/screens/Screen13FitCheck.tsx",
+      "image": "onboard_13.jpeg",
+      "type": "choice",
+      "bubble": {
+        "text": "Câu hỏi cuối! Cô chú có dành được 10–20 phút/ngày đồng hành cùng {kid.name} trong tuần đầu tiên không ạ?",
+        "position": "default"
+      },
+      "content": {
+        "narrator": "Chọn câu trả lời thật nhất nhé",
+        "choices": [
+          { "variant": "a", "emoji": "", "text": "Được! Mình sẵn sàng đồng hành", "value": "yes" },
+          { "variant": "b", "emoji": "", "text": "Có thể — mình bận nhưng sẽ cố", "value": "maybe" },
+          { "variant": "c", "emoji": "", "text": "Muốn Pika tự lo được cho bạn nhỏ", "value": "auto" }
+        ]
+      },
+      "actions": [
+        { "onChoice": "any", "navigateTo": "f", "delay": 250 }
+      ],
+      "dataCollected": ["interaction.fitChoice"]
+    },
+    {
+      "id": "f",
+      "key": "ScreenFinal",
+      "file": "src/screens/ScreenFinal.tsx",
+      "image": "onboard_14.jpeg",
+      "type": "completion",
+      "bubble": {
+        "text": "Cùng trải nghiệm các tính năng của Pika nhé!",
+        "position": "default"
+      },
+      "content": {
+        "successCard": {
+          "title": "Cùng Pika bắt đầu hành trình của {kid.name}!",
+          "gradient": "gradientPrimary"
+        },
+        "description": "Mỗi ngày 30 phút — không bỏ ngày nào — Pika đồng hành cùng bạn nhỏ tới cột mốc 100 giờ rồi 400 giờ nói tiếng Anh tự nhiên."
+      },
+      "actions": [
+        { "label": "Đăng ký tư vấn", "type": "primary", "navigateTo": "external" },
+        { "label": "Trải nghiệm các tính năng", "type": "ghost", "navigateTo": "home" },
+        { "label": "Đọc lại từ đầu", "type": "ghost", "navigateTo": 0 }
+      ],
+      "dataCollected": null
+    },
+    {
+      "id": "home",
+      "key": "ScreenHome",
+      "file": "src/screens/ScreenHome.tsx",
+      "image": "map.jpeg",
+      "type": "learning-map",
+      "bubble": null,
+      "content": {
+        "description": "Gamified learning roadmap with 6 units positioned on a map background",
+        "responsive": {
+          "lessonCardWidth": { "phone": 38, "tablet": 64 },
+          "lessonFontSize": { "phone": 6, "tablet": 11 },
+          "lessonIconSize": { "phone": 14, "tablet": 28 },
+          "headerNumSize": { "phone": 16, "tablet": 26 },
+          "headerFontSize": { "phone": 7, "tablet": 12 }
+        }
+      },
+      "units": [
+        {
+          "id": "u1",
+          "number": 1,
+          "title": "Làm quen với Pika",
+          "color": "#278234",
+          "gradient": ["#69c573ff", "#278234ff"],
+          "completed": true,
+          "position": { "top": 0.23, "left": 0.04 },
+          "tabletPosition": { "top": 0.18, "left": 0.12 },
+          "lessons": [
+            { "id": "1-1", "title": "Pika chào bạn", "icon": "👋", "duration": "5 phút", "completed": true },
+            { "id": "1-2", "title": "Giới thiệu", "icon": "🙋", "duration": "8 phút", "completed": true },
+            { "id": "1-3", "title": "Hát cùng Pika", "icon": "🎵", "duration": "6 phút", "completed": true },
+            { "id": "1-4", "title": "Trò chơi vui", "icon": "🎮", "duration": "5 phút", "completed": true }
+          ]
+        },
+        {
+          "id": "u2",
+          "number": 2,
+          "title": "Chào hỏi vui vẻ",
+          "color": "#8B5CF6",
+          "gradient": ["#A78BFA", "#8B5CF6"],
+          "completed": true,
+          "position": { "top": 0.24, "left": 0.68 },
+          "tabletPosition": { "top": 0.18, "left": 0.58 },
+          "lessons": [
+            { "id": "2-1", "title": "Hello, Hi", "icon": "👋", "duration": "5 phút", "completed": true },
+            { "id": "2-2", "title": "Good morning", "icon": "🌅", "duration": "7 phút", "completed": true },
+            { "id": "2-3", "title": "Goodbye", "icon": "🙋", "duration": "5 phút", "completed": true }
+          ]
+        },
+        {
+          "id": "u3",
+          "number": 3,
+          "title": "Màu sắc diệu kỳ",
+          "color": "#3B82F6",
+          "gradient": ["#60A5FA", "#3B82F6"],
+          "current": true,
+          "position": { "top": 0.43, "left": 0.018 },
+          "tabletPosition": { "top": 0.35, "left": 0.10 },
+          "lessons": [
+            { "id": "3-1", "title": "Red, Blue", "icon": "🔴", "duration": "6 phút", "completed": true },
+            { "id": "3-2", "title": "Green, Orange", "icon": "🟢", "duration": "6 phút" },
+            { "id": "3-3", "title": "Black, White", "icon": "⚫", "duration": "6 phút" },
+            { "id": "3-4", "title": "Trò chơi màu", "icon": "🎮", "duration": "8 phút" }
+          ]
+        },
+        {
+          "id": "u4",
+          "number": 4,
+          "title": "Đếm số vui",
+          "color": "#F97316",
+          "gradient": ["#FB923C", "#F97316"],
+          "position": { "top": 0.45, "left": 0.64 },
+          "tabletPosition": { "top": 0.36, "left": 0.54 },
+          "lessons": [
+            { "id": "4-1", "title": "Số 1-5", "icon": "1️⃣", "duration": "7 phút" },
+            { "id": "4-2", "title": "Số 6-10", "icon": "🔢", "duration": "7 phút" },
+            { "id": "4-3", "title": "Bài hát số", "icon": "🎶", "duration": "5 phút" }
+          ]
+        },
+        {
+          "id": "u5",
+          "number": 5,
+          "title": "Gia đình yêu thương",
+          "color": "#EC4899",
+          "gradient": ["#F472B6", "#EC4899"],
+          "position": { "top": 0.61, "left": 0.01 },
+          "tabletPosition": { "top": 0.50, "left": 0.09 },
+          "lessons": [
+            { "id": "5-1", "title": "Mom, Dad", "icon": "👩", "duration": "6 phút" },
+            { "id": "5-2", "title": "Brother, Sister", "icon": "👦", "duration": "6 phút" },
+            { "id": "5-3", "title": "Grandparents", "icon": "👴", "duration": "6 phút" },
+            { "id": "5-4", "title": "I love family", "icon": "❤️", "duration": "5 phút" }
+          ]
+        },
+        {
+          "id": "u6",
+          "number": 6,
+          "title": "Động vật đáng yêu",
+          "color": "#14B8A6",
+          "gradient": ["#2DD4BF", "#14B8A6"],
+          "position": { "top": 0.64, "left": 0.64 },
+          "tabletPosition": { "top": 0.52, "left": 0.54 },
+          "lessons": [
+            { "id": "6-1", "title": "Dog, Cat", "icon": "🐕", "duration": "7 phút" },
+            { "id": "6-2", "title": "Fish, Rabbit", "icon": "🐟", "duration": "7 phút" },
+            { "id": "6-3", "title": "Zoo animals", "icon": "🦁", "duration": "8 phút" }
+          ]
+        }
+      ],
+      "dataCollected": null
+    }
+  ],
+  "dataSchema": {
+    "kid": {
+      "name": "string",
+      "age": "4-5 | 6-7 | 8-9 | 10+",
+      "duration": "<6m | 6-12m | 1-2y | 2y+",
+      "extra": "center | online | none",
+      "speaking": "number (1-5)",
+      "vocab": "number (1-5)",
+      "grammar": "number (1-5)"
+    },
+    "interaction": {
+      "fitChoice": "yes | maybe | auto"
+    }
+  },
+  "navigation": {
+    "totalOnboardingScreens": 14,
+    "screenOrder": [0, 1, 2, 3, 5, 6, 7, 4, 8, 9, 10, 11, 12, 13, "f"],
+    "specialScreens": {
+      "hero": 0,
+      "final": "f",
+      "home": "home"
+    }
+  },
+  "assets": {
+    "images": [
+      "onboard_0.jpeg",
+      "onboard_1.jpeg",
+      "onboard_2.jpeg",
+      "onboard_3.jpeg",
+      "onboard_4.jpeg",
+      "onboard_5.jpeg",
+      "onboard_6.jpeg",
+      "onboard_7.jpeg",
+      "onboard_8.jpeg",
+      "onboard_9.jpeg",
+      "onboard_10.jpeg",
+      "onboard_11.jpeg",
+      "onboard_12.jpeg",
+      "onboard_13.jpeg",
+      "onboard_14.jpeg",
+      "map.jpeg"
+    ]
+  }
+}
