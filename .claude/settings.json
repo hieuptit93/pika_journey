@@ -1,0 +1,33 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl -s http://localhost:8081)",
+      "Bash(cd \"/Users/tranhieu/Project 2026/PikaDemo/PikaComicJourney\" && sed -i '' 's/ icon=\"[^\"]*\"//g' src/screens/*.tsx)",
+      "Bash(sed -i '' 's/SafeAreaView/View/g' src/screens/*.tsx)",
+      "Bash(sed -i '' 's/, SafeAreaView,/, /g' src/screens/*.tsx)",
+      "Bash(sed -i '' 's/import { View, Text, StyleSheet, , /import { View, Text, StyleSheet, /g' src/screens/*.tsx)",
+      "Bash(sed -i '' 's/View, View,/View,/g' src/screens/*.tsx)",
+      "Bash(sed -i '' 's/{ View, Text,/{ View, Text,/g' src/screens/*.tsx)",
+      "Bash(curl -s http://localhost:8090/status)",
+      "Bash(xargs ls -la)",
+      "Bash(curl -s http://localhost:8082)",
+      "Bash(cat index.ts)",
+      "Bash(cat index.tsx)",
+      "Bash(cat App.tsx)",
+      "Bash(curl -s \"http://localhost:8082/index.bundle?platform=web&dev=true&hot=false\")",
+      "Bash(rm -rf node_modules .expo)",
+      "Bash(npm cache *)",
+      "Bash(npx eas-cli *)",
+      "Bash(./gradlew assembleRelease)",
+      "Bash(adb logcat *)",
+      "Bash(adb shell *)",
+      "WebFetch(domain:docs.expo.dev)",
+      "Bash(./gradlew clean *)",
+      "Bash(./gradlew assembleRelease --no-daemon)",
+      "Bash(adb devices *)"
+    ],
+    "additionalDirectories": [
+      "/Users/tranhieu/Project 2026/PikaDemo/PikaComicJourney/src/screens"
+    ]
+  }
+}

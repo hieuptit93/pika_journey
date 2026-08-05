@@ -1,0 +1,4181 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>Pika Comic Journey</title>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800;900&family=Nunito:wght@400;600;700;800;900&family=Caveat:wght@500;700&family=Bangers&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --ink: #1a2340;
+    --ink-soft: #2d3a52;
+    --paper: #fff8ee;
+    --paper-2: #ffefd5;
+    --blue: #1a73e8;
+    --blue-soft: #d8ecff;
+    --gold: #f5a623;
+    --gold-deep: #e08311;
+    --mint: #00c896;
+    --pink: #ff8fb1;
+    --rose: #f56b6b;
+    --sky-day-top: #87cef0;
+    --sky-day-bot: #cfe9ff;
+    --sky-night-top: #0d1b3e;
+    --sky-night-bot: #2a3b6e;
+    --bubble: #ffffff;
+    --bubble-stroke: #1a2340;
+    --panel-stroke: #1a2340;
+    --animspeed: 1;
+  }
+
+  html, body {
+    width: 100%;
+    min-height: 100vh;
+    background: #232838;
+    background-image:
+      radial-gradient(circle at 25% 30%, rgba(255,255,255,0.04) 0, transparent 40%),
+      radial-gradient(circle at 75% 70%, rgba(255,255,255,0.03) 0, transparent 40%);
+    font-family: 'Nunito', system-ui, sans-serif;
+    color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+
+  /* ─── PHONE FRAME ─── */
+  #app {
+    max-width: 440px;
+    margin: 0 auto;
+    min-height: 100vh;
+    background: var(--paper);
+    position: relative;
+    box-shadow: 0 30px 60px rgba(0,0,0,0.4);
+    overflow: hidden;
+  }
+  @media (min-width: 460px) {
+    body { padding: 24px 0; }
+    #app { border-radius: 36px; min-height: calc(100vh - 48px); border: 1px solid #000; }
+  }
+
+  /* halftone paper texture overlay */
+  #app::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: radial-gradient(circle, rgba(26,35,64,0.04) 1px, transparent 1.2px);
+    background-size: 6px 6px;
+    pointer-events: none;
+    z-index: 1;
+    opacity: 0.6;
+  }
+
+  .screen {
+    display: none;
+    flex-direction: column;
+    min-height: 100vh;
+    position: relative;
+    z-index: 2;
+  }
+  .screen.active { display: flex; }
+
+  /* ─── TOP CHROME: progress dots + panel marker ─── */
+  .top-chrome {
+    padding: 18px 18px 8px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    position: relative;
+    z-index: 5;
+  }
+  .progress-dots {
+    flex: 1;
+    display: flex;
+    gap: 5px;
+  }
+  .pdot {
+    flex: 1;
+    height: 6px;
+    background: rgba(26,35,64,0.12);
+    border-radius: 3px;
+    border: 1.5px solid var(--ink);
+    overflow: hidden;
+    position: relative;
+  }
+  .pdot.done { background: var(--gold); }
+  .pdot.current { background: linear-gradient(90deg, var(--gold) 50%, rgba(26,35,64,0.08) 50%); }
+  .panel-tag {
+    font-family: 'Bangers', sans-serif;
+    font-size: 14px;
+    letter-spacing: 2px;
+    color: var(--ink);
+    background: var(--paper-2);
+    padding: 3px 10px;
+    border: 1.5px solid var(--ink);
+    border-radius: 4px;
+    transform: rotate(-2deg);
+    box-shadow: 2px 2px 0 var(--ink);
+  }
+
+  /* ─── COMIC PANEL (TOP HALF) ─── */
+  .comic-panel {
+    margin: 8px 16px 0;
+    border: 3.5px solid var(--panel-stroke);
+    border-radius: 18px;
+    height: 46vh;
+    min-height: 320px;
+    max-height: 440px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 5px 6px 0 var(--ink), 5px 6px 0 1.5px var(--ink);
+    background: var(--sky-day-bot);
+  }
+
+  /* Scene wrapper - holds parallax layers */
+  .scene {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+  }
+  .layer { position: absolute; inset: 0; pointer-events: none; }
+
+  /* ── shared scene atoms ── */
+  .sky { position: absolute; inset: 0; transition: background 0.6s; }
+  .floor {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 28%;
+  }
+
+  /* sun / moon */
+  .celestial {
+    position: absolute;
+    width: 60px; height: 60px;
+    border-radius: 50%;
+    top: 30px; right: 30px;
+    transition: background 0.6s, box-shadow 0.6s;
+    z-index: 1;
+  }
+  .day .celestial {
+    background: radial-gradient(circle, #fff7d6 0%, var(--gold) 70%);
+    box-shadow: 0 0 40px rgba(245,166,35,0.5);
+    animation: sunpulse calc(4s / var(--animspeed)) ease-in-out infinite;
+  }
+  .night .celestial {
+    background: radial-gradient(circle, #fff 0%, #e0e8ff 70%);
+    box-shadow: 0 0 30px rgba(255,255,255,0.6);
+  }
+  @keyframes sunpulse {
+    0%,100% { transform: scale(1); }
+    50% { transform: scale(1.06); }
+  }
+
+  /* clouds */
+  .cloud {
+    position: absolute;
+    background: rgba(255,255,255,0.9);
+    border-radius: 50%;
+    filter: drop-shadow(0 4px 0 rgba(26,35,64,0.06));
+  }
+  .cloud::before, .cloud::after {
+    content: ''; position: absolute;
+    background: rgba(255,255,255,0.9);
+    border-radius: 50%;
+  }
+  .cloud-1 {
+    width: 60px; height: 24px;
+    top: 22%; left: -70px;
+    animation: drift calc(40s / var(--animspeed)) linear infinite;
+  }
+  .cloud-1::before { width: 30px; height: 30px; top: -14px; left: 12px; }
+  .cloud-1::after { width: 22px; height: 22px; top: -8px; left: 36px; }
+  .cloud-2 {
+    width: 40px; height: 18px;
+    top: 38%; left: -50px;
+    animation: drift calc(55s / var(--animspeed)) linear infinite;
+    animation-delay: -20s;
+    opacity: 0.7;
+  }
+  .cloud-2::before { width: 22px; height: 22px; top: -10px; left: 8px; }
+  .cloud-2::after { width: 18px; height: 18px; top: -6px; left: 24px; }
+  @keyframes drift {
+    from { transform: translateX(0); }
+    to { transform: translateX(calc(100vw + 200px)); }
+  }
+  .night .cloud { opacity: 0.25; }
+
+  /* stars */
+  .stars-layer { display: none; }
+  .night .stars-layer { display: block; }
+  .star {
+    position: absolute;
+    width: 3px; height: 3px;
+    background: white;
+    border-radius: 50%;
+    animation: twinkle calc(3s / var(--animspeed)) ease-in-out infinite;
+  }
+  @keyframes twinkle {
+    0%,100% { opacity: 0.3; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.4); }
+  }
+
+  /* mountains */
+  .mountain {
+    position: absolute;
+    bottom: 28%;
+    width: 0; height: 0;
+    border-style: solid;
+  }
+
+  /* ground */
+  .ground-day {
+    background: linear-gradient(180deg, #7dd87c 0%, #5cb85c 100%);
+  }
+  .ground-night {
+    background: linear-gradient(180deg, #2d3a52 0%, #1a2340 100%);
+  }
+  .ground-grass-blade {
+    position: absolute;
+    bottom: 0;
+    width: 4px; height: 12px;
+    background: #4a9d4a;
+    border-radius: 50% 50% 0 0;
+    transform-origin: bottom center;
+    animation: sway calc(2s / var(--animspeed)) ease-in-out infinite;
+  }
+  @keyframes sway {
+    0%,100% { transform: rotate(-3deg); }
+    50% { transform: rotate(3deg); }
+  }
+
+  /* particles (sparkles, floating motes) */
+  .mote {
+    position: absolute;
+    width: 6px; height: 6px;
+    background: var(--gold);
+    border-radius: 50%;
+    opacity: 0.7;
+    animation: float-mote calc(6s / var(--animspeed)) ease-in-out infinite;
+    box-shadow: 0 0 8px rgba(245,166,35,0.6);
+  }
+  @keyframes float-mote {
+    0%,100% { transform: translateY(0) translateX(0); opacity: 0.3; }
+    50% { transform: translateY(-20px) translateX(8px); opacity: 1; }
+  }
+
+  /* ─── PIKA CHARACTER ─── */
+  .pika {
+    position: absolute;
+    width: 140px; height: 160px;
+    bottom: 12%;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 5;
+    animation: pika-float calc(3s / var(--animspeed)) ease-in-out infinite;
+  }
+  .pika.right { left: auto; right: 8%; transform: none; }
+  .pika.left { left: 8%; transform: none; }
+  @keyframes pika-float {
+    0%,100% { transform: translateX(-50%) translateY(0); }
+    50% { transform: translateX(-50%) translateY(-8px); }
+  }
+  .pika.left, .pika.right {
+    animation-name: pika-float-side;
+  }
+  @keyframes pika-float-side {
+    0%,100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+  }
+
+  .pika svg { width: 100%; height: 100%; overflow: visible; }
+  .pika .shadow-ground {
+    position: absolute;
+    bottom: -6px; left: 50%;
+    width: 80px; height: 14px;
+    background: rgba(26,35,64,0.25);
+    border-radius: 50%;
+    transform: translateX(-50%);
+    filter: blur(3px);
+    animation: shadow-pulse calc(3s / var(--animspeed)) ease-in-out infinite;
+    z-index: -1;
+  }
+  @keyframes shadow-pulse {
+    0%,100% { width: 80px; opacity: 0.25; }
+    50% { width: 60px; opacity: 0.18; }
+  }
+
+  /* expression-specific eyes (toggled via data-mood) */
+  .pika .eye-set { display: none; }
+  .pika[data-mood="happy"] .eye-happy { display: inline; }
+  .pika[data-mood="wave"] .eye-wave { display: inline; }
+  .pika[data-mood="thinking"] .eye-thinking { display: inline; }
+  .pika[data-mood="surprised"] .eye-surprised { display: inline; }
+  .pika[data-mood="excited"] .eye-excited { display: inline; }
+  .pika[data-mood="teaching"] .eye-teaching { display: inline; }
+
+  /* wave arm animation */
+  .pika .arm-r-wave { transform-origin: 106px 80px; animation: wave-arm 1.2s ease-in-out infinite; }
+  @keyframes wave-arm {
+    0%,100% { transform: rotate(0deg); }
+    25%, 75% { transform: rotate(-25deg); }
+    50% { transform: rotate(-12deg); }
+  }
+  .pika[data-mood="wave"] .arm-r { display: none; }
+  .pika:not([data-mood="wave"]) .arm-r-wave { display: none; }
+
+  /* ─── SPEECH BUBBLE ─── */
+  .bubble-wrap {
+    position: absolute;
+    top: 16px;
+    left: 16px;
+    right: 16px;
+    z-index: 8;
+  }
+  .bubble {
+    background: var(--bubble);
+    border: 2.5px solid var(--bubble-stroke);
+    border-radius: 18px;
+    padding: 12px 14px;
+    font-family: 'Baloo 2', sans-serif;
+    font-weight: 600;
+    font-size: 14px;
+    line-height: 1.4;
+    color: var(--ink);
+    box-shadow: 3px 3px 0 var(--ink);
+    position: relative;
+    max-width: 92%;
+    opacity: 0;
+    transform: scale(0.7) translateY(-10px);
+    transform-origin: bottom left;
+    transition: opacity 0.3s, transform 0.3s cubic-bezier(.34,1.56,.64,1);
+  }
+  .bubble.show { opacity: 1; transform: scale(1) translateY(0); }
+  .bubble strong { font-weight: 800; color: var(--blue); }
+  .bubble em { color: var(--gold-deep); font-style: normal; font-weight: 800; }
+  .bubble::after {
+    content: '';
+    position: absolute;
+    bottom: -14px;
+    left: 32px;
+    width: 22px;
+    height: 18px;
+    background: var(--bubble);
+    clip-path: polygon(0 0, 100% 0, 30% 100%);
+    border-right: 2.5px solid var(--bubble-stroke);
+    border-bottom: 2.5px solid var(--bubble-stroke);
+  }
+  .bubble.right::after { left: auto; right: 32px; }
+
+  /* small "sfx" word floating in panel */
+  .sfx {
+    position: absolute;
+    font-family: 'Bangers', sans-serif;
+    font-size: 28px;
+    color: var(--gold);
+    -webkit-text-stroke: 2px var(--ink);
+    text-shadow: 3px 3px 0 var(--ink);
+    transform: rotate(-12deg);
+    z-index: 7;
+    animation: sfx-pop calc(2s / var(--animspeed)) ease-in-out infinite;
+  }
+  @keyframes sfx-pop {
+    0%,100% { transform: rotate(-12deg) scale(1); }
+    50% { transform: rotate(-8deg) scale(1.08); }
+  }
+
+  /* ─── INTERACTION AREA (bottom half) ─── */
+  .interaction {
+    flex: 1;
+    padding: 16px 18px 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    background: var(--paper);
+    position: relative;
+    z-index: 2;
+  }
+
+  .narrator-line {
+    font-family: 'Caveat', cursive;
+    font-size: 18px;
+    color: var(--ink-soft);
+    text-align: center;
+    margin-bottom: 2px;
+    opacity: 0.75;
+    line-height: 1.2;
+  }
+
+  /* choice cards */
+  .choices { display: flex; flex-direction: column; gap: 8px; }
+  .choice-btn {
+    padding: 12px 14px;
+    background: white;
+    border: 2.5px solid var(--ink);
+    border-radius: 14px;
+    font-family: 'Baloo 2', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--ink);
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s, background 0.15s;
+    text-align: left;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 3px 3px 0 var(--ink);
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  .choice-btn.show { opacity: 1; transform: translateY(0); transition-delay: 0s, 0s, 0s, 0.3s, 0.3s; }
+  .choice-btn:hover {
+    background: var(--paper-2);
+    transform: translate(-2px, -2px);
+    box-shadow: 5px 5px 0 var(--ink);
+  }
+  .choice-btn:active {
+    transform: translate(2px, 2px);
+    box-shadow: 1px 1px 0 var(--ink);
+  }
+  .choice-emoji {
+    width: 36px; height: 36px;
+    background: var(--blue-soft);
+    border-radius: 10px;
+    border: 2px solid var(--ink);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+  .choice-btn.b .choice-emoji { background: #ffe8d6; }
+  .choice-btn.c .choice-emoji { background: #d6f5e3; }
+
+  /* primary CTA */
+  .btn-primary {
+    background: var(--gold);
+    color: var(--ink);
+    border: 2.5px solid var(--ink);
+    padding: 14px 28px;
+    border-radius: 50px;
+    font-family: 'Baloo 2', sans-serif;
+    font-size: 16px;
+    font-weight: 800;
+    cursor: pointer;
+    box-shadow: 4px 4px 0 var(--ink);
+    transition: transform 0.15s, box-shadow 0.15s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+  }
+  .btn-primary:hover { transform: translate(-2px, -2px); box-shadow: 6px 6px 0 var(--ink); }
+  .btn-primary:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0 var(--ink); }
+
+  .btn-ghost {
+    background: white;
+    color: var(--ink);
+    border: 2.5px solid var(--ink);
+    padding: 12px 22px;
+    border-radius: 50px;
+    font-family: 'Baloo 2', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 3px 3px 0 var(--ink);
+    transition: all 0.15s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+  .btn-ghost:hover { transform: translate(-2px, -2px); box-shadow: 5px 5px 0 var(--ink); }
+
+  .next-row { display: flex; justify-content: flex-end; padding-top: 4px; }
+  .btn-next {
+    background: var(--blue);
+    color: white;
+    border: 2.5px solid var(--ink);
+    padding: 10px 18px;
+    border-radius: 50px;
+    font-family: 'Baloo 2', sans-serif;
+    font-size: 14px;
+    font-weight: 800;
+    cursor: pointer;
+    box-shadow: 3px 3px 0 var(--ink);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.15s;
+  }
+  .btn-next:hover { transform: translate(-2px, -2px); box-shadow: 5px 5px 0 var(--ink); }
+  .btn-next:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--ink); }
+
+  /* stat bars */
+  .stat-row {
+    background: white;
+    border: 2px solid var(--ink);
+    border-radius: 12px;
+    padding: 10px 12px;
+    box-shadow: 3px 3px 0 var(--ink);
+    opacity: 0;
+    transform: translateX(-12px);
+    transition: opacity 0.4s, transform 0.4s;
+  }
+  .stat-row.show { opacity: 1; transform: translateX(0); }
+  .stat-head {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    font-weight: 800;
+    color: var(--ink);
+    margin-bottom: 6px;
+    align-items: center;
+    gap: 6px;
+  }
+  .stat-head .stat-emoji { font-size: 16px; }
+  .stat-head .stat-val {
+    font-family: 'Baloo 2', sans-serif;
+    color: var(--ink-soft);
+    font-weight: 700;
+    font-size: 11px;
+  }
+  .stat-track {
+    height: 10px;
+    background: rgba(26,35,64,0.08);
+    border-radius: 6px;
+    overflow: hidden;
+    border: 1.5px solid var(--ink);
+  }
+  .stat-fill {
+    height: 100%;
+    width: 0;
+    transition: width 1.2s cubic-bezier(.4,0,.2,1);
+  }
+
+  /* big number callout */
+  .big-num {
+    background: white;
+    border: 3px solid var(--ink);
+    border-radius: 16px;
+    padding: 16px;
+    text-align: center;
+    box-shadow: 4px 4px 0 var(--ink);
+    opacity: 0;
+    transform: scale(0.95);
+    transition: opacity 0.5s, transform 0.5s cubic-bezier(.34,1.56,.64,1);
+  }
+  .big-num.show { opacity: 1; transform: scale(1); }
+  .big-num .num {
+    font-family: 'Bangers', sans-serif;
+    font-size: 54px;
+    color: var(--blue);
+    line-height: 1;
+    letter-spacing: 2px;
+    -webkit-text-stroke: 1px var(--ink);
+    text-shadow: 3px 3px 0 var(--ink);
+    display: block;
+  }
+  .big-num .lbl {
+    font-family: 'Baloo 2', sans-serif;
+    font-size: 12px;
+    color: var(--ink-soft);
+    font-weight: 700;
+    margin-top: 6px;
+  }
+
+  .mini-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .mini-stat {
+    background: white;
+    border: 2px solid var(--ink);
+    border-radius: 12px;
+    padding: 10px 8px;
+    text-align: center;
+    box-shadow: 2px 2px 0 var(--ink);
+    opacity: 0;
+    transform: translateY(8px);
+    transition: opacity 0.4s, transform 0.4s;
+  }
+  .mini-stat.show { opacity: 1; transform: translateY(0); }
+  .mini-stat .mn {
+    font-family: 'Baloo 2', sans-serif;
+    font-size: 22px;
+    font-weight: 900;
+    color: var(--blue);
+    line-height: 1;
+  }
+  .mini-stat .ml {
+    font-size: 10.5px;
+    color: var(--ink-soft);
+    font-weight: 700;
+    margin-top: 4px;
+  }
+
+  /* role cards (s5) */
+  .role-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .role-card {
+    background: white;
+    border: 2.5px solid var(--ink);
+    border-radius: 12px;
+    padding: 10px;
+    box-shadow: 3px 3px 0 var(--ink);
+    opacity: 0;
+    transform: translateY(8px) rotate(-1deg);
+    transition: opacity 0.4s, transform 0.4s cubic-bezier(.34,1.56,.64,1);
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+  }
+  .role-card.show { opacity: 1; transform: translateY(0) rotate(0deg); }
+  .role-card:nth-child(2) { transform: translateY(8px) rotate(1deg); }
+  .role-card:nth-child(2).show { transform: translateY(0) rotate(0deg); }
+  .role-icon {
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    border: 2px solid var(--ink);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+  .role-card:nth-child(1) .role-icon { background: #d8ecff; }
+  .role-card:nth-child(2) .role-icon { background: #d6f5e3; }
+  .role-card:nth-child(3) .role-icon { background: #ffe8d6; }
+  .role-card:nth-child(4) .role-icon { background: #ffd8d8; }
+  .role-text { flex: 1; min-width: 0; }
+  .role-title {
+    font-family: 'Baloo 2', sans-serif;
+    font-weight: 800;
+    font-size: 12.5px;
+    color: var(--ink);
+    line-height: 1.2;
+  }
+  .role-desc {
+    font-size: 10.5px;
+    color: var(--ink-soft);
+    margin-top: 3px;
+    line-height: 1.35;
+  }
+
+  /* feature chip row */
+  .chips {
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    padding: 4px 0;
+    scrollbar-width: none;
+  }
+  .chips::-webkit-scrollbar { display: none; }
+  .chip {
+    flex-shrink: 0;
+    background: var(--paper-2);
+    border: 2px solid var(--ink);
+    border-radius: 20px;
+    padding: 6px 10px;
+    font-size: 11px;
+    font-weight: 800;
+    font-family: 'Baloo 2', sans-serif;
+    color: var(--ink);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    box-shadow: 2px 2px 0 var(--ink);
+    opacity: 0;
+    transform: translateY(6px);
+    transition: opacity 0.3s, transform 0.3s;
+  }
+  .chip.show { opacity: 1; transform: translateY(0); }
+
+  /* ─── HERO SCREEN OVERRIDE ─── */
+  #s0 .comic-panel {
+    height: 60vh;
+    min-height: 400px;
+    max-height: 520px;
+  }
+  #s0 .top-chrome { visibility: hidden; }
+  #s0 .interaction { text-align: center; }
+  .hero-tag {
+    display: inline-block;
+    background: var(--ink);
+    color: var(--paper);
+    font-family: 'Bangers', sans-serif;
+    font-size: 12px;
+    letter-spacing: 2px;
+    padding: 4px 10px;
+    border-radius: 4px;
+    margin-bottom: 8px;
+  }
+  .hero-title {
+    font-family: 'Baloo 2', sans-serif;
+    font-size: 26px;
+    font-weight: 900;
+    color: var(--ink);
+    line-height: 1.1;
+    margin-bottom: 8px;
+  }
+  .hero-title span { color: var(--blue); }
+  .hero-sub {
+    font-size: 13.5px;
+    color: var(--ink-soft);
+    line-height: 1.5;
+    margin-bottom: 14px;
+    font-weight: 600;
+  }
+
+  /* final screen */
+  #sf .comic-panel {
+    height: 50vh;
+    min-height: 340px;
+  }
+  .final-title {
+    font-family: 'Baloo 2', sans-serif;
+    font-size: 22px;
+    font-weight: 900;
+    color: var(--ink);
+    line-height: 1.2;
+    text-align: center;
+    margin-bottom: 6px;
+  }
+  .final-title span { color: var(--gold-deep); }
+  .final-sub {
+    font-size: 13px;
+    color: var(--ink-soft);
+    text-align: center;
+    line-height: 1.5;
+    margin-bottom: 12px;
+    font-weight: 600;
+  }
+  .final-cta { display: flex; flex-direction: column; gap: 8px; }
+
+  /* ─── TWEAKS PANEL ─── */
+  .tweaks {
+    position: fixed;
+    right: 16px;
+    bottom: 16px;
+    width: 280px;
+    background: white;
+    border: 2.5px solid var(--ink);
+    border-radius: 16px;
+    box-shadow: 5px 5px 0 var(--ink);
+    padding: 14px;
+    z-index: 999;
+    display: none;
+    font-family: 'Nunito', sans-serif;
+  }
+  .tweaks.open { display: block; }
+  .tweaks-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 1.5px dashed var(--ink);
+  }
+  .tweaks-head h3 {
+    font-family: 'Bangers', sans-serif;
+    font-size: 18px;
+    letter-spacing: 1.5px;
+    color: var(--ink);
+  }
+  .tweak-close {
+    width: 26px; height: 26px;
+    border: 2px solid var(--ink);
+    background: var(--paper-2);
+    border-radius: 50%;
+    cursor: pointer;
+    font-weight: 800;
+    line-height: 1;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .tweak-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 7px 0;
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--ink);
+    gap: 8px;
+  }
+  .tweak-row label { flex: 1; }
+  .tweak-row input[type="range"] { width: 100px; }
+  .seg {
+    display: flex;
+    border: 2px solid var(--ink);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .seg button {
+    background: white;
+    border: none;
+    padding: 5px 9px;
+    font-family: 'Baloo 2', sans-serif;
+    font-size: 11px;
+    font-weight: 800;
+    cursor: pointer;
+    border-right: 2px solid var(--ink);
+  }
+  .seg button:last-child { border-right: none; }
+  .seg button.active { background: var(--gold); color: var(--ink); }
+
+  /* user reply bubble - inline in interaction */
+  .user-reply {
+    align-self: flex-end;
+    background: var(--blue);
+    color: white;
+    padding: 10px 14px;
+    border-radius: 16px;
+    border-bottom-right-radius: 4px;
+    font-family: 'Baloo 2', sans-serif;
+    font-weight: 600;
+    font-size: 13.5px;
+    max-width: 80%;
+    border: 2px solid var(--ink);
+    box-shadow: 3px 3px 0 var(--ink);
+    margin-top: 4px;
+    opacity: 0;
+    transform: translateY(8px);
+    transition: opacity 0.3s, transform 0.3s;
+  }
+  .user-reply.show { opacity: 1; transform: translateY(0); }
+
+  /* ── per-scene atoms ── */
+  /* Scene: bedroom (s0) */
+  .scene-bedroom .sky {
+    background: linear-gradient(180deg, #1a3a6e 0%, #3c5a8a 60%, #5c7ab0 100%);
+  }
+  .scene-bedroom .window-frame {
+    position: absolute;
+    top: 10%; left: 10%;
+    width: 38%; height: 38%;
+    background: linear-gradient(180deg, #1a3a6e 0%, #3c5a8a 100%);
+    border: 4px solid #6b4226;
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  .scene-bedroom .window-frame::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent 48%, #6b4226 48%, #6b4226 52%, transparent 52%),
+                linear-gradient(0deg, transparent 48%, #6b4226 48%, #6b4226 52%, transparent 52%);
+  }
+  .scene-bedroom .moon-in-window {
+    position: absolute;
+    width: 40px; height: 40px;
+    background: radial-gradient(circle, #fff 0%, #e0e8ff 70%);
+    border-radius: 50%;
+    top: 20%; left: 20%;
+    box-shadow: 0 0 20px rgba(255,255,255,0.6);
+  }
+  .scene-bedroom .floor {
+    height: 22%;
+    background: linear-gradient(180deg, #c89b6c 0%, #a87a4a 100%);
+  }
+  .scene-bedroom .wall {
+    background: linear-gradient(180deg, #f5e0c0 0%, #e8d0a8 100%);
+  }
+  .scene-bedroom .shelf {
+    position: absolute;
+    bottom: 28%; right: 8%;
+    width: 38%; height: 6px;
+    background: #6b4226;
+  }
+  .scene-bedroom .book {
+    position: absolute;
+    bottom: calc(28% + 6px);
+    width: 8px; height: 22px;
+    border-radius: 2px 2px 0 0;
+  }
+
+  /* Scene: kitchen (s1) */
+  .scene-kitchen .sky {
+    background: linear-gradient(180deg, #ffd6a3 0%, #ffe8c5 50%, #fff5e0 100%);
+  }
+  .scene-kitchen .floor {
+    height: 26%;
+    background: repeating-linear-gradient(90deg, #d4a574 0 30px, #c89360 30px 60px);
+  }
+  .scene-kitchen .counter {
+    position: absolute;
+    bottom: 26%; left: 0; right: 0;
+    height: 14%;
+    background: linear-gradient(180deg, #e8d0a8 0%, #d4b888 100%);
+    border-bottom: 4px solid #8b6914;
+  }
+  .scene-kitchen .cabinet {
+    position: absolute;
+    top: 20%; left: 8%;
+    width: 80%; height: 24%;
+    background: #c89b6c;
+    border: 3px solid #6b4226;
+    border-radius: 4px;
+  }
+  .scene-kitchen .cabinet::after {
+    content: '';
+    position: absolute;
+    inset: 4px;
+    background:
+      linear-gradient(90deg, transparent 49%, #6b4226 49%, #6b4226 51%, transparent 51%);
+  }
+
+  /* Scene: pool (s2) - swimming analogy */
+  .scene-pool .sky {
+    background: linear-gradient(180deg, #87cef0 0%, #b0e0f5 100%);
+  }
+  .scene-pool .pool-water {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 55%;
+    background: linear-gradient(180deg, #4cb0e5 0%, #2080c4 100%);
+    overflow: hidden;
+  }
+  .scene-pool .pool-water::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 8px;
+    background: repeating-linear-gradient(90deg, rgba(255,255,255,0.5) 0 12px, transparent 12px 24px);
+  }
+  .scene-pool .wave {
+    position: absolute;
+    width: 30px; height: 6px;
+    border: 2px solid rgba(255,255,255,0.6);
+    border-radius: 50%;
+    border-top: none;
+    border-left: none;
+    transform: rotate(-15deg);
+    animation: wave-anim calc(3s / var(--animspeed)) ease-in-out infinite;
+  }
+  @keyframes wave-anim {
+    0%,100% { transform: translateY(0) rotate(-15deg); }
+    50% { transform: translateY(-3px) rotate(-15deg); }
+  }
+  .scene-pool .pool-tile {
+    position: absolute;
+    bottom: 55%; left: 0; right: 0;
+    height: 4px;
+    background: #fff;
+    border-bottom: 2px solid #c5d9e8;
+  }
+  .scene-pool .bubble-drop {
+    position: absolute;
+    width: 12px; height: 12px;
+    background: rgba(255,255,255,0.5);
+    border-radius: 50%;
+    border: 2px solid rgba(255,255,255,0.7);
+    animation: rise calc(4s / var(--animspeed)) ease-in infinite;
+  }
+  @keyframes rise {
+    0% { transform: translateY(0); opacity: 0.8; }
+    100% { transform: translateY(-80px); opacity: 0; }
+  }
+
+  /* Scene: classroom (s3) - chart */
+  .scene-class .sky {
+    background: linear-gradient(180deg, #f0e8d6 0%, #f5ebd0 100%);
+  }
+  .scene-class .blackboard {
+    position: absolute;
+    top: 10%; left: 8%;
+    width: 84%; height: 50%;
+    background: #2d4a3e;
+    border: 8px solid #6b4226;
+    border-radius: 8px;
+  }
+  .scene-class .chart-bar {
+    position: absolute;
+    bottom: 12%;
+    width: 14%;
+    background: linear-gradient(180deg, #f5a623 0%, #e08311 100%);
+    border: 2px solid #fff;
+    border-bottom: none;
+    transform-origin: bottom;
+    animation: chart-grow calc(2s / var(--animspeed)) ease-out forwards;
+  }
+  @keyframes chart-grow {
+    from { transform: scaleY(0); }
+    to { transform: scaleY(1); }
+  }
+  .scene-class .floor {
+    height: 22%;
+    background: linear-gradient(180deg, #c89b6c 0%, #a87a4a 100%);
+  }
+
+  /* Scene: trophy (s4) */
+  .scene-trophy .sky {
+    background: radial-gradient(circle at 50% 30%, #fff5d6 0%, #f5e0a0 50%, #e8c060 100%);
+  }
+  .scene-trophy .ray {
+    position: absolute;
+    top: 30%; left: 50%;
+    width: 4px; height: 100%;
+    background: linear-gradient(180deg, rgba(255,255,255,0.6), transparent);
+    transform-origin: top center;
+    animation: ray-spin calc(20s / var(--animspeed)) linear infinite;
+  }
+  @keyframes ray-spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+  .scene-trophy .floor {
+    height: 22%;
+    background: linear-gradient(180deg, #d4a574 0%, #b88550 100%);
+  }
+  .scene-trophy .confetti {
+    position: absolute;
+    width: 8px; height: 12px;
+    animation: confetti-fall calc(5s / var(--animspeed)) linear infinite;
+  }
+  @keyframes confetti-fall {
+    0% { transform: translateY(-20px) rotate(0deg); opacity: 1; }
+    100% { transform: translateY(400px) rotate(720deg); opacity: 0.6; }
+  }
+
+  /* Scene: stage (s5) - 4 roles */
+  .scene-stage .sky {
+    background: linear-gradient(180deg, #4a1a6e 0%, #6a3a8e 50%, #8a5aae 100%);
+  }
+  .scene-stage .curtain-l, .scene-stage .curtain-r {
+    position: absolute;
+    top: 0; bottom: 0;
+    width: 18%;
+    background: repeating-linear-gradient(90deg, #b8261a 0 8px, #8a1a14 8px 16px);
+    z-index: 2;
+  }
+  .scene-stage .curtain-l { left: 0; border-right: 4px solid #6a1010; }
+  .scene-stage .curtain-r { right: 0; border-left: 4px solid #6a1010; }
+  .scene-stage .floor {
+    height: 22%;
+    background: linear-gradient(180deg, #c89b6c 0%, #a87a4a 100%);
+  }
+  .scene-stage .spotlight {
+    position: absolute;
+    top: -10%;
+    left: 50%;
+    width: 200px; height: 60%;
+    background: linear-gradient(180deg, rgba(255,255,200,0.4) 0%, transparent 100%);
+    transform: translateX(-50%);
+    clip-path: polygon(40% 0, 60% 0, 100% 100%, 0 100%);
+    animation: spot-sway calc(4s / var(--animspeed)) ease-in-out infinite;
+  }
+  @keyframes spot-sway {
+    0%,100% { transform: translateX(-50%) rotate(0deg); }
+    50% { transform: translateX(-50%) rotate(3deg); }
+  }
+
+  /* Scene: cozy reading (s6) */
+  .scene-cozy .sky {
+    background: linear-gradient(180deg, #ffd6a3 0%, #ffe8d0 50%, #fff5e8 100%);
+  }
+  .scene-cozy .floor {
+    height: 22%;
+    background: linear-gradient(180deg, #c89b6c 0%, #a87a4a 100%);
+  }
+  .scene-cozy .rug {
+    position: absolute;
+    bottom: 8%; left: 20%;
+    width: 60%; height: 14px;
+    background: repeating-linear-gradient(90deg, #d44a4a 0 12px, #f56b6b 12px 24px);
+    border: 2px solid var(--ink);
+    border-radius: 50%;
+  }
+  .scene-cozy .lamp {
+    position: absolute;
+    bottom: 22%; left: 8%;
+    width: 30px; height: 50px;
+    background: linear-gradient(180deg, #ffd6a3 0%, #f5a623 100%);
+    border: 2px solid var(--ink);
+    border-radius: 50% 50% 4px 4px;
+    box-shadow: 0 0 30px rgba(245,166,35,0.5);
+  }
+
+  /* Scene: garden (final) */
+  .scene-garden .sky {
+    background: linear-gradient(180deg, #87cef0 0%, #b0e0f5 60%, #d8f0d6 100%);
+  }
+  .scene-garden .floor {
+    height: 30%;
+    background: linear-gradient(180deg, #7dd87c 0%, #5cb85c 100%);
+  }
+  .scene-garden .flower {
+    position: absolute;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    animation: flower-sway calc(3s / var(--animspeed)) ease-in-out infinite;
+  }
+  @keyframes flower-sway {
+    0%,100% { transform: rotate(-5deg); }
+    50% { transform: rotate(5deg); }
+  }
+  .scene-garden .flower::before {
+    content: '';
+    position: absolute;
+    width: 3px; height: 20px;
+    background: #4a9d4a;
+    left: 50%; top: 100%;
+    transform: translateX(-50%);
+  }
+  .scene-garden .balloon {
+    position: absolute;
+    width: 30px; height: 36px;
+    border-radius: 50%;
+    border: 2px solid var(--ink);
+    animation: balloon-rise calc(8s / var(--animspeed)) ease-in-out infinite;
+  }
+  @keyframes balloon-rise {
+    0%,100% { transform: translateY(0); }
+    50% { transform: translateY(-15px); }
+  }
+  .scene-garden .balloon::after {
+    content: '';
+    position: absolute;
+    top: 100%; left: 50%;
+    width: 1px; height: 30px;
+    background: var(--ink);
+  }
+
+  /* Reduce motion preference */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.1s !important; }
+  }
+
+  /* ─── FORM INPUTS ─── */
+  .field-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .field-label {
+    font-family: 'Baloo 2', sans-serif;
+    font-size: 13px;
+    font-weight: 800;
+    color: var(--ink);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .field-input {
+    width: 100%;
+    background: white;
+    border: 2.5px solid var(--ink);
+    border-radius: 12px;
+    padding: 12px 14px;
+    font-family: 'Baloo 2', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--ink);
+    box-shadow: 3px 3px 0 var(--ink);
+    outline: none;
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+  .field-input:focus {
+    transform: translate(-1px, -1px);
+    box-shadow: 4px 4px 0 var(--ink);
+  }
+  .field-input::placeholder { color: rgba(26,35,64,0.35); font-weight: 600; }
+
+  .seg-pick {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+  }
+  .seg-pick button {
+    background: white;
+    border: 2.5px solid var(--ink);
+    border-radius: 12px;
+    padding: 9px 4px;
+    font-family: 'Baloo 2', sans-serif;
+    font-size: 12.5px;
+    font-weight: 800;
+    color: var(--ink);
+    cursor: pointer;
+    box-shadow: 2px 2px 0 var(--ink);
+    transition: all 0.15s;
+  }
+  .seg-pick button:hover { transform: translate(-1px,-1px); box-shadow: 3px 3px 0 var(--ink); }
+  .seg-pick button.active {
+    background: var(--gold);
+    transform: translate(1px, 1px);
+    box-shadow: 1px 1px 0 var(--ink);
+  }
+
+  /* skill self-rating row */
+  .skill-row {
+    background: white;
+    border: 2px solid var(--ink);
+    border-radius: 12px;
+    padding: 9px 10px;
+    box-shadow: 2px 2px 0 var(--ink);
+  }
+  .skill-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: 'Baloo 2', sans-serif;
+    font-size: 12.5px;
+    font-weight: 800;
+    color: var(--ink);
+    margin-bottom: 5px;
+    gap: 6px;
+  }
+  .skill-stars {
+    display: flex;
+    gap: 4px;
+  }
+  .skill-star {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: #f0e8d6;
+    border: 1.5px solid var(--ink);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    font-size: 11px;
+    color: rgba(26,35,64,0.3);
+    transition: all 0.12s;
+    font-weight: 800;
+  }
+  .skill-star:hover { transform: scale(1.1); }
+  .skill-star.on { background: var(--gold); color: var(--ink); }
+
+  /* diagnostic "patient chart" header */
+  .chart-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: white;
+    border: 2.5px solid var(--ink);
+    border-radius: 12px;
+    padding: 8px 12px;
+    box-shadow: 3px 3px 0 var(--ink);
+    margin-bottom: 4px;
+  }
+  .chart-stamp {
+    font-family: 'Bangers', sans-serif;
+    font-size: 13px;
+    letter-spacing: 1.5px;
+    color: var(--rose);
+    border: 2px solid var(--rose);
+    padding: 3px 8px;
+    border-radius: 4px;
+    transform: rotate(-4deg);
+    flex-shrink: 0;
+  }
+  .chart-name {
+    font-family: 'Baloo 2', sans-serif;
+    font-weight: 800;
+    font-size: 13px;
+    color: var(--ink);
+    flex: 1;
+    line-height: 1.2;
+  }
+  .chart-name span { color: var(--ink-soft); font-weight: 600; font-size: 11px; display: block; }
+
+  .diag-verdict {
+    background: #ffe8d6;
+    border: 2.5px dashed var(--rose);
+    border-radius: 12px;
+    padding: 10px 12px;
+    font-family: 'Baloo 2', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--ink);
+    line-height: 1.45;
+    opacity: 0;
+    transform: scale(0.96);
+    transition: opacity 0.5s, transform 0.5s cubic-bezier(.34,1.56,.64,1);
+  }
+  .diag-verdict.show { opacity: 1; transform: scale(1); }
+  .diag-verdict strong { color: var(--rose); font-weight: 900; }
+
+  /* ─── MILESTONES TIMELINE ─── */
+  .milestone-line {
+    position: relative;
+    padding: 8px 6px 4px;
+  }
+  .ml-track {
+    position: relative;
+    height: 70px;
+    margin: 0 6px;
+  }
+  .ml-rail {
+    position: absolute;
+    top: 18px; left: 6px; right: 6px;
+    height: 4px;
+    background: rgba(26,35,64,0.15);
+    border-radius: 2px;
+  }
+  .ml-fill {
+    position: absolute;
+    top: 18px; left: 6px;
+    height: 4px;
+    width: 0;
+    background: linear-gradient(90deg, var(--gold), var(--mint));
+    border-radius: 2px;
+    transition: width 1.6s cubic-bezier(.4,0,.2,1);
+  }
+  .ml-node {
+    position: absolute;
+    top: 4px;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    width: 70px;
+  }
+  .ml-dot {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: white;
+    border: 2.5px solid var(--ink);
+    box-shadow: 2px 2px 0 var(--ink);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Baloo 2', sans-serif;
+    font-weight: 900;
+    font-size: 12px;
+    color: var(--ink);
+    transition: all 0.4s;
+  }
+  .ml-node.on .ml-dot {
+    background: var(--gold);
+    transform: scale(1.1);
+  }
+  .ml-node.on .ml-dot::after {
+    content: '★';
+    position: absolute;
+    top: -10px; right: -10px;
+    background: var(--rose);
+    color: white;
+    border: 2px solid var(--ink);
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    font-size: 10px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .ml-label {
+    font-family: 'Baloo 2', sans-serif;
+    font-size: 10px;
+    font-weight: 800;
+    color: var(--ink);
+    margin-top: 4px;
+    line-height: 1.1;
+  }
+  .ml-time {
+    font-size: 9.5px;
+    color: var(--ink-soft);
+    font-weight: 700;
+    margin-top: 1px;
+    line-height: 1.1;
+  }
+
+  .ml-callout {
+    background: white;
+    border: 2.5px solid var(--ink);
+    border-radius: 12px;
+    padding: 10px 12px;
+    box-shadow: 3px 3px 0 var(--ink);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .ml-callout .cnum {
+    font-family: 'Bangers', sans-serif;
+    font-size: 26px;
+    color: var(--blue);
+    -webkit-text-stroke: 1px var(--ink);
+    line-height: 1;
+    flex-shrink: 0;
+  }
+  .ml-callout .ctext {
+    font-family: 'Baloo 2', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--ink);
+    line-height: 1.35;
+  }
+  .ml-callout .ctext em { color: var(--gold-deep); font-style: normal; font-weight: 900; }
+
+  /* ─── COMPARISON BARS (school vs Pika) ─── */
+  .cmp-card {
+    background: white;
+    border: 2.5px solid var(--ink);
+    border-radius: 14px;
+    padding: 12px;
+    box-shadow: 3px 3px 0 var(--ink);
+  }
+  .cmp-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  .cmp-row:last-child { margin-bottom: 0; }
+  .cmp-label {
+    font-family: 'Baloo 2', sans-serif;
+    font-weight: 800;
+    font-size: 12px;
+    color: var(--ink);
+    width: 84px;
+    flex-shrink: 0;
+    line-height: 1.2;
+  }
+  .cmp-label span {
+    display: block;
+    font-size: 10px;
+    color: var(--ink-soft);
+    font-weight: 600;
+  }
+  .cmp-track {
+    flex: 1;
+    height: 22px;
+    background: rgba(26,35,64,0.08);
+    border-radius: 6px;
+    border: 1.5px solid var(--ink);
+    overflow: hidden;
+    position: relative;
+  }
+  .cmp-fill {
+    height: 100%;
+    width: 0;
+    transition: width 1.3s cubic-bezier(.4,0,.2,1);
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding-right: 8px;
+    font-family: 'Baloo 2', sans-serif;
+    font-weight: 900;
+    font-size: 11px;
+    color: white;
+    white-space: nowrap;
+  }
+
+  /* day-of-week dots */
+  .week-dots {
+    display: flex;
+    gap: 6px;
+    justify-content: space-between;
+  }
+  .week-day {
+    flex: 1;
+    text-align: center;
+  }
+  .wd-letter {
+    font-family: 'Baloo 2', sans-serif;
+    font-size: 10px;
+    font-weight: 800;
+    color: var(--ink-soft);
+    margin-bottom: 3px;
+  }
+  .wd-dot {
+    width: 22px; height: 22px;
+    margin: 0 auto;
+    border-radius: 50%;
+    background: white;
+    border: 2px solid var(--ink);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px;
+    box-shadow: 2px 2px 0 var(--ink);
+    opacity: 0;
+    transform: scale(0.6);
+    transition: opacity 0.3s, transform 0.3s cubic-bezier(.34,1.56,.64,1);
+  }
+  .wd-dot.on { opacity: 1; transform: scale(1); }
+  .wd-dot.school { background: var(--blue-soft); }
+  .wd-dot.pika { background: var(--gold); }
+  .wd-dot.weekend { background: #ffd6d6; }
+
+  /* ─── REGRESSION CHART (line graph SVG) ─── */
+  .regress-card {
+    background: white;
+    border: 2.5px solid var(--ink);
+    border-radius: 14px;
+    padding: 12px;
+    box-shadow: 3px 3px 0 var(--ink);
+  }
+  .regress-svg { display: block; width: 100%; height: 140px; }
+  .regress-legend {
+    display: flex;
+    gap: 14px;
+    justify-content: center;
+    margin-top: 6px;
+    font-family: 'Baloo 2', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--ink);
+  }
+  .legend-key {
+    display: flex; align-items: center; gap: 5px;
+  }
+  .legend-swatch {
+    width: 16px; height: 4px;
+    border-radius: 2px;
+  }
+
+  .warn-card {
+    background: #fff3d6;
+    border: 2.5px solid var(--rose);
+    border-radius: 12px;
+    padding: 10px 12px;
+    font-family: 'Baloo 2', sans-serif;
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--ink);
+    line-height: 1.45;
+    box-shadow: 3px 3px 0 var(--rose);
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+  }
+  .warn-card .warn-icon {
+    width: 28px; height: 28px;
+    background: var(--rose);
+    color: white;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Bangers', sans-serif;
+    font-size: 18px;
+    flex-shrink: 0;
+    border: 2px solid var(--ink);
+  }
+  .warn-card strong { color: var(--rose); font-weight: 900; }
+
+  /* ─── UNIVERSE MAP (S8) ─── */
+  .uni-row {
+    background: white;
+    border: 2.5px solid var(--ink);
+    border-radius: 14px;
+    padding: 10px 12px;
+    box-shadow: 3px 3px 0 var(--ink);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s, background 0.15s;
+    opacity: 0;
+    transform: translateX(-8px);
+  }
+  .uni-row.show { opacity: 1; transform: translateX(0); transition: opacity 0.4s, transform 0.4s; }
+  .uni-row:hover { background: var(--paper-2); transform: translate(-2px,-2px); box-shadow: 5px 5px 0 var(--ink); }
+  .uni-row.active-row { background: var(--blue-soft); border-color: var(--blue); }
+  .uni-row.gap-row {
+    background: var(--blue-soft);
+    border-color: var(--blue);
+    border-style: dashed;
+  }
+  .uni-icon {
+    width: 38px; height: 38px;
+    border-radius: 10px;
+    border: 2px solid var(--ink);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+  .uni-body { flex: 1; min-width: 0; }
+  .uni-name {
+    font-family: 'Baloo 2', sans-serif;
+    font-weight: 800;
+    font-size: 13px;
+    color: var(--ink);
+    line-height: 1.2;
+  }
+  .uni-desc {
+    font-size: 11px;
+    color: var(--ink-soft);
+    margin-top: 2px;
+    line-height: 1.35;
+  }
+  .uni-tag {
+    font-family: 'Bangers', sans-serif;
+    font-size: 10px;
+    letter-spacing: 1px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    border: 1.5px solid var(--ink);
+    flex-shrink: 0;
+  }
+  .verdict-chip {
+    background: var(--paper-2);
+    border: 2.5px dashed var(--ink);
+    border-radius: 12px;
+    padding: 10px 12px;
+    font-family: 'Baloo 2', sans-serif;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--ink);
+    line-height: 1.5;
+    opacity: 0;
+    transform: scale(0.96);
+    transition: opacity 0.4s, transform 0.4s;
+  }
+  .verdict-chip.show { opacity: 1; transform: scale(1); }
+  .verdict-chip strong { color: var(--blue); font-weight: 900; }
+
+  /* ─── DAILY JOURNEY (S9) ─── */
+  .jstep {
+    background: white;
+    border: 2.5px solid var(--ink);
+    border-radius: 14px;
+    box-shadow: 3px 3px 0 var(--ink);
+    overflow: hidden;
+    opacity: 0;
+    transform: translateY(6px);
+    transition: opacity 0.4s, transform 0.4s;
+  }
+  .jstep.show { opacity: 1; transform: translateY(0); }
+  .jstep-head {
+    padding: 10px 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    background: white;
+    transition: background 0.15s;
+  }
+  .jstep-head:hover { background: var(--paper-2); }
+  .jstep-num {
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    border: 2px solid var(--ink);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Bangers', sans-serif;
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+  .jstep-info { flex: 1; min-width: 0; }
+  .jstep-title {
+    font-family: 'Baloo 2', sans-serif;
+    font-weight: 800;
+    font-size: 13px;
+    color: var(--ink);
+    line-height: 1.2;
+  }
+  .jstep-sub {
+    font-size: 10.5px;
+    color: var(--ink-soft);
+    margin-top: 1px;
+    line-height: 1.3;
+  }
+  .jstep-chevron {
+    font-family: 'Bangers', sans-serif;
+    font-size: 18px;
+    color: var(--ink);
+    transition: transform 0.2s;
+    flex-shrink: 0;
+  }
+  .jstep.open .jstep-chevron { transform: rotate(90deg); }
+  .jstep-body {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s cubic-bezier(.4,0,.2,1);
+  }
+  .jstep.open .jstep-body { max-height: 280px; }
+  .jstep-content {
+    padding: 0 12px 12px;
+    border-top: 1.5px dashed var(--ink);
+    padding-top: 10px;
+    margin: 0 0 0 0;
+  }
+  .jstep-quote {
+    background: var(--paper-2);
+    border: 1.5px solid var(--ink);
+    border-radius: 10px;
+    padding: 8px 10px;
+    font-family: 'Baloo 2', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--ink);
+    line-height: 1.5;
+    margin-bottom: 8px;
+  }
+  .jstep-quote em {
+    color: var(--blue);
+    font-style: italic;
+    font-weight: 700;
+  }
+  .jstep-quote .pika-says {
+    font-family: 'Bangers', sans-serif;
+    color: var(--blue);
+    font-style: normal;
+    letter-spacing: 1px;
+    font-size: 11px;
+    margin-right: 4px;
+  }
+  .jstep-tags {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+  }
+  .jtag {
+    font-family: 'Baloo 2', sans-serif;
+    font-size: 10px;
+    font-weight: 800;
+    padding: 3px 8px;
+    border-radius: 12px;
+    border: 1.5px solid var(--ink);
+    background: var(--paper-2);
+    color: var(--ink);
+  }
+  .tap-hint {
+    text-align: center;
+    font-family: 'Caveat', cursive;
+    font-size: 16px;
+    color: var(--ink-soft);
+    opacity: 0;
+    transition: opacity 0.4s;
+  }
+  .tap-hint.show { opacity: 0.8; }
+
+  /* ─── 4 ROLES (S10) ─── */
+  .roles2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .role2 {
+    background: white;
+    border: 2.5px solid var(--ink);
+    border-radius: 14px;
+    padding: 10px;
+    box-shadow: 3px 3px 0 var(--ink);
+    cursor: pointer;
+    opacity: 0;
+    transform: scale(0.95) rotate(-1deg);
+    transition: opacity 0.4s, transform 0.4s cubic-bezier(.34,1.56,.64,1), background 0.15s;
+    text-align: center;
+  }
+  .role2:nth-child(2), .role2:nth-child(4) { transform: scale(0.95) rotate(1deg); }
+  .role2.show { opacity: 1; transform: scale(1) rotate(0); }
+  .role2:nth-child(2).show, .role2:nth-child(4).show { transform: scale(1) rotate(0); }
+  .role2:hover { background: var(--paper-2); }
+  .role2.selected {
+    background: var(--gold);
+    transform: scale(1.02);
+  }
+  .role2-ico {
+    width: 36px; height: 36px;
+    margin: 0 auto 4px;
+    border-radius: 50%;
+    border: 2px solid var(--ink);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    background: white;
+  }
+  .role2.selected .role2-ico { background: white; }
+  .role2-badge {
+    font-family: 'Bangers', sans-serif;
+    font-size: 9.5px;
+    letter-spacing: 1px;
+    color: var(--ink);
+    background: var(--paper-2);
+    padding: 1px 6px;
+    border-radius: 3px;
+    border: 1.5px solid var(--ink);
+    display: inline-block;
+    margin-bottom: 4px;
+  }
+  .role2-title {
+    font-family: 'Baloo 2', sans-serif;
+    font-weight: 800;
+    font-size: 12px;
+    color: var(--ink);
+    line-height: 1.2;
+  }
+
+  .role-detail2 {
+    background: var(--paper-2);
+    border: 2.5px dashed var(--ink);
+    border-radius: 14px;
+    padding: 10px 12px;
+    opacity: 0;
+    transform: translateY(6px);
+    transition: opacity 0.35s, transform 0.35s;
+  }
+  .role-detail2.show { opacity: 1; transform: translateY(0); }
+  .rd2-title {
+    font-family: 'Baloo 2', sans-serif;
+    font-weight: 900;
+    font-size: 13px;
+    color: var(--ink);
+    margin-bottom: 6px;
+    line-height: 1.2;
+  }
+  .rd2-items { display: flex; flex-direction: column; gap: 4px; margin-bottom: 8px; }
+  .rd2-item {
+    font-size: 11.5px;
+    color: var(--ink-soft);
+    line-height: 1.4;
+    padding-left: 14px;
+    position: relative;
+    font-family: 'Baloo 2', sans-serif;
+    font-weight: 600;
+  }
+  .rd2-item::before {
+    content: '→';
+    position: absolute; left: 0;
+    color: var(--blue);
+    font-weight: 800;
+    font-family: 'Bangers', sans-serif;
+  }
+  .rd2-sample {
+    background: white;
+    border: 1.5px solid var(--ink);
+    border-radius: 10px;
+    padding: 8px 10px;
+    font-family: 'Baloo 2', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--ink);
+    line-height: 1.5;
+  }
+  .rd2-sample .pika-says {
+    font-family: 'Bangers', sans-serif;
+    color: var(--blue);
+    letter-spacing: 1px;
+    font-size: 11px;
+    margin-right: 4px;
+  }
+
+  /* ─── SAFETY (S11) ─── */
+  .safety-card {
+    background: white;
+    border: 2.5px solid var(--ink);
+    border-radius: 14px;
+    padding: 10px;
+    box-shadow: 3px 3px 0 var(--ink);
+  }
+  .safety-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 4px;
+    border-bottom: 1.5px dashed rgba(26,35,64,0.2);
+    opacity: 0;
+    transform: translateX(-8px);
+    transition: opacity 0.4s, transform 0.4s;
+  }
+  .safety-row:last-child { border-bottom: none; }
+  .safety-row.show { opacity: 1; transform: translateX(0); }
+  .safety-ico {
+    width: 34px; height: 34px;
+    border-radius: 8px;
+    border: 2px solid var(--ink);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+  .safety-body { flex: 1; min-width: 0; }
+  .safety-name {
+    font-family: 'Baloo 2', sans-serif;
+    font-weight: 800;
+    font-size: 12.5px;
+    color: var(--ink);
+    line-height: 1.2;
+  }
+  .safety-desc {
+    font-size: 10.5px;
+    color: var(--ink-soft);
+    margin-top: 2px;
+    line-height: 1.4;
+  }
+  .safety-check {
+    color: var(--mint);
+    font-family: 'Bangers', sans-serif;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+  .parent-tip {
+    background: #d6f5e3;
+    border: 2.5px solid var(--ink);
+    border-radius: 14px;
+    padding: 10px 12px;
+    box-shadow: 3px 3px 0 var(--ink);
+    opacity: 0;
+    transform: translateY(8px);
+    transition: opacity 0.4s, transform 0.4s;
+  }
+  .parent-tip.show { opacity: 1; transform: translateY(0); }
+  .pt-title {
+    font-family: 'Baloo 2', sans-serif;
+    font-weight: 900;
+    font-size: 12.5px;
+    color: var(--ink);
+    margin-bottom: 6px;
+  }
+  .pt-items { display: flex; flex-direction: column; gap: 3px; }
+  .pt-item {
+    font-size: 11.5px;
+    color: var(--ink);
+    line-height: 1.4;
+    display: flex;
+    gap: 6px;
+    align-items: flex-start;
+    font-family: 'Baloo 2', sans-serif;
+    font-weight: 600;
+  }
+  .pt-item .pt-arrow {
+    color: var(--mint);
+    font-family: 'Bangers', sans-serif;
+    font-size: 13px;
+    flex-shrink: 0;
+    line-height: 1.4;
+  }
+
+  /* ─── S8 BRAIN: planning + adaptive ─── */
+  .plan-card {
+    background: white;
+    border: 2.5px solid var(--ink);
+    border-radius: 14px;
+    padding: 10px 12px;
+    box-shadow: 3px 3px 0 var(--ink);
+    opacity: 0;
+    transform: translateY(6px);
+    transition: opacity 0.45s, transform 0.45s;
+  }
+  .plan-card.show { opacity: 1; transform: translateY(0); }
+  .plan-head {
+    font-family: 'Baloo 2', sans-serif;
+    font-weight: 900;
+    font-size: 12px;
+    color: var(--ink);
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .plan-head::after {
+    content: '';
+    flex: 1;
+    height: 1.5px;
+    background: var(--ink);
+    opacity: 0.2;
+    border-radius: 1px;
+  }
+  .plan-item {
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+    padding: 5px 0;
+    font-size: 11.5px;
+    font-family: 'Baloo 2', sans-serif;
+    color: var(--ink);
+    line-height: 1.4;
+    font-weight: 600;
+    border-bottom: 1px dashed rgba(26,35,64,0.12);
+  }
+  .plan-item:last-child { border-bottom: none; }
+  .plan-item em { color: var(--blue); font-style: normal; font-weight: 800; }
+  .plan-time {
+    font-family: 'Bangers', sans-serif;
+    color: var(--gold-deep);
+    font-size: 11px;
+    letter-spacing: 1px;
+    background: var(--paper-2);
+    border: 1.5px solid var(--ink);
+    padding: 1px 5px;
+    border-radius: 4px;
+    flex-shrink: 0;
+    line-height: 1.4;
+  }
+
+  .feature-trio {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 6px;
+  }
+  .ftcard {
+    background: var(--paper-2);
+    border: 2px solid var(--ink);
+    border-radius: 12px;
+    padding: 8px 6px;
+    text-align: center;
+    box-shadow: 2px 2px 0 var(--ink);
+    font-family: 'Baloo 2', sans-serif;
+    font-weight: 800;
+    font-size: 10.5px;
+    color: var(--ink);
+    line-height: 1.2;
+    opacity: 0;
+    transform: scale(0.9);
+    transition: opacity 0.4s, transform 0.4s cubic-bezier(.34,1.56,.64,1);
+  }
+  .ftcard.show { opacity: 1; transform: scale(1); }
+  .ftcard .ft-ico { display: block; font-size: 18px; margin-bottom: 2px; }
+
+  .adaptive-card {
+    background: var(--blue-soft);
+    border: 2.5px solid var(--ink);
+    border-radius: 14px;
+    padding: 10px 12px;
+    box-shadow: 3px 3px 0 var(--ink);
+    opacity: 0;
+    transition: opacity 0.4s;
+  }
+  .adaptive-card.show { opacity: 1; }
+  .ad-title {
+    font-family: 'Baloo 2', sans-serif;
+    font-weight: 900;
+    font-size: 11.5px;
+    color: var(--ink);
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .ad-bar {
+    height: 8px;
+    background: white;
+    border: 1.5px solid var(--ink);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 8px;
+  }
+  .ad-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--gold), var(--blue), var(--mint));
+    width: 0;
+    transition: width 1.6s cubic-bezier(.4,0,.2,1);
+  }
+  .ad-marks {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 4px;
+  }
+  .ad-mark {
+    text-align: center;
+    padding: 4px 3px;
+    border-radius: 6px;
+    background: white;
+    border: 1.5px solid var(--ink);
+    opacity: 0.45;
+  }
+  .ad-mark.on { opacity: 1; }
+  .ad-day {
+    display: block;
+    font-family: 'Bangers', sans-serif;
+    font-size: 10px;
+    letter-spacing: 0.5px;
+    color: var(--blue);
+    line-height: 1.1;
+  }
+  .ad-desc {
+    display: block;
+    font-size: 9px;
+    color: var(--ink);
+    font-weight: 700;
+    line-height: 1.1;
+    margin-top: 2px;
+  }
+
+  /* ─── S9 CHAT preview ─── */
+  .chat-card {
+    background: white;
+    border: 2.5px solid var(--ink);
+    border-radius: 14px;
+    padding: 10px;
+    box-shadow: 3px 3px 0 var(--ink);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .chat-msg {
+    max-width: 78%;
+    padding: 7px 10px;
+    font-family: 'Baloo 2', sans-serif;
+    font-size: 11.5px;
+    font-weight: 600;
+    color: var(--ink);
+    line-height: 1.35;
+    border: 2px solid var(--ink);
+    border-radius: 12px;
+    opacity: 0;
+    transform: translateY(4px);
+    transition: opacity 0.35s, transform 0.35s;
+  }
+  .chat-msg.show { opacity: 1; transform: translateY(0); }
+  .chat-msg.pika {
+    align-self: flex-start;
+    background: var(--paper-2);
+    border-bottom-left-radius: 3px;
+  }
+  .chat-msg.kid {
+    align-self: flex-end;
+    background: var(--blue);
+    color: white;
+    border-bottom-right-radius: 3px;
+  }
+
+  .memory-card {
+    background: #fff3d6;
+    border: 2.5px solid var(--ink);
+    border-radius: 14px;
+    padding: 9px 11px;
+    box-shadow: 3px 3px 0 var(--ink);
+    display: flex;
+    gap: 9px;
+    align-items: flex-start;
+    opacity: 0;
+    transform: translateY(8px);
+    transition: opacity 0.4s, transform 0.4s;
+  }
+  .memory-card.show { opacity: 1; transform: translateY(0); }
+  .memory-icon {
+    width: 30px; height: 30px;
+    background: var(--gold);
+    border: 2px solid var(--ink);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+  .memory-text {
+    font-family: 'Baloo 2', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--ink);
+    line-height: 1.4;
+  }
+  .memory-text em {
+    color: var(--gold-deep);
+    font-style: italic;
+    font-weight: 800;
+  }
+
+  /* ─── S10 LESSON cards ─── */
+  .lesson-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+  .lesson-card {
+    background: white;
+    border: 2.5px solid var(--ink);
+    border-radius: 12px;
+    box-shadow: 3px 3px 0 var(--ink);
+    overflow: hidden;
+    opacity: 0;
+    transform: translateY(6px);
+    transition: opacity 0.4s, transform 0.4s;
+  }
+  .lesson-card.show { opacity: 1; transform: translateY(0); }
+  .lesson-head {
+    padding: 8px 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .lesson-head:hover { background: var(--paper-2); }
+  .lesson-ico {
+    width: 30px; height: 30px;
+    border-radius: 8px;
+    border: 2px solid var(--ink);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px;
+    flex-shrink: 0;
+  }
+  .lesson-info { flex: 1; min-width: 0; }
+  .lesson-title {
+    font-family: 'Baloo 2', sans-serif;
+    font-weight: 800;
+    font-size: 12.5px;
+    color: var(--ink);
+    line-height: 1.2;
+  }
+  .lesson-sub {
+    font-size: 10.5px;
+    color: var(--ink-soft);
+    margin-top: 1px;
+    line-height: 1.3;
+  }
+  .lesson-chev {
+    font-family: 'Bangers', sans-serif;
+    font-size: 16px;
+    color: var(--ink);
+    transition: transform 0.2s;
+  }
+  .lesson-card.open .lesson-chev { transform: rotate(90deg); }
+  .lesson-body {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s cubic-bezier(.4,0,.2,1);
+  }
+  .lesson-card.open .lesson-body { max-height: 220px; }
+  .lesson-content {
+    padding: 0 10px 10px;
+    border-top: 1.5px dashed var(--ink);
+    padding-top: 8px;
+  }
+  .lesson-example {
+    background: var(--paper-2);
+    border: 1.5px solid var(--ink);
+    border-radius: 10px;
+    padding: 7px 9px;
+    font-family: 'Baloo 2', sans-serif;
+    font-size: 11.5px;
+    font-weight: 600;
+    color: var(--ink);
+    line-height: 1.45;
+  }
+  .lesson-example em { color: var(--blue); font-style: italic; font-weight: 700; }
+  .lesson-example .scene-tag {
+    display: inline-block;
+    background: var(--rose);
+    color: white;
+    font-family: 'Bangers', sans-serif;
+    font-size: 9.5px;
+    letter-spacing: 1px;
+    padding: 1px 6px;
+    border-radius: 3px;
+    margin-bottom: 4px;
+    border: 1.5px solid var(--ink);
+  }
+
+  /* ─── S11 SCHOOL companion ─── */
+  .school-card {
+    background: white;
+    border: 2.5px solid var(--ink);
+    border-radius: 14px;
+    padding: 10px;
+    box-shadow: 3px 3px 0 var(--ink);
+    opacity: 0;
+    transform: translateY(8px);
+    transition: opacity 0.5s, transform 0.5s;
+  }
+  .school-card.show { opacity: 1; transform: translateY(0); }
+  .school-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 5px;
+  }
+  .school-col {
+    text-align: center;
+  }
+  .school-day {
+    font-family: 'Baloo 2', sans-serif;
+    font-size: 10px;
+    font-weight: 800;
+    color: var(--ink-soft);
+    margin-bottom: 4px;
+  }
+  .school-cell {
+    background: var(--blue-soft);
+    border: 1.5px solid var(--ink);
+    border-radius: 6px;
+    padding: 6px 2px;
+    font-size: 13px;
+    margin-bottom: 3px;
+    min-height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .school-pika-cell {
+    background: var(--gold);
+    border: 1.5px solid var(--ink);
+    border-radius: 6px;
+    padding: 5px 2px;
+    font-size: 11.5px;
+    min-height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .school-label {
+    font-family: 'Baloo 2', sans-serif;
+    font-size: 9.5px;
+    font-weight: 800;
+    color: var(--ink);
+    text-align: left;
+    margin: 6px 0 4px;
+  }
+  .pairing-card {
+    background: #d6f5e3;
+    border: 2.5px solid var(--ink);
+    border-radius: 14px;
+    padding: 10px 12px;
+    box-shadow: 3px 3px 0 var(--ink);
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    opacity: 0;
+    transform: translateY(8px);
+    transition: opacity 0.4s, transform 0.4s;
+  }
+  .pairing-card.show { opacity: 1; transform: translateY(0); }
+  .pairing-icon {
+    width: 36px; height: 36px;
+    background: white;
+    border: 2px solid var(--ink);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+  .pairing-text {
+    font-family: 'Baloo 2', sans-serif;
+    font-size: 11.5px;
+    font-weight: 700;
+    color: var(--ink);
+    line-height: 1.45;
+  }
+  .pairing-text em { color: var(--blue); font-style: italic; font-weight: 800; }
+  .pairing-text .arrow-glyph {
+    font-family: 'Bangers', sans-serif;
+    color: var(--gold-deep);
+    margin: 0 4px;
+  }
+
+  /* When ambient anims off */
+  .no-anim .cloud, .no-anim .star, .no-anim .mote,
+  .no-anim .bubble-drop, .no-anim .confetti, .no-anim .ray,
+  .no-anim .wave, .no-anim .pika, .no-anim .ground-grass-blade,
+  .no-anim .spotlight, .no-anim .balloon, .no-anim .flower,
+  .no-anim .shadow-ground, .no-anim .pika .arm-r-wave,
+  .no-anim .sfx {
+    animation: none !important;
+  }
+  .no-anim .pika { transform: translateX(-50%) translateY(0) !important; }
+  .no-anim .pika.left, .no-anim .pika.right { transform: none !important; }
+
+</style>
+</head>
+<body>
+
+<template id="__bundler_thumbnail" data-bg-color="#fff8ee">
+  <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+    <!-- antenna -->
+    <line x1="100" y1="50" x2="100" y2="30" stroke="#1a2340" stroke-width="5" stroke-linecap="round"/>
+    <circle cx="100" cy="28" r="7" fill="#f5a623" stroke="#1a2340" stroke-width="3"/>
+    <!-- ear-fins -->
+    <ellipse cx="32" cy="105" rx="11" ry="20" fill="#7ec8e3" stroke="#1a2340" stroke-width="3"/>
+    <ellipse cx="168" cy="105" rx="11" ry="20" fill="#7ec8e3" stroke="#1a2340" stroke-width="3"/>
+    <!-- body -->
+    <ellipse cx="100" cy="120" rx="65" ry="70" fill="#ffffff" stroke="#1a2340" stroke-width="4"/>
+    <!-- face screen -->
+    <ellipse cx="100" cy="105" rx="48" ry="40" fill="#1a2340"/>
+    <!-- eyes -->
+    <circle cx="80" cy="105" r="8" fill="#7ee8fa"/>
+    <circle cx="120" cy="105" r="8" fill="#7ee8fa"/>
+    <circle cx="83" cy="102" r="3" fill="#ffffff"/>
+    <circle cx="123" cy="102" r="3" fill="#ffffff"/>
+    <!-- smile -->
+    <path d="M 85 122 Q 100 132 115 122" stroke="#7ee8fa" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <!-- cheek blush -->
+    <ellipse cx="58" cy="148" rx="11" ry="5" fill="#ff8fb1" opacity="0.6"/>
+    <ellipse cx="142" cy="148" rx="11" ry="5" fill="#ff8fb1" opacity="0.6"/>
+    <!-- chest button -->
+    <circle cx="100" cy="170" r="7" fill="#f5a623" stroke="#1a2340" stroke-width="3"/>
+  </svg>
+</template>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     PIKA SVG TEMPLATE (referenced by <use> in each screen)
+     ═══════════════════════════════════════════════════════════════ -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="pika-sym" viewBox="0 0 140 160">
+      <!-- antenna -->
+      <line x1="70" y1="22" x2="70" y2="6" stroke="#1a2340" stroke-width="3" stroke-linecap="round"/>
+      <circle cx="70" cy="5" r="5" fill="#f5a623" stroke="#1a2340" stroke-width="2"/>
+      <circle cx="68" cy="3" r="1.5" fill="#fff7d6" opacity="0.8"/>
+
+      <!-- ear-fins (sides of head) -->
+      <ellipse cx="22" cy="60" rx="8" ry="14" fill="#7ec8e3" stroke="#1a2340" stroke-width="2"/>
+      <ellipse cx="118" cy="60" rx="8" ry="14" fill="#7ec8e3" stroke="#1a2340" stroke-width="2"/>
+
+      <!-- main body (egg) -->
+      <ellipse cx="70" cy="80" rx="48" ry="55" fill="#ffffff" stroke="#1a2340" stroke-width="3"/>
+      <!-- body shading -->
+      <path d="M 30 80 Q 25 110 50 130" stroke="#e8eef5" stroke-width="6" fill="none" stroke-linecap="round" opacity="0.6"/>
+
+      <!-- face screen -->
+      <ellipse cx="70" cy="68" rx="36" ry="30" fill="#1a2340" stroke="#1a2340" stroke-width="2"/>
+      <!-- screen reflection highlight -->
+      <ellipse cx="55" cy="55" rx="14" ry="8" fill="#3a4a72" opacity="0.6"/>
+
+      <!-- ━━ EYES — multiple expressions, toggled by data-mood ━━ -->
+      <!-- happy: round cyan eyes -->
+      <g class="eye-set eye-happy">
+        <circle cx="55" cy="68" r="6" fill="#7ee8fa"/>
+        <circle cx="85" cy="68" r="6" fill="#7ee8fa"/>
+        <circle cx="57" cy="66" r="2" fill="#ffffff"/>
+        <circle cx="87" cy="66" r="2" fill="#ffffff"/>
+      </g>
+      <!-- wave: same as happy with one closed eye -->
+      <g class="eye-set eye-wave">
+        <path d="M 49 68 Q 55 62 61 68" stroke="#7ee8fa" stroke-width="3" fill="none" stroke-linecap="round"/>
+        <circle cx="85" cy="68" r="6" fill="#7ee8fa"/>
+        <circle cx="87" cy="66" r="2" fill="#ffffff"/>
+      </g>
+      <!-- thinking: half eyes + thought dot -->
+      <g class="eye-set eye-thinking">
+        <ellipse cx="55" cy="69" rx="6" ry="4" fill="#7ee8fa"/>
+        <ellipse cx="85" cy="69" rx="6" ry="4" fill="#7ee8fa"/>
+        <circle cx="100" cy="50" r="3" fill="#ffffff" opacity="0.7"/>
+      </g>
+      <!-- surprised: big round + small pupils -->
+      <g class="eye-set eye-surprised">
+        <circle cx="55" cy="68" r="8" fill="#7ee8fa"/>
+        <circle cx="85" cy="68" r="8" fill="#7ee8fa"/>
+        <circle cx="55" cy="68" r="3" fill="#1a2340"/>
+        <circle cx="85" cy="68" r="3" fill="#1a2340"/>
+      </g>
+      <!-- excited: star eyes -->
+      <g class="eye-set eye-excited">
+        <path d="M 55 60 L 57 66 L 63 67 L 58 71 L 60 77 L 55 73 L 50 77 L 52 71 L 47 67 L 53 66 Z" fill="#ffd875"/>
+        <path d="M 85 60 L 87 66 L 93 67 L 88 71 L 90 77 L 85 73 L 80 77 L 82 71 L 77 67 L 83 66 Z" fill="#ffd875"/>
+      </g>
+      <!-- teaching: focused rectangular eyes -->
+      <g class="eye-set eye-teaching">
+        <rect x="49" y="65" width="12" height="6" rx="2" fill="#7ee8fa"/>
+        <rect x="79" y="65" width="12" height="6" rx="2" fill="#7ee8fa"/>
+        <rect x="50" y="66" width="3" height="2" rx="1" fill="#ffffff"/>
+        <rect x="80" y="66" width="3" height="2" rx="1" fill="#ffffff"/>
+      </g>
+
+      <!-- small smile mouth -->
+      <path d="M 62 82 Q 70 88 78 82" stroke="#7ee8fa" stroke-width="2" fill="none" stroke-linecap="round"/>
+
+      <!-- cheek blushes (on body, outside screen) -->
+      <ellipse cx="38" cy="100" rx="8" ry="4" fill="#ff8fb1" opacity="0.55"/>
+      <ellipse cx="102" cy="100" rx="8" ry="4" fill="#ff8fb1" opacity="0.55"/>
+
+      <!-- chest light/button -->
+      <circle cx="70" cy="120" r="5" fill="#f5a623" stroke="#1a2340" stroke-width="2"/>
+      <circle cx="68" cy="118" r="1.5" fill="#fff7d6"/>
+
+      <!-- arms (small floating discs) -->
+      <g class="arm-l">
+        <circle cx="20" cy="100" r="9" fill="#ffffff" stroke="#1a2340" stroke-width="2.5"/>
+        <circle cx="20" cy="100" r="3" fill="#7ec8e3"/>
+      </g>
+      <g class="arm-r">
+        <circle cx="120" cy="100" r="9" fill="#ffffff" stroke="#1a2340" stroke-width="2.5"/>
+        <circle cx="120" cy="100" r="3" fill="#7ec8e3"/>
+      </g>
+      <!-- waving arm (lifted) -->
+      <g class="arm-r-wave">
+        <circle cx="125" cy="55" r="9" fill="#ffffff" stroke="#1a2340" stroke-width="2.5"/>
+        <circle cx="125" cy="55" r="3" fill="#7ec8e3"/>
+      </g>
+    </symbol>
+  </defs>
+</svg>
+
+<div id="app">
+
+  <!-- ═══════════════════ SCREEN 0: HERO ═══════════════════ -->
+  <div id="s0" class="screen active">
+    <div class="top-chrome">
+      <div class="progress-dots"></div>
+      <div class="panel-tag">PIKA #00</div>
+    </div>
+    <div class="comic-panel">
+      <div class="scene scene-bedroom night">
+        <div class="layer sky"></div>
+        <div class="layer stars-layer">
+          <div class="star" style="top:8%;left:15%;"></div>
+          <div class="star" style="top:14%;left:78%;animation-delay:0.4s"></div>
+          <div class="star" style="top:22%;left:42%;animation-delay:0.8s"></div>
+          <div class="star" style="top:6%;left:62%;animation-delay:1.2s"></div>
+          <div class="star" style="top:18%;left:8%;animation-delay:1.5s"></div>
+          <div class="star" style="top:30%;left:88%;animation-delay:1.8s"></div>
+          <div class="star" style="top:12%;left:32%;animation-delay:2.2s"></div>
+        </div>
+        <div class="window-frame">
+          <div class="moon-in-window"></div>
+        </div>
+        <div class="shelf"></div>
+        <div class="book" style="right:11%;background:#d44a4a;"></div>
+        <div class="book" style="right:15%;background:#1a73e8;height:26px;"></div>
+        <div class="book" style="right:19%;background:#00c896;height:20px;"></div>
+        <div class="book" style="right:23%;background:#f5a623;"></div>
+        <div class="book" style="right:27%;background:#9b59b6;height:24px;"></div>
+        <div class="book" style="right:31%;background:#ff8fb1;"></div>
+        <div class="floor"></div>
+
+        <!-- ambient motes -->
+        <div class="mote" style="top:40%;left:60%;animation-delay:0s;"></div>
+        <div class="mote" style="top:55%;left:25%;animation-delay:1.5s;"></div>
+        <div class="mote" style="top:35%;left:80%;animation-delay:3s;"></div>
+
+        <div class="pika" data-mood="wave" style="bottom:18%;">
+          <svg viewBox="0 0 140 160"><use href="#pika-sym"/></svg>
+          <div class="shadow-ground"></div>
+        </div>
+
+        <div class="sfx" style="top:30%;right:14%;">HI!</div>
+
+        <div class="bubble-wrap">
+          <div class="bubble show">
+            Chào cô chú! Pika đây! Pika muốn kể một câu chuyện nhỏ về việc <em>học tiếng Anh</em> của bạn nhỏ nhà mình 🌙
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="interaction">
+      <span class="hero-tag">★ COMIC INTRO ★</span>
+      <h1 class="hero-title">Hành trình cùng <span>Pika</span></h1>
+      <p class="hero-sub">14 panel ngắn — Pika kiểm tra tiếng Anh của bạn nhỏ, vẽ bản đồ cột mốc, và chỉ ra <strong>khoa học đằng sau việc nói mỗi ngày</strong>.</p>
+      <button class="btn-primary" onclick="goTo(1)">🚀 Mở panel đầu tiên</button>
+    </div>
+  </div>
+
+  <!-- ═══════════════════ SCREEN 1: PAIN POINT (KITCHEN) ═══════════════════ -->
+  <div id="s1" class="screen">
+    <div class="top-chrome">
+      <div class="progress-dots"></div>
+      <div class="panel-tag">PIKA #01</div>
+    </div>
+    <div class="comic-panel">
+      <div class="scene scene-kitchen day">
+        <div class="layer sky"></div>
+        <div class="cabinet"></div>
+        <div class="counter"></div>
+        <div class="floor"></div>
+        <div class="celestial" style="top:8%;left:14%;width:36px;height:36px;"></div>
+        <div class="mote" style="top:38%;left:70%;"></div>
+        <div class="mote" style="top:50%;left:18%;animation-delay:2s;"></div>
+
+        <div class="pika" data-mood="thinking" style="bottom:14%;">
+          <svg viewBox="0 0 140 160"><use href="#pika-sym"/></svg>
+          <div class="shadow-ground"></div>
+        </div>
+        <div class="sfx" style="top:24%;left:8%;color:#1a73e8;">?</div>
+
+        <div class="bubble-wrap">
+          <div class="bubble show">
+            Trước tiên… cho Pika biết <strong>tên bạn nhỏ</strong> và <strong>bạn nhỏ bao nhiêu tuổi</strong> nhé! Pika sẽ gọi tên bạn nhỏ suốt câu chuyện 💌
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="interaction">
+      <div class="field-group">
+        <div class="field-label">✏️ Tên bạn nhỏ là gì?</div>
+        <input type="text" class="field-input" id="inp-name" placeholder="VD: Bin, Bống, An…" maxlength="20" autocomplete="off">
+      </div>
+      <div class="field-group" style="margin-top:4px;">
+        <div class="field-label">🎂 Bạn nhỏ bao nhiêu tuổi?</div>
+        <div class="seg-pick" id="seg-age">
+          <button data-v="4-5">4–5</button>
+          <button data-v="6-7">6–7</button>
+          <button data-v="8-9">8–9</button>
+          <button data-v="10+">10+</button>
+        </div>
+      </div>
+      <div class="next-row" style="justify-content:stretch;">
+        <button class="btn-primary" id="btn1" onclick="submitNameAge()" style="opacity:0.5;pointer-events:none;">Tiếp tục →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════ SCREEN 2: ASSESSMENT (CLASSROOM) ═══════════════════ -->
+  <div id="s2" class="screen">
+    <div class="top-chrome">
+      <div class="progress-dots"></div>
+      <div class="panel-tag">PIKA #02</div>
+    </div>
+    <div class="comic-panel">
+      <div class="scene scene-class day">
+        <div class="layer sky"></div>
+        <div class="blackboard">
+          <div style="position:absolute;top:14%;left:50%;transform:translateX(-50%);font-family:'Caveat',cursive;color:#fff;font-size:22px;font-weight:700;">Khám sức khoẻ</div>
+          <div style="position:absolute;top:32%;left:50%;transform:translateX(-50%);font-family:'Caveat',cursive;color:#ffd875;font-size:16px;font-weight:700;">tiếng Anh ✎</div>
+          <!-- abc letters floating on board -->
+          <div style="position:absolute;bottom:18%;left:18%;font-family:'Caveat',cursive;color:#fff;font-size:20px;opacity:0.7;">A</div>
+          <div style="position:absolute;bottom:20%;left:32%;font-family:'Caveat',cursive;color:#ffd875;font-size:24px;opacity:0.7;">B</div>
+          <div style="position:absolute;bottom:14%;left:50%;font-family:'Caveat',cursive;color:#fff;font-size:18px;opacity:0.7;">C</div>
+          <div style="position:absolute;bottom:22%;left:68%;font-family:'Caveat',cursive;color:#7ee8fa;font-size:22px;opacity:0.7;">?</div>
+          <div style="position:absolute;bottom:18%;left:82%;font-family:'Caveat',cursive;color:#fff;font-size:20px;opacity:0.7;">!</div>
+        </div>
+        <div class="floor"></div>
+        <div class="mote" style="top:30%;left:10%;"></div>
+        <div class="mote" style="top:62%;left:85%;animation-delay:2s;"></div>
+
+        <div class="pika left" data-mood="teaching" style="bottom:8%;width:100px;height:115px;">
+          <svg viewBox="0 0 140 160"><use href="#pika-sym"/></svg>
+          <div class="shadow-ground"></div>
+        </div>
+
+        <div class="bubble-wrap">
+          <div class="bubble show right" id="b2">Trải nghiệm học tiếng Anh hiện tại của [tên bạn nhỏ]</div>
+        </div>
+      </div>
+    </div>
+    <div class="interaction" style="overflow-y:auto;max-height:50vh;">
+      <div class="field-group">
+        <div class="field-label">📅 Bạn nhỏ học tiếng Anh được bao lâu rồi ạ?</div>
+        <div class="seg-pick" id="seg-dur" style="grid-template-columns:repeat(4,1fr);">
+          <button data-v="<6m">&lt; 6 tháng</button>
+          <button data-v="6-12m">6–12 tháng</button>
+          <button data-v="1-2y">1–2 năm</button>
+          <button data-v="2y+">&gt; 2 năm</button>
+        </div>
+      </div>
+      <div class="field-group" style="margin-top:6px;">
+        <div class="field-label">🏫 Đang học thêm ở đâu?</div>
+        <div class="seg-pick" id="seg-extra" style="grid-template-columns:repeat(3,1fr);">
+          <button data-v="center">Trung tâm</button>
+          <button data-v="online">App / Online</button>
+          <button data-v="none">Chỉ ở trường</button>
+        </div>
+      </div>
+
+      <div class="field-label" style="margin-top:6px;">⭐ Tự đánh giá kỹ năng của bạn nhỏ</div>
+      <div class="skill-row">
+        <div class="skill-head"><span>🗣️ Nói (Speaking)</span><span class="skill-stars" data-skill="speaking">
+          <span class="skill-star" data-v="1">1</span><span class="skill-star" data-v="2">2</span><span class="skill-star" data-v="3">3</span><span class="skill-star" data-v="4">4</span><span class="skill-star" data-v="5">5</span>
+        </span></div>
+      </div>
+      <div class="skill-row">
+        <div class="skill-head"><span>📖 Từ vựng (Vocabulary)</span><span class="skill-stars" data-skill="vocab">
+          <span class="skill-star" data-v="1">1</span><span class="skill-star" data-v="2">2</span><span class="skill-star" data-v="3">3</span><span class="skill-star" data-v="4">4</span><span class="skill-star" data-v="5">5</span>
+        </span></div>
+      </div>
+      <div class="skill-row">
+        <div class="skill-head"><span>✏️ Ngữ pháp (Grammar)</span><span class="skill-stars" data-skill="grammar">
+          <span class="skill-star" data-v="1">1</span><span class="skill-star" data-v="2">2</span><span class="skill-star" data-v="3">3</span><span class="skill-star" data-v="4">4</span><span class="skill-star" data-v="5">5</span>
+        </span></div>
+      </div>
+
+      <div class="next-row" style="justify-content:stretch;">
+        <button class="btn-primary" id="btn2" onclick="submitAssessment()" style="opacity:0.5;pointer-events:none;">Xem kết quả khám →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════ SCREEN 3: DIAGNOSTIC MAP (COZY CLINIC) ═══════════════════ -->
+  <div id="s3" class="screen">
+    <div class="top-chrome">
+      <div class="progress-dots"></div>
+      <div class="panel-tag">PIKA #03</div>
+    </div>
+    <div class="comic-panel">
+      <div class="scene scene-cozy day">
+        <div class="layer sky"></div>
+        <div class="celestial" style="top:6%;right:8%;width:34px;height:34px;"></div>
+        <div class="cloud cloud-1"></div>
+        <div class="floor"></div>
+        <div class="rug"></div>
+        <div class="lamp"></div>
+        <div class="mote" style="top:28%;left:18%;background:#ff8fb1;"></div>
+        <div class="mote" style="top:42%;left:75%;animation-delay:1.8s;"></div>
+
+        <!-- floating clipboard with cross icon -->
+        <div style="position:absolute;top:14%;right:14%;width:64px;height:80px;background:#fff;border:3px solid var(--ink);border-radius:6px;transform:rotate(8deg);box-shadow:3px 3px 0 var(--ink);">
+          <div style="position:absolute;top:-8px;left:50%;transform:translateX(-50%);width:24px;height:10px;background:var(--ink);border-radius:3px;"></div>
+          <div style="position:absolute;top:12px;left:50%;transform:translateX(-50%);width:18px;height:18px;background:var(--rose);border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;font-family:'Bangers',sans-serif;font-size:16px;">+</div>
+          <div style="position:absolute;top:36px;left:8px;right:8px;height:2px;background:rgba(26,35,64,0.2);"></div>
+          <div style="position:absolute;top:46px;left:8px;right:8px;height:2px;background:rgba(26,35,64,0.2);"></div>
+          <div style="position:absolute;top:56px;left:8px;right:8px;height:2px;background:rgba(26,35,64,0.2);"></div>
+        </div>
+
+        <div class="pika left" data-mood="thinking" style="bottom:12%;width:110px;height:125px;">
+          <svg viewBox="0 0 140 160"><use href="#pika-sym"/></svg>
+          <div class="shadow-ground"></div>
+        </div>
+        <div class="sfx" style="top:24%;left:6%;color:#1a73e8;">HMM…</div>
+
+        <div class="bubble-wrap">
+          <div class="bubble show right">Cùng overview lại trình độ của [tên bạn nhỏ] nhé ạ</div>
+        </div>
+      </div>
+    </div>
+    <div class="interaction" style="overflow-y:auto;max-height:50vh;">
+      <div class="chart-head">
+        <div class="chart-stamp"><br></div>
+        <div class="chart-name" id="patient-card">Bé Nameless — 6 tuổi<span id="patient-sub">Học 1–2 năm · Có học thêm</span></div>
+      </div>
+      <div class="stat-row" id="st1">
+        <div class="stat-head"><span><span class="stat-emoji">📖</span> Từ vựng</span> <span class="stat-val" id="sv1">Khá</span></div>
+        <div class="stat-track"><div class="stat-fill" id="sf1" style="background:#1a73e8"></div></div>
+      </div>
+      <div class="stat-row" id="st2">
+        <div class="stat-head"><span><span class="stat-emoji">✏️</span> Ngữ pháp</span> <span class="stat-val" id="sv2">Ổn</span></div>
+        <div class="stat-track"><div class="stat-fill" id="sf2" style="background:#00c896"></div></div>
+      </div>
+      <div class="stat-row" id="st3">
+        <div class="stat-head"><span><span class="stat-emoji">🗣️</span> <strong>Kỹ năng Nói</strong></span> <span class="stat-val" id="sv3">…</span></div>
+        <div class="stat-track"><div class="stat-fill" id="sf3" style="background:#f5a623"></div></div>
+      </div>
+      <div class="diag-verdict" id="verdict">
+        🩺 <strong>Đánh giá:</strong> [AI gen]
+      </div>
+      <div class="next-row"><button class="btn-next" id="btn3" onclick="goTo(5)" style="visibility:hidden;">Cột mốc cần đạt →</button></div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════ SCREEN 4: PROOF (TROPHY) ═══════════════════ -->
+  <div id="s4" class="screen">
+    <div class="top-chrome">
+      <div class="progress-dots"></div>
+      <div class="panel-tag">PIKA #04</div>
+    </div>
+    <div class="comic-panel">
+      <div class="scene scene-trophy day">
+        <div class="layer sky"></div>
+        <div class="ray" style="transform:rotate(0deg);"></div>
+        <div class="ray" style="transform:rotate(45deg);"></div>
+        <div class="ray" style="transform:rotate(90deg);"></div>
+        <div class="ray" style="transform:rotate(135deg);"></div>
+        <div class="ray" style="transform:rotate(180deg);"></div>
+        <div class="ray" style="transform:rotate(225deg);"></div>
+        <div class="floor"></div>
+
+        <!-- trophy graphic (CSS) -->
+        <div style="position:absolute;bottom:30%;left:50%;transform:translateX(-50%);width:90px;height:110px;z-index:2;">
+          <div style="position:absolute;top:0;left:50%;transform:translateX(-50%);width:60px;height:60px;background:linear-gradient(180deg,#ffd875,#f5a623);border-radius:6px 6px 30px 30px;border:3px solid var(--ink);"></div>
+          <div style="position:absolute;top:5px;left:-12px;width:24px;height:30px;border:3px solid var(--ink);border-right:none;border-radius:20px 0 0 20px;background:transparent;"></div>
+          <div style="position:absolute;top:5px;right:-12px;width:24px;height:30px;border:3px solid var(--ink);border-left:none;border-radius:0 20px 20px 0;background:transparent;"></div>
+          <div style="position:absolute;top:60px;left:50%;transform:translateX(-50%);width:14px;height:18px;background:#e08311;border:3px solid var(--ink);"></div>
+          <div style="position:absolute;top:78px;left:50%;transform:translateX(-50%);width:50px;height:14px;background:linear-gradient(180deg,#f5a623,#e08311);border:3px solid var(--ink);border-radius:4px;"></div>
+          <div style="position:absolute;top:22px;left:50%;transform:translateX(-50%);font-family:'Bangers',sans-serif;color:var(--ink);font-size:18px;letter-spacing:1px;">PIKA</div>
+        </div>
+
+        <div class="confetti" style="left:15%;background:#1a73e8;animation-delay:0s;"></div>
+        <div class="confetti" style="left:30%;background:#f5a623;animation-delay:0.7s;"></div>
+        <div class="confetti" style="left:55%;background:#00c896;animation-delay:1.3s;"></div>
+        <div class="confetti" style="left:75%;background:#ff8fb1;animation-delay:2.2s;"></div>
+        <div class="confetti" style="left:88%;background:#9b59b6;animation-delay:1.8s;"></div>
+
+        <div class="pika right" data-mood="excited" style="bottom:8%;width:100px;height:115px;">
+          <svg viewBox="0 0 140 160"><use href="#pika-sym"/></svg>
+          <div class="shadow-ground"></div>
+        </div>
+        <div class="sfx" style="top:14%;left:8%;">WOW!</div>
+
+        <div class="bubble-wrap">
+          <div class="bubble show">
+            Đây là kết quả thật của 1 bạn nhỏ sau <strong>1 tháng</strong> với Pika — nếu <strong id="nm4">bạn nhỏ</strong> bắt đầu hôm nay cũng được như vậy! 🏆
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="interaction">
+      <div class="big-num" id="bn">
+        <span class="num" id="counter">0</span>
+        <div class="lbl">lượt mở miệng nói tiếng Anh / 1 tháng</div>
+      </div>
+      <div class="mini-stats">
+        <div class="mini-stat" id="ms1"><div class="mn">20</div><div class="ml">ngày học</div></div>
+        <div class="mini-stat" id="ms2"><div class="mn">13.441</div><div class="ml">từ đã nói</div></div>
+        <div class="mini-stat" id="ms3"><div class="mn">115</div><div class="ml">từ mới học</div></div>
+        <div class="mini-stat" id="ms4"><div class="mn">23'</div><div class="ml">TB/buổi</div></div>
+      </div>
+      <div class="next-row"><button class="btn-next" id="btn4" onclick="goTo(8)" style="visibility:hidden;">Pika làm gì để được vậy? →</button></div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════ SCREEN 5: MILESTONES (STAGE) ═══════════════════ -->
+  <div id="s5" class="screen">
+    <div class="top-chrome">
+      <div class="progress-dots"></div>
+      <div class="panel-tag">PIKA #05</div>
+    </div>
+    <div class="comic-panel">
+      <div class="scene scene-stage night">
+        <div class="layer sky"></div>
+        <div class="curtain-l"></div>
+        <div class="curtain-r"></div>
+        <div class="spotlight"></div>
+        <div class="floor"></div>
+        <div class="layer stars-layer">
+          <div class="star" style="top:8%;left:30%;"></div>
+          <div class="star" style="top:14%;left:70%;animation-delay:0.7s"></div>
+          <div class="star" style="top:22%;left:50%;animation-delay:1.4s"></div>
+        </div>
+
+        <!-- treasure chest at end -->
+        <div style="position:absolute;bottom:24%;right:24%;width:54px;height:42px;z-index:3;">
+          <div style="position:absolute;bottom:0;width:100%;height:60%;background:linear-gradient(180deg,#c89360 0%,#8b6914 100%);border:2.5px solid var(--ink);border-radius:0 0 6px 6px;"></div>
+          <div style="position:absolute;top:0;width:100%;height:48%;background:linear-gradient(180deg,#d4a574,#a87a4a);border:2.5px solid var(--ink);border-radius:50% 50% 0 0/100% 100% 0 0;"></div>
+          <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:8px;height:10px;background:var(--gold);border:1.5px solid var(--ink);border-radius:2px;"></div>
+          <div style="position:absolute;top:-18px;left:8px;font-family:'Caveat',cursive;color:var(--gold);font-size:16px;font-weight:700;transform:rotate(-8deg);">★ Fluent!</div>
+        </div>
+        <div class="mote" style="top:40%;left:30%;"></div>
+        <div class="mote" style="top:50%;left:65%;animation-delay:2s;"></div>
+
+        <div class="pika left" data-mood="excited" style="bottom:12%;width:100px;height:115px;">
+          <svg viewBox="0 0 140 160"><use href="#pika-sym"/></svg>
+          <div class="shadow-ground"></div>
+        </div>
+        <div class="sfx" style="top:14%;right:14%;color:#ffd875;">★</div>
+
+        <div class="bubble-wrap">
+          <div class="bubble show right">
+            <strong id="nm5">Bạn nhỏ</strong> nói 30 phút mỗi ngày — đây là 2 cột mốc kỳ diệu sẽ xảy ra! 🎯
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="interaction">
+      <div class="milestone-line">
+        <div class="ml-track">
+          <div class="ml-rail"></div>
+          <div class="ml-fill" id="mlfill"></div>
+          <div class="ml-node" id="mln0" style="left:0%;">
+            <div class="ml-dot">0</div>
+            <div class="ml-label">Bắt đầu</div>
+            <div class="ml-time">hôm nay</div>
+          </div>
+          <div class="ml-node" id="mln1" style="left:33%;">
+            <div class="ml-dot">100h</div>
+            <div class="ml-label">Bật phản xạ</div>
+            <div class="ml-time">~6.5 tháng</div>
+          </div>
+          <div class="ml-node" id="mln2" style="left:100%;transform:translateX(-100%);">
+            <div class="ml-dot">400h</div>
+            <div class="ml-label">Nói lưu loát</div>
+            <div class="ml-time">~2 năm</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ml-callout" id="mlc1" style="opacity:0;transition:opacity 0.5s;">
+        <div class="cnum">100h</div>
+        <div class="ctext"><em>Phản xạ tiếng Anh bật lên</em> — bạn nhỏ bắt đầu trả lời thẳng không cần dịch trong đầu nữa</div>
+      </div>
+      <div class="ml-callout" id="mlc2" style="opacity:0;transition:opacity 0.5s;">
+        <div class="cnum">400h</div>
+        <div class="ctext"><em>Nói lưu loát tự nhiên</em> — bạn nhỏ tự kể chuyện, đặt câu hỏi, tự tin trò chuyện không nghĩ ngợi</div>
+      </div>
+
+      <div style="font-family:'Caveat',cursive;font-size:15px;color:var(--ink-soft);text-align:center;margin-top:2px;line-height:1.3;">
+        ⏱️ 30 phút/ngày · không bỏ ngày nào
+      </div>
+
+      <div class="next-row"><button class="btn-next" id="btn5" onclick="goTo(6)" style="visibility:hidden;">Ở trường thì sao? →</button></div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════ SCREEN 6: SCHOOL GAP (CLASSROOM) ═══════════════════ -->
+  <div id="s6" class="screen">
+    <div class="top-chrome">
+      <div class="progress-dots"></div>
+      <div class="panel-tag">PIKA #06</div>
+    </div>
+    <div class="comic-panel">
+      <div class="scene scene-class day">
+        <div class="layer sky"></div>
+        <div class="blackboard">
+          <div style="position:absolute;top:14%;left:50%;transform:translateX(-50%);font-family:'Caveat',cursive;color:#fff;font-size:18px;font-weight:700;">7 ngày trong tuần</div>
+          <!-- 7 day boxes on board -->
+          <div style="position:absolute;top:38%;left:6%;right:6%;display:flex;gap:4px;">
+            <div style="flex:1;height:46px;background:#3a5a4e;border:2px solid #ffd875;border-radius:4px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:'Baloo 2',sans-serif;color:#fff;font-size:9px;"><span>T2</span><span style="font-size:14px;">🏫</span></div>
+            <div style="flex:1;height:46px;background:#3a5a4e;border:2px solid #ffd875;border-radius:4px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:'Baloo 2',sans-serif;color:#fff;font-size:9px;"><span>T3</span><span style="font-size:14px;">🏫</span></div>
+            <div style="flex:1;height:46px;background:#3a5a4e;border:2px solid #ffd875;border-radius:4px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:'Baloo 2',sans-serif;color:#fff;font-size:9px;"><span>T4</span><span style="font-size:14px;">🏫</span></div>
+            <div style="flex:1;height:46px;background:#3a5a4e;border:2px solid #ffd875;border-radius:4px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:'Baloo 2',sans-serif;color:#fff;font-size:9px;"><span>T5</span><span style="font-size:14px;">🏫</span></div>
+            <div style="flex:1;height:46px;background:#3a5a4e;border:2px solid #ffd875;border-radius:4px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:'Baloo 2',sans-serif;color:#fff;font-size:9px;"><span>T6</span><span style="font-size:14px;">🏫</span></div>
+            <div style="flex:1;height:46px;background:#5a3a3a;border:2px dashed #ff8fb1;border-radius:4px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:'Baloo 2',sans-serif;color:#ff8fb1;font-size:9px;"><span>T7</span><span style="font-size:12px;">?</span></div>
+            <div style="flex:1;height:46px;background:#5a3a3a;border:2px dashed #ff8fb1;border-radius:4px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:'Baloo 2',sans-serif;color:#ff8fb1;font-size:9px;"><span>CN</span><span style="font-size:12px;">?</span></div>
+          </div>
+          <div style="position:absolute;bottom:8%;left:50%;transform:translateX(-50%);font-family:'Caveat',cursive;color:#ffd875;font-size:14px;font-weight:700;">↑ những ngày không nói TA</div>
+        </div>
+        <div class="floor"></div>
+        <div class="mote" style="top:62%;left:80%;animation-delay:2s;"></div>
+
+        <div class="pika left" data-mood="teaching" style="bottom:8%;width:100px;height:115px;">
+          <svg viewBox="0 0 140 160"><use href="#pika-sym"/></svg>
+          <div class="shadow-ground"></div>
+        </div>
+
+        <div class="bubble-wrap">
+          <div class="bubble show right">
+            Đi học thêm 2-3 buổi/tuần, Pika lấp đầy khoảng trống 5/7 ngày còn lại — để <strong>ngày nào cũng nói</strong>! 📅
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="interaction">
+      <div class="narrator-line">7 ngày trong tuần với <span id="nm6">bạn nhỏ</span></div>
+      <div style="background:white;border:2.5px solid var(--ink);border-radius:14px;padding:10px;box-shadow:3px 3px 0 var(--ink);">
+        <div style="font-family:'Baloo 2',sans-serif;font-size:11px;font-weight:800;color:var(--ink-soft);margin-bottom:4px;">🏫 Chỉ học trên trường:</div>
+        <div class="week-dots" id="wd-school">
+          <div class="week-day"><div class="wd-letter">T2</div><div class="wd-dot school" data-i="0">✓</div></div>
+          <div class="week-day"><div class="wd-letter">T3</div><div class="wd-dot weekend" data-i="1">×</div></div>
+          <div class="week-day"><div class="wd-letter">T4</div><div class="wd-dot school" data-i="2">✓</div></div>
+          <div class="week-day"><div class="wd-letter">T5</div><div class="wd-dot weekend" data-i="3">×</div></div>
+          <div class="week-day"><div class="wd-letter">T6</div><div class="wd-dot school" data-i="4">✓</div></div>
+          <div class="week-day"><div class="wd-letter">T7</div><div class="wd-dot weekend" data-i="5">×</div></div>
+          <div class="week-day"><div class="wd-letter">CN</div><div class="wd-dot weekend" data-i="6">×</div></div>
+        </div>
+        <div style="font-family:'Baloo 2',sans-serif;font-size:11px;font-weight:800;color:var(--gold-deep);margin:8px 0 4px;">🤖 Có Pika đồng hành:</div>
+        <div class="week-dots" id="wd-pika">
+          <div class="week-day"><div class="wd-dot pika" data-i="0">★</div></div>
+          <div class="week-day"><div class="wd-dot pika" data-i="1">★</div></div>
+          <div class="week-day"><div class="wd-dot pika" data-i="2">★</div></div>
+          <div class="week-day"><div class="wd-dot pika" data-i="3">★</div></div>
+          <div class="week-day"><div class="wd-dot pika" data-i="4">★</div></div>
+          <div class="week-day"><div class="wd-dot pika" data-i="5">★</div></div>
+          <div class="week-day"><div class="wd-dot pika" data-i="6">★</div></div>
+        </div>
+      </div>
+      <div class="cmp-card">
+        <div class="cmp-row">
+          <div class="cmp-label">Chỉ trường <span>nói/tuần</span></div>
+          <div class="cmp-track"><div class="cmp-fill" id="cf1" style="background:linear-gradient(90deg,#7a8aa0,#5a6a80);">~15p</div></div>
+        </div>
+        <div class="cmp-row">
+          <div class="cmp-label">+ Pika <span>nói/tuần</span></div>
+          <div class="cmp-track"><div class="cmp-fill" id="cf2" style="background:linear-gradient(90deg,#f5a623,#e08311);">3h 30p</div></div>
+        </div>
+      </div>
+      <div class="next-row"><button class="btn-next" id="btn6" onclick="goTo(7)" style="visibility:hidden;">Nếu ngắt quãng? →</button></div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════ SCREEN 7: REGRESSION WARNING (BEDROOM NIGHT) ═══════════════════ -->
+  <div id="s7" class="screen">
+    <div class="top-chrome">
+      <div class="progress-dots"></div>
+      <div class="panel-tag">PIKA #07</div>
+    </div>
+    <div class="comic-panel">
+      <div class="scene scene-bedroom night">
+        <div class="layer sky"></div>
+        <div class="layer stars-layer">
+          <div class="star" style="top:10%;left:18%;"></div>
+          <div class="star" style="top:14%;left:78%;animation-delay:0.4s"></div>
+          <div class="star" style="top:24%;left:42%;animation-delay:0.8s"></div>
+          <div class="star" style="top:8%;left:62%;animation-delay:1.2s"></div>
+        </div>
+        <div class="window-frame">
+          <div class="moon-in-window"></div>
+        </div>
+        <div class="floor"></div>
+
+        <!-- chart sketch on the wall -->
+        <div style="position:absolute;top:14%;right:8%;width:38%;height:38%;background:#fff8ee;border:3px solid var(--ink);border-radius:6px;box-shadow:3px 3px 0 var(--ink);transform:rotate(-4deg);padding:8px;">
+          <svg viewBox="0 0 100 50" style="width:100%;height:100%;">
+            <line x1="6" y1="44" x2="94" y2="44" stroke="#1a2340" stroke-width="1.5"/>
+            <line x1="6" y1="44" x2="6" y2="6" stroke="#1a2340" stroke-width="1.5"/>
+            <polyline points="6,40 20,32 34,22 48,12 62,8 78,6 92,4" fill="none" stroke="#00c896" stroke-width="2.5" stroke-linecap="round"/>
+            <polyline points="6,40 20,32 34,22 44,28 56,36 70,40 88,42" fill="none" stroke="#f56b6b" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="3 2"/>
+          </svg>
+        </div>
+
+        <div class="pika left" data-mood="thinking" style="bottom:10%;width:100px;height:115px;">
+          <svg viewBox="0 0 140 160"><use href="#pika-sym"/></svg>
+          <div class="shadow-ground"></div>
+        </div>
+        <div class="sfx" style="top:14%;left:6%;color:#f56b6b;">!</div>
+
+        <div class="bubble-wrap">
+          <div class="bubble show right">
+            Còn một <strong>bí mật quan trọng</strong> về <strong id="nm7">bạn nhỏ</strong> mà cô chú cần biết trước cột mốc 400 giờ 🌙
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="interaction">
+      <div class="regress-card">
+        <div style="font-family:'Baloo 2',sans-serif;font-weight:800;font-size:12px;color:var(--ink);margin-bottom:6px;text-align:center;">
+          📉 Kỹ năng nói theo thời gian
+        </div>
+        <svg class="regress-svg" viewBox="0 0 300 140" preserveAspectRatio="none">
+          <!-- grid -->
+          <line x1="20" y1="120" x2="290" y2="120" stroke="#1a2340" stroke-width="1.5"/>
+          <line x1="20" y1="120" x2="20" y2="10" stroke="#1a2340" stroke-width="1.5"/>
+          <!-- y-axis labels (text) -->
+          <text x="14" y="14" font-family="Baloo 2" font-size="9" font-weight="700" text-anchor="end" fill="#7a8aa0">Giỏi</text>
+          <text x="14" y="118" font-family="Baloo 2" font-size="9" font-weight="700" text-anchor="end" fill="#7a8aa0">0</text>
+          <!-- x-axis labels -->
+          <text x="20" y="135" font-family="Baloo 2" font-size="9" font-weight="700" fill="#7a8aa0">bắt đầu</text>
+          <text x="155" y="135" font-family="Baloo 2" font-size="9" font-weight="700" text-anchor="middle" fill="#f56b6b" font-weight="800">⚠ NGẮT QUÃNG</text>
+          <text x="285" y="135" font-family="Baloo 2" font-size="9" font-weight="700" text-anchor="end" fill="#7a8aa0">→ thời gian</text>
+          <!-- the dotted "if you stopped" zone -->
+          <rect x="155" y="10" width="135" height="110" fill="#f56b6b" opacity="0.06"/>
+          <line x1="155" y1="10" x2="155" y2="120" stroke="#f56b6b" stroke-width="1.5" stroke-dasharray="3 3"/>
+
+          <!-- ideal path (steady) -->
+          <path id="path-ideal" d="M 20 110 Q 80 90 140 60 T 290 20"
+                fill="none" stroke="#00c896" stroke-width="4" stroke-linecap="round"
+                stroke-dasharray="600" stroke-dashoffset="600">
+            <animate attributeName="stroke-dashoffset" from="600" to="0" dur="1.8s" fill="freeze" begin="0.4s"/>
+          </path>
+          <!-- interrupted path: rises then drops -->
+          <path id="path-bad" d="M 20 110 Q 80 90 140 60 L 155 58 Q 200 78 240 96 T 290 108"
+                fill="none" stroke="#f56b6b" stroke-width="4" stroke-linecap="round" stroke-dasharray="6 4"
+                stroke-dashoffset="600">
+            <animate attributeName="stroke-dashoffset" from="600" to="0" dur="2.4s" fill="freeze" begin="1.2s"/>
+          </path>
+          <!-- end dots -->
+          <circle cx="290" cy="20" r="5" fill="#00c896" stroke="#1a2340" stroke-width="2" opacity="0">
+            <animate attributeName="opacity" from="0" to="1" dur="0.3s" fill="freeze" begin="2.2s"/>
+          </circle>
+          <circle cx="290" cy="108" r="5" fill="#f56b6b" stroke="#1a2340" stroke-width="2" opacity="0">
+            <animate attributeName="opacity" from="0" to="1" dur="0.3s" fill="freeze" begin="3.6s"/>
+          </circle>
+          <text x="285" y="14" font-family="Baloo 2" font-size="10" font-weight="800" text-anchor="end" fill="#00c896" opacity="0">
+            <animate attributeName="opacity" from="0" to="1" dur="0.3s" fill="freeze" begin="2.2s"/>
+            Lưu loát ✓
+          </text>
+          <text x="285" y="102" font-family="Baloo 2" font-size="10" font-weight="800" text-anchor="end" fill="#f56b6b" opacity="0">
+            <animate attributeName="opacity" from="0" to="1" dur="0.3s" fill="freeze" begin="3.6s"/>
+            Tụt mất ✗
+          </text>
+        </svg>
+        <div class="regress-legend">
+          <div class="legend-key"><div class="legend-swatch" style="background:#00c896;"></div>Có Pika hàng ngày</div>
+          <div class="legend-key"><div class="legend-swatch" style="background:#f56b6b;border-top:1px dashed #f56b6b;"></div>Ngắt quãng</div>
+        </div>
+      </div>
+
+      <div class="warn-card" id="warn7" style="opacity:0;transform:translateY(8px);transition:opacity 0.5s, transform 0.5s;">
+        <div class="warn-icon">!</div>
+        <div>Trước cột mốc <strong>400 giờ</strong>, nếu ngừng nói vài tuần thì phản xạ <strong>tụt nhanh</strong>. Đây là lý do <strong>luyện hàng ngày</strong> quan trọng hơn nhiều việc học dồn cuối tuần.</div>
+      </div>
+
+      <div class="next-row"><button class="btn-next" id="btn7" onclick="goTo(4)" style="visibility:hidden;">Cùng xem giải pháp của Pika <span id="nm7b">→</span></button></div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════ SCREEN 8: PIKA'S BRAIN (STAGE NIGHT) ═══════════════════ -->
+  <div id="s8" class="screen">
+    <div class="top-chrome">
+      <div class="progress-dots"></div>
+      <div class="panel-tag">PIKA #08</div>
+    </div>
+    <div class="comic-panel">
+      <div class="scene scene-stage night">
+        <div class="layer sky"></div>
+        <div class="curtain-l"></div>
+        <div class="curtain-r"></div>
+        <div class="spotlight"></div>
+        <div class="floor"></div>
+        <div class="layer stars-layer">
+          <div class="star" style="top:8%;left:30%;"></div>
+          <div class="star" style="top:14%;left:70%;animation-delay:0.7s"></div>
+          <div class="star" style="top:22%;left:50%;animation-delay:1.4s"></div>
+        </div>
+
+        <!-- Floating brain "HQ" board -->
+        <div style="position:absolute;top:8%;right:14%;width:64px;height:78px;background:white;border:3px solid var(--ink);border-radius:8px;box-shadow:3px 3px 0 var(--ink);transform:rotate(6deg);padding:5px;">
+          <div style="font-family:'Bangers',sans-serif;font-size:9px;letter-spacing:1px;color:var(--rose);text-align:center;border-bottom:1.5px dashed var(--ink);padding-bottom:2px;margin-bottom:3px;">PLAN</div>
+          <div style="height:3px;background:var(--blue);margin-bottom:3px;border-radius:1px;"></div>
+          <div style="height:3px;background:var(--gold);margin-bottom:3px;border-radius:1px;width:80%;"></div>
+          <div style="height:3px;background:var(--mint);margin-bottom:3px;border-radius:1px;width:60%;"></div>
+          <div style="height:3px;background:var(--blue);margin-bottom:3px;border-radius:1px;width:90%;"></div>
+          <div style="font-family:'Bangers',sans-serif;font-size:9px;color:var(--ink);text-align:center;margin-top:3px;">★ TODAY</div>
+        </div>
+
+        <!-- pika cogs/gear motif -->
+        <div style="position:absolute;top:18%;left:14%;font-size:18px;animation:sunpulse calc(4s / var(--animspeed)) ease-in-out infinite;">⚙️</div>
+
+        <div class="pika left" data-mood="teaching" style="bottom:10%;width:100px;height:115px;">
+          <svg viewBox="0 0 140 160"><use href="#pika-sym"/></svg>
+          <div class="shadow-ground"></div>
+        </div>
+        <div class="sfx" style="top:14%;left:4%;color:var(--gold);">PLAN!</div>
+
+        <div class="bubble-wrap">
+          <div class="bubble show right">
+            Pika không phải 1 chatbot — phía sau là một <strong>bộ não có kế hoạch</strong>. Mỗi sáng Pika tự "lập trình" hôm nay nên làm gì với <strong id="nm8">bạn nhỏ</strong> 🧠
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="interaction" style="overflow-y:auto;max-height:50vh;">
+      <div class="plan-card" id="plan-card">
+        <div class="plan-head">📋 Hôm nay Pika quyết định:</div>
+        <div class="plan-item"><span class="plan-time">7:30</span><span>Khởi động bằng chủ đề <em>siêu anh hùng</em> — bạn nhỏ thích nhất tuần qua</span></div>
+        <div class="plan-item"><span class="plan-time">7:35</span><span>Ôn 3 từ <em>fly, save, hero</em> — bạn nhỏ còn yếu thứ 5</span></div>
+        <div class="plan-item"><span class="plan-time">7:42</span><span>Nhập vai bảo vệ thành phố — luyện <em>câu dài hơn 8 từ</em></span></div>
+      </div>
+
+      <div style="font-family:'Baloo 2',sans-serif;font-weight:900;font-size:11.5px;color:var(--ink);text-align:center;margin-top:2px;">3 việc Pika làm với bạn nhỏ mỗi ngày</div>
+      <div class="feature-trio">
+        <div class="ftcard" id="ft1"><span class="ft-ico">💬</span>Trò chuyện</div>
+        <div class="ftcard" id="ft2"><span class="ft-ico">📚</span>Bài học</div>
+        <div class="ftcard" id="ft3"><span class="ft-ico">🎒</span>Đồng hành trường</div>
+      </div>
+
+      <div class="adaptive-card" id="adapt-card">
+        <div class="ad-title">⚡ Pika hiểu bạn nhỏ hơn mỗi ngày</div>
+        <div class="ad-bar"><div class="ad-fill" id="ad-fill"></div></div>
+        <div class="ad-marks">
+          <div class="ad-mark on" id="adm1"><span class="ad-day">Ngày 1</span><span class="ad-desc">Học tên & sở thích</span></div>
+          <div class="ad-mark on" id="adm2"><span class="ad-day">Tuần 2</span><span class="ad-desc">Nhớ điểm yếu</span></div>
+          <div class="ad-mark" id="adm3"><span class="ad-day">Tháng 3+</span><span class="ad-desc">Tự chọn bài tối ưu</span></div>
+        </div>
+      </div>
+
+      <div class="next-row"><button class="btn-next" id="btn8" onclick="goTo(9)" style="visibility:hidden;">Xem từng tính năng →</button></div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════ SCREEN 9: FEATURE 1 — CHAT (COZY DAY) ═══════════════════ -->
+  <div id="s9" class="screen">
+    <div class="top-chrome">
+      <div class="progress-dots"></div>
+      <div class="panel-tag">PIKA #09</div>
+    </div>
+    <div class="comic-panel">
+      <div class="scene scene-cozy day">
+        <div class="layer sky"></div>
+        <div class="celestial" style="top:6%;right:10%;width:34px;height:34px;"></div>
+        <div class="cloud cloud-1"></div>
+        <div class="floor"></div>
+        <div class="rug"></div>
+        <div class="lamp"></div>
+        <div class="mote" style="top:32%;left:20%;background:#ff8fb1;"></div>
+        <div class="mote" style="top:42%;left:75%;animation-delay:1.8s;"></div>
+
+        <!-- floating chat bubble: pika says hi -->
+        <div style="position:absolute;top:18%;right:8%;background:white;border:2.5px solid var(--ink);border-radius:14px;padding:6px 10px;box-shadow:2px 2px 0 var(--ink);font-family:'Baloo 2',sans-serif;font-size:11px;font-weight:700;color:var(--ink);transform:rotate(4deg);max-width:50%;">
+          "How was school?" 😊
+        </div>
+        <!-- floating heart -->
+        <div style="position:absolute;top:38%;right:18%;font-size:18px;animation:float-mote calc(5s / var(--animspeed)) ease-in-out infinite;">💛</div>
+
+        <div class="pika" data-mood="happy" style="bottom:14%;">
+          <svg viewBox="0 0 140 160"><use href="#pika-sym"/></svg>
+          <div class="shadow-ground"></div>
+        </div>
+        <div class="sfx" style="top:14%;left:6%;color:var(--blue);font-size:22px;">💬</div>
+
+        <div class="bubble-wrap">
+          <div class="bubble show">
+            <strong>Tính năng 1:</strong> Pika trò chuyện với <strong id="nm9">bạn nhỏ</strong> như 2 người bạn — về phim, game, sở thích. Càng nói càng <em>hiểu bạn nhỏ hơn</em> 💬
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="interaction" style="overflow-y:auto;max-height:50vh;">
+      <div class="chat-card" id="chat-card">
+        <div class="chat-msg pika" id="cm1">Hey <span id="nm9b">bạn nhỏ</span>! Hôm qua xem Spider-Man chưa? 🕷️</div>
+        <div class="chat-msg kid" id="cm2">Yes! Spider-Man saved a cat from a tree!</div>
+        <div class="chat-msg pika" id="cm3">Cool! "Saved" là quá khứ của save đó. Kể tiếp đi!</div>
+        <div class="chat-msg kid" id="cm4">He climbed the building and… umm…</div>
+        <div class="chat-msg pika" id="cm5">"Climbed the building" hay quá! Rồi sao nữa? 🤩</div>
+      </div>
+
+      <div class="memory-card" id="mem-card">
+        <div class="memory-icon">🧠</div>
+        <div class="memory-text">
+          <strong>Pika nhớ:</strong> <em><span id="nm9c">bạn nhỏ</span> mê siêu anh hùng</em>, hơi nhút nhát lúc đầu, thích kể chuyện trước khi đi ngủ. Tuần sau Pika sẽ hỏi về Iron Man!
+        </div>
+      </div>
+
+      <div class="chips" id="chips-c9">
+        <div class="chip">🎬 Phim</div>
+        <div class="chip">🎮 Game</div>
+        <div class="chip">🏫 Trường</div>
+        <div class="chip">👨‍👩‍👧 Gia đình</div>
+        <div class="chip">⚽ Thể thao</div>
+        <div class="chip">🍕 Đồ ăn</div>
+        <div class="chip">🐶 Thú cưng</div>
+      </div>
+
+      <div class="next-row"><button class="btn-next" id="btn9" onclick="goTo(10)" style="visibility:hidden;">Bài học có cấu trúc →</button></div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════ SCREEN 10: FEATURE 2 — STRUCTURED LESSONS (STAGE) ═══════════════════ -->
+  <div id="s10" class="screen">
+    <div class="top-chrome">
+      <div class="progress-dots"></div>
+      <div class="panel-tag">PIKA #10</div>
+    </div>
+    <div class="comic-panel">
+      <div class="scene scene-stage night">
+        <div class="layer sky"></div>
+        <div class="curtain-l"></div>
+        <div class="curtain-r"></div>
+        <div class="spotlight"></div>
+        <div class="floor"></div>
+        <div class="layer stars-layer">
+          <div class="star" style="top:8%;left:30%;"></div>
+          <div class="star" style="top:14%;left:70%;animation-delay:0.7s"></div>
+          <div class="star" style="top:22%;left:50%;animation-delay:1.4s"></div>
+        </div>
+
+        <!-- 4 lesson props on stage -->
+        <div style="position:absolute;bottom:34%;left:26%;width:24px;height:30px;background:#7ec8e3;border:2px solid var(--ink);border-radius:50% 50% 0 0;display:flex;align-items:center;justify-content:center;font-size:11px;">🎤</div>
+        <div style="position:absolute;bottom:34%;left:42%;width:26px;height:26px;background:white;border:2px solid var(--ink);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:13px;">💬</div>
+        <div style="position:absolute;bottom:34%;left:58%;width:26px;height:28px;background:var(--gold);border:2px solid var(--ink);border-radius:4px 4px 50% 50%;display:flex;align-items:center;justify-content:center;font-size:13px;">🎭</div>
+        <div style="position:absolute;bottom:34%;left:74%;width:26px;height:24px;background:var(--rose);border:2px solid var(--ink);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:13px;">🎙️</div>
+
+        <div class="pika left" data-mood="excited" style="bottom:8%;width:90px;height:104px;">
+          <svg viewBox="0 0 140 160"><use href="#pika-sym"/></svg>
+          <div class="shadow-ground"></div>
+        </div>
+        <div class="sfx" style="top:14%;left:6%;color:#ffd875;">LET'S GO!</div>
+
+        <div class="bubble-wrap">
+          <div class="bubble show right">
+            <strong>Tính năng 2:</strong> Khi cần học có cấu trúc, Pika có sẵn <strong>4 kiểu bài luyện</strong> — tap để xem nhé! 📚
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="interaction" style="overflow-y:auto;max-height:50vh;">
+      <div class="lesson-grid">
+        <div class="lesson-card" id="lc1" onclick="toggleLesson('lc1')">
+          <div class="lesson-head">
+            <div class="lesson-ico" style="background:var(--blue-soft);">🎤</div>
+            <div class="lesson-info">
+              <div class="lesson-title">Luyện phát âm</div>
+              <div class="lesson-sub">Nghe mẫu → nói lại → sửa từng âm</div>
+            </div>
+            <span class="lesson-chev">›</span>
+          </div>
+          <div class="lesson-body"><div class="lesson-content">
+            <div class="lesson-example">
+              <em>"ship" /ʃɪp/</em> vs <em>"sheep" /ʃiːp/</em><br>
+              Pika đọc mẫu → bạn nhỏ nhắc lại → AI nghe → khen hoặc gợi ý sửa rất nhẹ.
+            </div>
+          </div></div>
+        </div>
+
+        <div class="lesson-card" id="lc2" onclick="toggleLesson('lc2')">
+          <div class="lesson-head">
+            <div class="lesson-ico" style="background:#d6f5e3;">💬</div>
+            <div class="lesson-info">
+              <div class="lesson-title">Học cụm từ thông dụng</div>
+              <div class="lesson-sub">Cụm dùng hàng ngày, không học rời</div>
+            </div>
+            <span class="lesson-chev">›</span>
+          </div>
+          <div class="lesson-body"><div class="lesson-content">
+            <div class="lesson-example">
+              <em>"Could you please…"</em>, <em>"What if…?"</em>, <em>"I'd love to…"</em><br>
+              Pika dùng cụm trong nhiều tình huống khác nhau để bạn nhỏ nhớ tự nhiên.
+            </div>
+          </div></div>
+        </div>
+
+        <div class="lesson-card" id="lc3" onclick="toggleLesson('lc3')">
+          <div class="lesson-head">
+            <div class="lesson-ico" style="background:#ffe8d6;">🎭</div>
+            <div class="lesson-info">
+              <div class="lesson-title">Nhập vai xử lý tình huống</div>
+              <div class="lesson-sub">Tình huống thật, xử bằng tiếng Anh</div>
+            </div>
+            <span class="lesson-chev">›</span>
+          </div>
+          <div class="lesson-body"><div class="lesson-content">
+            <div class="lesson-example">
+              <span class="scene-tag">SCENE</span><br>
+              <em>"Bạn nhỏ đang mua đồ thì phát hiện làm rơi tiền — phải nói gì với cô bán hàng?"</em><br>
+              Pika đóng vai cô bán hàng, dắt bạn nhỏ qua cuộc thoại thật.
+            </div>
+          </div></div>
+        </div>
+
+        <div class="lesson-card" id="lc4" onclick="toggleLesson('lc4')">
+          <div class="lesson-head">
+            <div class="lesson-ico" style="background:#ffd8d8;">🎙️</div>
+            <div class="lesson-info">
+              <div class="lesson-title">Luyện thuyết trình</div>
+              <div class="lesson-sub">Nói liền 30s–1p về 1 chủ đề</div>
+            </div>
+            <span class="lesson-chev">›</span>
+          </div>
+          <div class="lesson-body"><div class="lesson-content">
+            <div class="lesson-example">
+              <em>"Kể về môn học mình yêu thích nhất trong 1 phút"</em><br>
+              Pika ghi âm, đếm câu, gợi ý cách mở rộng, vỗ tay cuối bài 👏
+            </div>
+          </div></div>
+        </div>
+      </div>
+      <div class="tap-hint" id="th-l">☝️ Tap từng kiểu bài để xem ví dụ</div>
+
+      <div class="next-row"><button class="btn-next" id="btn10" onclick="goTo(11)" style="visibility:hidden;">Đồng hành trường →</button></div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════ SCREEN 11: SCHOOL COMPANION (CLASSROOM) ═══════════════════ -->
+  <div id="s11" class="screen">
+    <div class="top-chrome">
+      <div class="progress-dots"></div>
+      <div class="panel-tag">PIKA #11</div>
+    </div>
+    <div class="comic-panel">
+      <div class="scene scene-class day">
+        <div class="layer sky"></div>
+        <div class="blackboard">
+          <div style="position:absolute;top:14%;left:50%;transform:translateX(-50%);font-family:'Caveat',cursive;color:#fff;font-size:18px;font-weight:700;">Tuần này bạn nhỏ học</div>
+          <div style="position:absolute;top:42%;left:6%;right:6%;display:flex;gap:6px;justify-content:space-between;">
+            <div style="text-align:center;color:#fff;font-family:'Baloo 2',sans-serif;font-size:11px;"><div style="font-size:22px;">🐘</div><div>Animals</div></div>
+            <div style="text-align:center;color:#fff;font-family:'Baloo 2',sans-serif;font-size:11px;"><div style="font-size:22px;">🍎</div><div>Food</div></div>
+            <div style="text-align:center;color:#fff;font-family:'Baloo 2',sans-serif;font-size:11px;"><div style="font-size:22px;">⛅</div><div>Weather</div></div>
+            <div style="text-align:center;color:#fff;font-family:'Baloo 2',sans-serif;font-size:11px;"><div style="font-size:22px;">👨‍👩‍👧</div><div>Family</div></div>
+            <div style="text-align:center;color:#fff;font-family:'Baloo 2',sans-serif;font-size:11px;"><div style="font-size:22px;">🎨</div><div>Colors</div></div>
+          </div>
+        </div>
+        <div class="floor"></div>
+
+        <!-- Pika holding a textbook -->
+        <div style="position:absolute;bottom:14%;right:8%;width:30px;height:36px;background:#d44a4a;border:2px solid var(--ink);border-radius:2px;z-index:4;transform:rotate(-8deg);box-shadow:2px 2px 0 var(--ink);">
+          <div style="position:absolute;top:6px;left:4px;right:4px;height:2px;background:white;"></div>
+          <div style="position:absolute;top:11px;left:4px;right:4px;height:2px;background:white;"></div>
+          <div style="position:absolute;top:16px;left:4px;right:6px;height:2px;background:white;"></div>
+        </div>
+
+        <div class="pika left" data-mood="teaching" style="bottom:8%;width:100px;height:115px;">
+          <svg viewBox="0 0 140 160"><use href="#pika-sym"/></svg>
+          <div class="shadow-ground"></div>
+        </div>
+        <div class="sfx" style="top:14%;left:4%;color:var(--blue);">SYNC!</div>
+
+        <div class="bubble-wrap">
+          <div class="bubble show right">
+            Pika theo dõi chương trình trên trường của <strong id="nm11">bạn nhỏ</strong> — tối là <strong>ôn lại + luyện nói</strong> đúng chủ đề hôm đó 🎒
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="interaction" style="overflow-y:auto;max-height:50vh;">
+      <div class="school-card" id="sch-card">
+        <div style="font-family:'Baloo 2',sans-serif;font-weight:900;font-size:11.5px;color:var(--ink);margin-bottom:6px;text-align:center;">📚 Hỗ trợ chương trình trên trường</div>
+        <div class="school-grid">
+          <div class="school-col">
+            <div class="school-day">T2</div>
+            <div class="school-cell" title="Bài trường">🐘</div>
+            <div class="school-pika-cell" title="Pika tối">+15 từ</div>
+          </div>
+          <div class="school-col">
+            <div class="school-day">T3</div>
+            <div class="school-cell">🍎</div>
+            <div class="school-pika-cell">Story</div>
+          </div>
+          <div class="school-col">
+            <div class="school-day">T4</div>
+            <div class="school-cell">⛅</div>
+            <div class="school-pika-cell">Roleplay</div>
+          </div>
+          <div class="school-col">
+            <div class="school-day">T5</div>
+            <div class="school-cell">👨‍👩‍👧</div>
+            <div class="school-pika-cell">Quiz</div>
+          </div>
+          <div class="school-col">
+            <div class="school-day">T6</div>
+            <div class="school-cell">🎨</div>
+            <div class="school-pika-cell">Show & Tell</div>
+          </div>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;font-size:10px;font-family:'Baloo 2',sans-serif;font-weight:700;">
+          <span style="color:var(--ink-soft);">🏫 Bài trường</span>
+          <span style="color:var(--gold-deep);">🤖 Pika ôn tối</span>
+        </div>
+      </div>
+
+      <div class="pairing-card" id="pair-1">
+        <div class="pairing-icon">🐘</div>
+        <div class="pairing-text">Ôn tập, củng cố cấu trúc, từ vựng.</div>
+      </div>
+      <div class="pairing-card" id="pair-2">
+        <div class="pairing-icon">📖</div>
+        <div class="pairing-text">Luyện nói, nghe và giao tiếp cho các chủ đề đó.</div>
+      </div>
+
+      <div style="font-family:'Caveat',cursive;font-size:15px;color:var(--ink-soft);text-align:center;line-height:1.3;">
+        ✨ Con không quá tải — ôn đúng nhịp trường
+      </div>
+
+      <div class="next-row"><button class="btn-next" id="btn11" onclick="goTo(12)" style="visibility:hidden;">An toàn cho bạn nhỏ? →</button></div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════ SCREEN 12: SAFETY + PARENT ROLE (COZY) ═══════════════════ -->
+  <div id="s12" class="screen">
+    <div class="top-chrome">
+      <div class="progress-dots"></div>
+      <div class="panel-tag">PIKA #12</div>
+    </div>
+    <div class="comic-panel">
+      <div class="scene scene-cozy day">
+        <div class="layer sky"></div>
+        <div class="celestial" style="top:6%;right:8%;width:34px;height:34px;"></div>
+        <div class="cloud cloud-1"></div>
+        <div class="floor"></div>
+        <div class="rug"></div>
+        <div class="lamp"></div>
+
+        <!-- shield motif -->
+        <div style="position:absolute;top:14%;right:14%;width:54px;height:64px;z-index:3;">
+          <div style="position:absolute;inset:0;background:linear-gradient(180deg,#7ec8e3,#1a73e8);border:3px solid var(--ink);clip-path:polygon(50% 0,100% 20%,100% 70%,50% 100%,0 70%,0 20%);box-shadow:3px 3px 0 var(--ink);"></div>
+          <div style="position:absolute;top:24%;left:50%;transform:translateX(-50%);color:white;font-family:'Bangers',sans-serif;font-size:22px;">+</div>
+        </div>
+
+        <div class="mote" style="top:42%;left:18%;background:var(--mint);"></div>
+        <div class="mote" style="top:55%;left:40%;animation-delay:2s;background:var(--mint);"></div>
+
+        <div class="pika left" data-mood="teaching" style="bottom:14%;width:100px;height:115px;">
+          <svg viewBox="0 0 140 160"><use href="#pika-sym"/></svg>
+          <div class="shadow-ground"></div>
+        </div>
+        <div class="sfx" style="top:18%;left:6%;color:var(--mint);">SAFE!</div>
+
+        <div class="bubble-wrap">
+          <div class="bubble show right">
+            "AI có an toàn cho <strong id="nm12">bạn nhỏ</strong> không?" Pika được thiết kế như <strong>lan can cầu thang</strong> — giữ bạn nhỏ đi an toàn hơn rất nhiều 🛡️
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="interaction" style="overflow-y:auto;max-height:50vh;">
+      <div class="safety-card">
+        <div style="font-family:'Baloo 2',sans-serif;font-weight:900;font-size:12px;color:var(--ink);margin-bottom:6px;text-align:center;">🛡️ 4 LỚP BẢO VỆ</div>
+        <div class="safety-row" id="sl1">
+          <div class="safety-ico" style="background:#ffd8d8;">🔍</div>
+          <div class="safety-body">
+            <div class="safety-name">Lọc nội dung trước phản hồi</div>
+            <div class="safety-desc">Mọi câu trả lời được kiểm tra — không có nội dung không phù hợp</div>
+          </div>
+          <span class="safety-check">✓</span>
+        </div>
+        <div class="safety-row" id="sl2">
+          <div class="safety-ico" style="background:#d6f5e3;">🎯</div>
+          <div class="safety-body">
+            <div class="safety-name">Luôn bám mục tiêu học</div>
+            <div class="safety-desc">Biết kéo bạn nhỏ về học khi đi lạc chủ đề</div>
+          </div>
+          <span class="safety-check">✓</span>
+        </div>
+        <div class="safety-row" id="sl3">
+          <div class="safety-ico" style="background:#eeedfe;">🧠</div>
+          <div class="safety-body">
+            <div class="safety-name">Sửa nhẹ nhàng theo tuổi</div>
+            <div class="safety-desc">Không phủ nhận toàn câu — chỉ nhắc nhẹ từng điểm</div>
+          </div>
+          <span class="safety-check">✓</span>
+        </div>
+        <div class="safety-row" id="sl4">
+          <div class="safety-ico" style="background:var(--blue-soft);">📊</div>
+          <div class="safety-body">
+            <div class="safety-name">Dashboard cho cô chú</div>
+            <div class="safety-desc">Cô chú xem được bạn nhỏ tương tác, luyện gì, chủ đề nào</div>
+          </div>
+          <span class="safety-check">✓</span>
+        </div>
+      </div>
+
+      <div class="parent-tip" id="pr-d">
+        <div class="pt-title">💛 Vai trò cô chú — ít nhưng quan trọng</div>
+        <div class="pt-items">
+          <div class="pt-item"><span class="pt-arrow">→</span>Đồng hành <strong>2–3 ngày đầu</strong> để bạn nhỏ quen Pika</div>
+          <div class="pt-item"><span class="pt-arrow">→</span>Nhắc nhẹ mỗi tối: <em>"Hôm nay nói với Pika chưa?"</em></div>
+          <div class="pt-item"><span class="pt-arrow">→</span>Khen khi thấy bạn nhỏ tự chủ động — <strong>dù chỉ 5 phút</strong></div>
+          <div class="pt-item"><span class="pt-arrow">→</span>Cô chú <strong>không cần giỏi tiếng Anh</strong> — Pika lo phần đó</div>
+        </div>
+      </div>
+
+      <div class="next-row"><button class="btn-next" id="btn12" onclick="goTo(13)" style="visibility:hidden;">Pika hợp với bạn nhỏ? →</button></div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════ SCREEN 13: FIT CHECK (KITCHEN) ═══════════════════ -->
+  <div id="s13" class="screen">
+    <div class="top-chrome">
+      <div class="progress-dots"></div>
+      <div class="panel-tag">PIKA #13</div>
+    </div>
+    <div class="comic-panel">
+      <div class="scene scene-kitchen day">
+        <div class="layer sky"></div>
+        <div class="cabinet"></div>
+        <div class="counter"></div>
+        <div class="floor"></div>
+        <div class="celestial" style="top:8%;left:14%;width:36px;height:36px;"></div>
+        <div class="mote" style="top:38%;left:70%;"></div>
+        <div class="mote" style="top:50%;left:18%;animation-delay:2s;"></div>
+
+        <!-- handshake hearts -->
+        <div style="position:absolute;top:22%;right:20%;font-size:24px;animation:float-mote calc(4s / var(--animspeed)) ease-in-out infinite;">💛</div>
+        <div style="position:absolute;top:36%;right:30%;font-size:18px;animation:float-mote calc(5s / var(--animspeed)) ease-in-out infinite;animation-delay:1.5s;">✨</div>
+
+        <div class="pika" data-mood="happy" style="bottom:14%;">
+          <svg viewBox="0 0 140 160"><use href="#pika-sym"/></svg>
+          <div class="shadow-ground"></div>
+        </div>
+        <div class="sfx" style="top:18%;left:6%;color:var(--blue);">?</div>
+
+        <div class="bubble-wrap">
+          <div class="bubble show">
+            Câu hỏi cuối! Cô chú có dành được <strong>10–20 phút/ngày</strong> đồng hành cùng <strong id="nm13">bạn nhỏ</strong> trong <strong>tuần đầu tiên</strong> không ạ? 💛
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="interaction">
+      <div class="narrator-line">Chọn câu trả lời thật nhất nhé</div>
+      <div class="choices" id="ch13">
+        <button class="choice-btn a" onclick="pickFit('yes')">
+          <div class="choice-emoji">✅</div>
+          <span>Được! Mình sẵn sàng đồng hành</span>
+        </button>
+        <button class="choice-btn b" onclick="pickFit('maybe')">
+          <div class="choice-emoji">🤔</div>
+          <span>Có thể — mình bận nhưng sẽ cố</span>
+        </button>
+        <button class="choice-btn c" onclick="pickFit('auto')">
+          <div class="choice-emoji">🤖</div>
+          <span>Muốn Pika tự lo được cho bạn nhỏ</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════ FINAL SCREEN (GARDEN) ═══════════════════ -->
+  <div id="sf" class="screen">
+    <div class="top-chrome">
+      <div class="progress-dots"></div>
+      <div class="panel-tag">★ END ★</div>
+    </div>
+    <div class="comic-panel">
+      <div class="scene scene-garden day">
+        <div class="layer sky"></div>
+        <div class="celestial"></div>
+        <div class="cloud cloud-1"></div>
+        <div class="cloud cloud-2"></div>
+        <div class="floor"></div>
+
+        <!-- flowers -->
+        <div class="flower" style="bottom:8%;left:10%;background:#ff8fb1;"></div>
+        <div class="flower" style="bottom:6%;left:24%;background:#f5a623;animation-delay:0.5s;"></div>
+        <div class="flower" style="bottom:9%;left:78%;background:#9b59b6;animation-delay:1s;"></div>
+        <div class="flower" style="bottom:5%;left:88%;background:#ff8fb1;animation-delay:1.5s;"></div>
+
+        <!-- balloons -->
+        <div class="balloon" style="top:18%;left:14%;background:#f5a623;"></div>
+        <div class="balloon" style="top:8%;right:18%;background:#1a73e8;animation-delay:1.5s;"></div>
+        <div class="balloon" style="top:22%;right:32%;background:#ff8fb1;animation-delay:3s;width:24px;height:30px;"></div>
+
+        <div class="confetti" style="left:20%;background:#f5a623;animation-delay:0s;"></div>
+        <div class="confetti" style="left:40%;background:#1a73e8;animation-delay:1s;"></div>
+        <div class="confetti" style="left:65%;background:#00c896;animation-delay:2s;"></div>
+        <div class="confetti" style="left:85%;background:#ff8fb1;animation-delay:0.5s;"></div>
+
+        <div class="pika" data-mood="excited" style="bottom:18%;">
+          <svg viewBox="0 0 140 160"><use href="#pika-sym"/></svg>
+          <div class="shadow-ground"></div>
+        </div>
+        <div class="sfx" style="top:20%;left:8%;">YAY!</div>
+        <div class="sfx" style="top:14%;right:8%;color:#ff8fb1;">♥</div>
+
+        <div class="bubble-wrap">
+          <div class="bubble show" id="bf">
+            Cùng trải nghiệm các tính năng của Pika nhé!
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="interaction">
+      <h2 class="final-title" id="ft">Cùng Pika bắt đầu hành trình của <span id="nmft">bạn nhỏ</span>!</h2>
+      <p class="final-sub" id="fs">Mỗi ngày 30 phút — không bỏ ngày nào — Pika đồng hành cùng bạn nhỏ tới cột mốc <strong>100 giờ</strong> rồi <strong>400 giờ</strong> nói tiếng Anh tự nhiên.</p>
+      <div class="final-cta">
+        <button class="btn-primary">💬 Đăng ký tư vấn</button>
+        <button class="btn-ghost">Trải nghiệm các tính năng</button>
+        <button class="btn-ghost" onclick="goTo(0)">🔄 Đọc lại từ đầu</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══════════════════ TWEAKS PANEL ═══════════════════ -->
+<div class="tweaks" id="tweaks">
+  <div class="tweaks-head">
+    <h3>★ Tweaks</h3>
+    <button class="tweak-close" id="tw-close">×</button>
+  </div>
+  <div class="tweak-row">
+    <label>Animation nền</label>
+    <div class="seg" id="seg-anim">
+      <button data-v="on" class="active">ON</button>
+      <button data-v="off">OFF</button>
+    </div>
+  </div>
+  <div class="tweak-row">
+    <label>Tốc độ</label>
+    <input type="range" id="tw-speed" min="0.3" max="2" step="0.1" value="1">
+  </div>
+  <div class="tweak-row">
+    <label>Day / Night</label>
+    <div class="seg" id="seg-mode">
+      <button data-v="auto" class="active">AUTO</button>
+      <button data-v="day">DAY</button>
+      <button data-v="night">NIGHT</button>
+    </div>
+  </div>
+  <div class="tweak-row" style="flex-direction:column;align-items:flex-start;">
+    <label style="margin-bottom:6px;">Jump to panel</label>
+    <div class="seg" style="width:100%;flex-wrap:wrap;">
+      <button onclick="goTo(0)" style="flex:1;min-width:32px;">0</button>
+      <button onclick="goTo(1)" style="flex:1;min-width:32px;">1</button>
+      <button onclick="goTo(2)" style="flex:1;min-width:32px;">2</button>
+      <button onclick="goTo(3)" style="flex:1;min-width:32px;">3</button>
+      <button onclick="goTo(4)" style="flex:1;min-width:32px;">4</button>
+      <button onclick="goTo(5)" style="flex:1;min-width:32px;">5</button>
+      <button onclick="goTo(6)" style="flex:1;min-width:32px;">6</button>
+      <button onclick="goTo(7)" style="flex:1;min-width:32px;">7</button>
+      <button onclick="goTo(8)" style="flex:1;min-width:32px;">8</button>
+      <button onclick="goTo(9)" style="flex:1;min-width:32px;">9</button>
+      <button onclick="goTo(10)" style="flex:1;min-width:32px;">10</button>
+      <button onclick="goTo(11)" style="flex:1;min-width:32px;">11</button>
+      <button onclick="goTo(12)" style="flex:1;min-width:32px;">12</button>
+      <button onclick="goTo(13)" style="flex:1;min-width:32px;">13</button>
+      <button onclick="goTo('f')" style="flex:1;min-width:32px;">★</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  /* ─── Tweak defaults ─── */
+  const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+    "animation": "off",
+    "speed": 1,
+    "mode": "auto"
+  }/*EDITMODE-END*/;
+  let state = { ...TWEAK_DEFAULTS };
+
+  /* ─── User journey state ─── */
+  let kid = {
+    name: '',
+    age: '',         // '4-5' | '6-7' | '8-9' | '10+'
+    duration: '',    // '<6m' | '6-12m' | '1-2y' | '2y+'
+    extra: '',       // 'center' | 'online' | 'none'
+    speaking: 0,     // 1-5 self-rating
+    vocab: 0,
+    grammar: 0
+  };
+  let interaction = {
+    lessonsOpened: 0,
+    fitChoice: ''
+  };
+  let currentScreen = 0;
+  const TOTAL_PANELS = 14; // s1..s13 + final
+
+  /* ─── Progress dots ─── */
+  function paintDots() {
+    const map = { 0: 0, 1: 1, 2: 2, 3: 3, 4: 7, 5: 4, 6: 5, 7: 6, 8: 8, 9: 9, 10: 10, 11: 11, 12: 12, 13: 13, 'f': 14 };
+    const cur = map[currentScreen] ?? 0;
+    document.querySelectorAll('.progress-dots').forEach(c => {
+      c.innerHTML = '';
+      for (let i = 1; i <= TOTAL_PANELS; i++) {
+        const d = document.createElement('div');
+        d.className = 'pdot' + (i < cur ? ' done' : i === cur ? ' current' : '');
+        c.appendChild(d);
+      }
+    });
+  }
+
+  /* ─── Name injector ─── */
+  function paintName() {
+    const n = kid.name || 'bạn nhỏ';
+    document.querySelectorAll('#nm2,#nm3,#nm4,#nm5,#nm6,#nm7,#nm7b,#nm8,#nm9,#nm9b,#nm9c,#nm11,#nm12,#nm13,#nmf,#nmft').forEach(el => { el.textContent = n; });
+    // patient card
+    const pc = document.getElementById('patient-card');
+    if (pc) {
+      const ageTxt = kid.age ? ` · ${kid.age} tuổi` : '';
+      pc.firstChild && (pc.firstChild.textContent = `Bé ${n}${ageTxt}`);
+    }
+    const ps = document.getElementById('patient-sub');
+    if (ps) {
+      const durMap = {'<6m':'< 6 tháng','6-12m':'6–12 tháng','1-2y':'1–2 năm','2y+':'> 2 năm'};
+      const extraMap = {'center':'học thêm trung tâm','online':'có app online','none':'chỉ ở trường'};
+      const parts = [];
+      if (kid.duration) parts.push('Học ' + (durMap[kid.duration] || kid.duration));
+      if (kid.extra) parts.push(extraMap[kid.extra] || kid.extra);
+      ps.textContent = parts.join(' · ') || 'Đang khám…';
+    }
+  }
+
+  /* ─── Navigation ─── */
+  function goTo(n) {
+    currentScreen = n;
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    const target = n === 'f' ? document.getElementById('sf') : document.getElementById('s' + n);
+    if (!target) return;
+    target.classList.add('active');
+    window.scrollTo(0, 0);
+    paintDots();
+    paintName();
+    if (n === 1) animateScreen1();
+    if (n === 2) animateScreen2();
+    if (n === 3) animateScreen3();
+    if (n === 4) animateScreen4();
+    if (n === 5) animateScreen5();
+    if (n === 6) animateScreen6();
+    if (n === 7) animateScreen7();
+    if (n === 8) animateScreen8();
+    if (n === 9) animateScreen9();
+    if (n === 10) animateScreen10();
+    if (n === 11) animateScreen11();
+    if (n === 12) animateScreen12();
+    if (n === 13) animateScreen13();
+    if (n === 'f') animateFinal();
+  }
+
+  function reShowBubble(scope) {
+    const bubble = scope.querySelector('.bubble');
+    if (bubble) {
+      bubble.classList.remove('show');
+      requestAnimationFrame(() => setTimeout(() => bubble.classList.add('show'), 60));
+    }
+  }
+
+  /* ─── S1: Name + age ─── */
+  function checkS1Valid() {
+    const btn = document.getElementById('btn1');
+    const ok = kid.name.trim().length >= 1 && kid.age;
+    btn.style.opacity = ok ? '1' : '0.5';
+    btn.style.pointerEvents = ok ? 'auto' : 'none';
+  }
+  function submitNameAge() {
+    if (!kid.name.trim() || !kid.age) return;
+    goTo(2);
+  }
+  function animateScreen1() {
+    reShowBubble(document.getElementById('s1'));
+    const inp = document.getElementById('inp-name');
+    if (inp) inp.value = kid.name;
+    document.querySelectorAll('#seg-age button').forEach(b => b.classList.toggle('active', b.dataset.v === kid.age));
+    checkS1Valid();
+  }
+
+  /* ─── S2: Assessment ─── */
+  function checkS2Valid() {
+    const btn = document.getElementById('btn2');
+    const ok = kid.duration && kid.extra && kid.speaking && kid.vocab && kid.grammar;
+    btn.style.opacity = ok ? '1' : '0.5';
+    btn.style.pointerEvents = ok ? 'auto' : 'none';
+  }
+  function submitAssessment() {
+    if (!(kid.duration && kid.extra && kid.speaking && kid.vocab && kid.grammar)) return;
+    goTo(3);
+  }
+  function animateScreen2() {
+    const scope = document.getElementById('s2');
+    reShowBubble(scope);
+    // restore selected values
+    document.querySelectorAll('#seg-dur button').forEach(b => b.classList.toggle('active', b.dataset.v === kid.duration));
+    document.querySelectorAll('#seg-extra button').forEach(b => b.classList.toggle('active', b.dataset.v === kid.extra));
+    document.querySelectorAll('.skill-stars').forEach(group => {
+      const skill = group.dataset.skill;
+      group.querySelectorAll('.skill-star').forEach(s => {
+        s.classList.toggle('on', parseInt(s.dataset.v) <= (kid[skill] || 0));
+      });
+    });
+    checkS2Valid();
+  }
+
+  /* ─── S3: Diagnostic map ─── */
+  function animateScreen3() {
+    const scope = document.getElementById('s3');
+    reShowBubble(scope);
+    ['st1','st2','st3'].forEach(id => document.getElementById(id).classList.remove('show'));
+    document.getElementById('sf1').style.width = '0';
+    document.getElementById('sf2').style.width = '0';
+    document.getElementById('sf3').style.width = '0';
+    document.getElementById('verdict').classList.remove('show');
+    document.getElementById('btn3').style.visibility = 'hidden';
+
+    // map self-rating (1-5) → bar width
+    const vocabPct = Math.max(40, kid.vocab * 18);     // baseline 40%, generous
+    const grammarPct = Math.max(40, kid.grammar * 18);
+    // Speaking: we deliberately show it MUCH lower to expose the gap, even if parent rated high
+    const speakingPct = Math.min(28, Math.max(8, kid.speaking * 4));
+
+    const vocabLabel = ['Yếu','Cần luyện','Khá','Khá','Tốt','Tốt'][kid.vocab] || 'Khá';
+    const grammarLabel = ['Yếu','Cần luyện','Khá','Khá','Tốt','Tốt'][kid.grammar] || 'Ổn';
+
+    setTimeout(() => {
+      document.getElementById('st1').classList.add('show');
+      document.getElementById('sf1').style.width = vocabPct + '%';
+      document.getElementById('sv1').textContent = vocabLabel;
+    }, 700);
+    setTimeout(() => {
+      document.getElementById('st2').classList.add('show');
+      document.getElementById('sf2').style.width = grammarPct + '%';
+      document.getElementById('sv2').textContent = grammarLabel;
+    }, 1200);
+    setTimeout(() => {
+      document.getElementById('st3').classList.add('show');
+      document.getElementById('sf3').style.width = speakingPct + '%';
+      document.getElementById('sv3').textContent = '⚠️ Rất thiếu';
+    }, 1900);
+    setTimeout(() => { document.getElementById('verdict').classList.add('show'); }, 2800);
+    setTimeout(() => { document.getElementById('btn3').style.visibility = 'visible'; }, 3400);
+  }
+
+  /* ─── S4: Big number ─── */
+  function animateScreen4() {
+    const scope = document.getElementById('s4');
+    reShowBubble(scope);
+    const bn = document.getElementById('bn');
+    bn.classList.remove('show');
+    ['ms1','ms2','ms3','ms4'].forEach(id => document.getElementById(id).classList.remove('show'));
+    document.getElementById('btn4').style.visibility = 'hidden';
+    document.getElementById('counter').textContent = '0';
+
+    setTimeout(() => {
+      bn.classList.add('show');
+      let count = 0;
+      const target = 3195;
+      const dur = 1800;
+      const step = target / (dur / 16);
+      const itv = setInterval(() => {
+        count = Math.min(count + step, target);
+        document.getElementById('counter').textContent = Math.round(count).toLocaleString('vi-VN');
+        if (count >= target) {
+          clearInterval(itv);
+          ['ms1','ms2','ms3','ms4'].forEach((id, i) => {
+            setTimeout(() => document.getElementById(id).classList.add('show'), i * 130);
+          });
+          setTimeout(() => { document.getElementById('btn4').style.visibility = 'visible'; }, 700);
+        }
+      }, 16);
+    }, 900);
+  }
+
+  /* ─── S5: Milestones ─── */
+  function animateScreen5() {
+    const scope = document.getElementById('s5');
+    reShowBubble(scope);
+    const fill = document.getElementById('mlfill');
+    const n0 = document.getElementById('mln0');
+    const n1 = document.getElementById('mln1');
+    const n2 = document.getElementById('mln2');
+    const c1 = document.getElementById('mlc1');
+    const c2 = document.getElementById('mlc2');
+    fill.style.width = '0';
+    [n0,n1,n2].forEach(n => n.classList.remove('on'));
+    c1.style.opacity = '0';
+    c2.style.opacity = '0';
+    document.getElementById('btn5').style.visibility = 'hidden';
+
+    setTimeout(() => n0.classList.add('on'), 600);
+    setTimeout(() => { fill.style.width = '33%'; }, 800);
+    setTimeout(() => n1.classList.add('on'), 1800);
+    setTimeout(() => { c1.style.opacity = '1'; }, 2000);
+    setTimeout(() => { fill.style.width = '100%'; }, 2600);
+    setTimeout(() => n2.classList.add('on'), 3600);
+    setTimeout(() => { c2.style.opacity = '1'; }, 3800);
+    setTimeout(() => { document.getElementById('btn5').style.visibility = 'visible'; }, 4400);
+  }
+
+  /* ─── S6: School gap ─── */
+  function animateScreen6() {
+    const scope = document.getElementById('s6');
+    reShowBubble(scope);
+    document.querySelectorAll('#wd-school .wd-dot, #wd-pika .wd-dot').forEach(d => d.classList.remove('on'));
+    document.getElementById('cf1').style.width = '0';
+    document.getElementById('cf2').style.width = '0';
+    document.getElementById('btn6').style.visibility = 'hidden';
+
+    // animate school dots first
+    document.querySelectorAll('#wd-school .wd-dot').forEach((d, i) => {
+      setTimeout(() => d.classList.add('on'), 500 + i * 110);
+    });
+    setTimeout(() => { document.getElementById('cf1').style.width = '14%'; }, 1400);
+    // then pika dots
+    document.querySelectorAll('#wd-pika .wd-dot').forEach((d, i) => {
+      setTimeout(() => d.classList.add('on'), 2200 + i * 110);
+    });
+    setTimeout(() => { document.getElementById('cf2').style.width = '95%'; }, 3200);
+    setTimeout(() => { document.getElementById('btn6').style.visibility = 'visible'; }, 4200);
+  }
+
+  /* ─── S7: Regression warning ─── */
+  function animateScreen7() {
+    const scope = document.getElementById('s7');
+    reShowBubble(scope);
+    const warn = document.getElementById('warn7');
+    warn.style.opacity = '0';
+    warn.style.transform = 'translateY(8px)';
+    document.getElementById('btn7').style.visibility = 'hidden';
+    // re-trigger SVG animations by cloning the SVG
+    const card = scope.querySelector('.regress-card');
+    const svg = card.querySelector('.regress-svg');
+    const clone = svg.cloneNode(true);
+    svg.replaceWith(clone);
+
+    setTimeout(() => {
+      warn.style.opacity = '1';
+      warn.style.transform = 'translateY(0)';
+    }, 4000);
+    setTimeout(() => { document.getElementById('btn7').style.visibility = 'visible'; }, 4600);
+  }
+
+  /* ─── S8: Brain (planning + adaptive) ─── */
+  function animateScreen8() {
+    const scope = document.getElementById('s8');
+    reShowBubble(scope);
+    document.getElementById('plan-card').classList.remove('show');
+    ['ft1','ft2','ft3'].forEach(id => document.getElementById(id).classList.remove('show'));
+    document.getElementById('adapt-card').classList.remove('show');
+    document.getElementById('ad-fill').style.width = '0';
+    document.getElementById('btn8').style.visibility = 'hidden';
+
+    setTimeout(() => document.getElementById('plan-card').classList.add('show'), 600);
+    ['ft1','ft2','ft3'].forEach((id,i) => {
+      setTimeout(() => document.getElementById(id).classList.add('show'), 1400 + i * 160);
+    });
+    setTimeout(() => {
+      document.getElementById('adapt-card').classList.add('show');
+      document.getElementById('ad-fill').style.width = '55%';
+    }, 2100);
+    setTimeout(() => document.getElementById('btn8').style.visibility = 'visible', 3300);
+  }
+
+  /* ─── S9: Chat preview ─── */
+  function animateScreen9() {
+    const scope = document.getElementById('s9');
+    reShowBubble(scope);
+    ['cm1','cm2','cm3','cm4','cm5'].forEach(id => document.getElementById(id).classList.remove('show'));
+    document.getElementById('mem-card').classList.remove('show');
+    document.querySelectorAll('#chips-c9 .chip').forEach(c => c.classList.remove('show'));
+    document.getElementById('btn9').style.visibility = 'hidden';
+
+    ['cm1','cm2','cm3','cm4','cm5'].forEach((id,i) => {
+      setTimeout(() => document.getElementById(id).classList.add('show'), 500 + i * 350);
+    });
+    setTimeout(() => document.getElementById('mem-card').classList.add('show'), 2500);
+    document.querySelectorAll('#chips-c9 .chip').forEach((c,i) => {
+      setTimeout(() => c.classList.add('show'), 3100 + i * 80);
+    });
+    setTimeout(() => document.getElementById('btn9').style.visibility = 'visible', 3900);
+  }
+
+  /* ─── S10: Structured lessons ─── */
+  function animateScreen10() {
+    const scope = document.getElementById('s10');
+    reShowBubble(scope);
+    ['lc1','lc2','lc3','lc4'].forEach(id => {
+      const el = document.getElementById(id);
+      el.classList.remove('show', 'open');
+    });
+    document.getElementById('th-l').classList.remove('show');
+    interaction.lessonsOpened = 0;
+    document.getElementById('btn10').style.visibility = 'hidden';
+
+    ['lc1','lc2','lc3','lc4'].forEach((id,i) => {
+      setTimeout(() => document.getElementById(id).classList.add('show'), 600 + i * 150);
+    });
+    setTimeout(() => document.getElementById('th-l').classList.add('show'), 1400);
+  }
+  function toggleLesson(id) {
+    const el = document.getElementById(id);
+    const wasOpen = el.classList.contains('open');
+    document.querySelectorAll('#s10 .lesson-card').forEach(l => l.classList.remove('open'));
+    if (!wasOpen) {
+      el.classList.add('open');
+      interaction.lessonsOpened = (interaction.lessonsOpened || 0) + 1;
+    }
+    if ((interaction.lessonsOpened || 0) >= 2) {
+      document.getElementById('btn10').style.visibility = 'visible';
+      document.getElementById('th-l').classList.remove('show');
+    }
+  }
+
+  /* ─── S11: School companion ─── */
+  function animateScreen11() {
+    const scope = document.getElementById('s11');
+    reShowBubble(scope);
+    document.getElementById('sch-card').classList.remove('show');
+    document.getElementById('pair-1').classList.remove('show');
+    document.getElementById('pair-2').classList.remove('show');
+    document.getElementById('btn11').style.visibility = 'hidden';
+
+    setTimeout(() => document.getElementById('sch-card').classList.add('show'), 500);
+    setTimeout(() => document.getElementById('pair-1').classList.add('show'), 1500);
+    setTimeout(() => document.getElementById('pair-2').classList.add('show'), 2100);
+    setTimeout(() => document.getElementById('btn11').style.visibility = 'visible', 2700);
+  }
+
+  /* ─── S12: Safety + parent ─── */
+  function animateScreen12() {
+    const scope = document.getElementById('s12');
+    reShowBubble(scope);
+    ['sl1','sl2','sl3','sl4'].forEach(id => document.getElementById(id).classList.remove('show'));
+    document.getElementById('pr-d').classList.remove('show');
+    document.getElementById('btn12').style.visibility = 'hidden';
+    ['sl1','sl2','sl3','sl4'].forEach((id,i) => {
+      setTimeout(() => document.getElementById(id).classList.add('show'), 500 + i * 220);
+    });
+    setTimeout(() => document.getElementById('pr-d').classList.add('show'), 1700);
+    setTimeout(() => document.getElementById('btn12').style.visibility = 'visible', 2400);
+  }
+
+  /* ─── S13: Fit check ─── */
+  function animateScreen13() {
+    const scope = document.getElementById('s13');
+    reShowBubble(scope);
+    const btns = scope.querySelectorAll('.choice-btn');
+    btns.forEach(b => b.classList.remove('show'));
+    btns.forEach((b, i) => setTimeout(() => b.classList.add('show'), 700 + i * 150));
+  }
+  const fitMsgs = {
+    yes:   { ttl: 'Cô chú + Pika = <span>combo hoàn hảo</span> 💪', sub: 'Đồng hành tuần đầu là bí quyết thành công nhất. Bạn nhỏ sẽ quen và tự chạy sau đó — cô chú chỉ cần cổ vũ từ xa!' },
+    maybe: { ttl: 'Không sao! Pika <span>lo phần khó</span> 💛', sub: 'Pika được thiết kế đủ thú vị để bạn nhỏ tự muốn quay lại mỗi ngày. Cô chú chỉ cần nhắc nhẹ là đủ!' },
+    auto:  { ttl: 'Pika <span>hiểu cô chú</span> bận thế nào 🤖', sub: 'Tinh thể Popa và phần thưởng trong app tạo động lực để bạn nhỏ tự chạy. Nhưng nếu cần, Pika luôn báo cô chú nhé!' }
+  };
+  function pickFit(v) {
+    interaction.fitChoice = v;
+    setTimeout(() => goTo('f'), 250);
+  }
+
+  /* ─── Final ─── */
+  function animateFinal() {
+    const scope = document.getElementById('sf');
+    reShowBubble(scope);
+    if (interaction.fitChoice && fitMsgs[interaction.fitChoice]) {
+      const d = fitMsgs[interaction.fitChoice];
+      const n = kid.name || 'bạn nhỏ';
+      document.getElementById('ft').innerHTML = d.ttl.replace(/<span>/, `<span>`);
+      document.getElementById('fs').textContent = d.sub;
+    }
+  }
+
+  /* ─── Tweaks ─── */
+  function applyTweaks() {
+    document.documentElement.style.setProperty('--animspeed', state.speed);
+    document.body.classList.toggle('no-anim', state.animation === 'off');
+
+    if (state.mode !== 'auto') {
+      document.querySelectorAll('.scene').forEach(sc => {
+        sc.classList.remove('day', 'night');
+        sc.classList.add(state.mode);
+      });
+    } else {
+      restoreAuthoredModes();
+    }
+  }
+  function restoreAuthoredModes() {
+    const map = {
+      'scene-bedroom': 'night', 'scene-kitchen': 'day', 'scene-pool': 'day',
+      'scene-class': 'day', 'scene-trophy': 'day', 'scene-stage': 'night',
+      'scene-cozy': 'day', 'scene-garden': 'day'
+    };
+    document.querySelectorAll('.scene').forEach(sc => {
+      Object.keys(map).forEach(k => {
+        if (sc.classList.contains(k)) {
+          sc.classList.remove('day', 'night');
+          sc.classList.add(map[k]);
+        }
+      });
+    });
+  }
+  function persistTweaks(patch) {
+    state = { ...state, ...patch };
+    applyTweaks();
+    try { window.parent.postMessage({ type: '__edit_mode_set_keys', edits: patch }, '*'); } catch(e){}
+  }
+
+  /* ─── Tweak panel UI ─── */
+  function initTweakUI() {
+    const tweaks = document.getElementById('tweaks');
+    document.getElementById('tw-close').onclick = () => {
+      tweaks.classList.remove('open');
+      try { window.parent.postMessage({ type: '__edit_mode_dismissed' }, '*'); } catch(e){}
+    };
+    document.querySelectorAll('#seg-anim button').forEach(b => {
+      b.onclick = () => {
+        document.querySelectorAll('#seg-anim button').forEach(x => x.classList.remove('active'));
+        b.classList.add('active');
+        persistTweaks({ animation: b.dataset.v });
+      };
+    });
+    document.querySelectorAll('#seg-mode button').forEach(b => {
+      b.onclick = () => {
+        document.querySelectorAll('#seg-mode button').forEach(x => x.classList.remove('active'));
+        b.classList.add('active');
+        persistTweaks({ mode: b.dataset.v });
+      };
+    });
+    document.getElementById('tw-speed').oninput = (e) => {
+      persistTweaks({ speed: parseFloat(e.target.value) });
+    };
+
+    document.querySelectorAll('#seg-anim button').forEach(b => b.classList.toggle('active', b.dataset.v === state.animation));
+    document.querySelectorAll('#seg-mode button').forEach(b => b.classList.toggle('active', b.dataset.v === state.mode));
+    document.getElementById('tw-speed').value = state.speed;
+  }
+
+  /* ─── Form wiring ─── */
+  function initForms() {
+    // S1 name
+    const inp = document.getElementById('inp-name');
+    if (inp) {
+      inp.addEventListener('input', (e) => {
+        kid.name = e.target.value;
+        checkS1Valid();
+      });
+      inp.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && kid.name.trim() && kid.age) submitNameAge();
+      });
+    }
+    // S1 age segmented
+    document.querySelectorAll('#seg-age button').forEach(b => {
+      b.addEventListener('click', () => {
+        kid.age = b.dataset.v;
+        document.querySelectorAll('#seg-age button').forEach(x => x.classList.remove('active'));
+        b.classList.add('active');
+        checkS1Valid();
+      });
+    });
+    // S2 segmented
+    document.querySelectorAll('#seg-dur button').forEach(b => {
+      b.addEventListener('click', () => {
+        kid.duration = b.dataset.v;
+        document.querySelectorAll('#seg-dur button').forEach(x => x.classList.remove('active'));
+        b.classList.add('active');
+        checkS2Valid();
+      });
+    });
+    document.querySelectorAll('#seg-extra button').forEach(b => {
+      b.addEventListener('click', () => {
+        kid.extra = b.dataset.v;
+        document.querySelectorAll('#seg-extra button').forEach(x => x.classList.remove('active'));
+        b.classList.add('active');
+        checkS2Valid();
+      });
+    });
+    // S2 stars
+    document.querySelectorAll('.skill-stars').forEach(group => {
+      const skill = group.dataset.skill;
+      group.querySelectorAll('.skill-star').forEach(star => {
+        star.addEventListener('click', () => {
+          const v = parseInt(star.dataset.v);
+          kid[skill] = v;
+          group.querySelectorAll('.skill-star').forEach(s => {
+            s.classList.toggle('on', parseInt(s.dataset.v) <= v);
+          });
+          checkS2Valid();
+        });
+      });
+    });
+  }
+
+  /* ─── Host protocol ─── */
+  window.addEventListener('message', (ev) => {
+    const d = ev.data;
+    if (!d || typeof d !== 'object') return;
+    if (d.type === '__activate_edit_mode') {
+      document.getElementById('tweaks').classList.add('open');
+    } else if (d.type === '__deactivate_edit_mode') {
+      document.getElementById('tweaks').classList.remove('open');
+    }
+  });
+  try { window.parent.postMessage({ type: '__edit_mode_available' }, '*'); } catch(e){}
+
+  /* ─── Init ─── */
+  initForms();
+  initTweakUI();
+  applyTweaks();
+  paintDots();
+</script>
+</body>
+</html>
