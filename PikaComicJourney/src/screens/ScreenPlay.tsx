@@ -6,6 +6,7 @@ import { Button3D } from '../components/Button3D';
 import { Toast } from '../components/Toast';
 import { apiService, PlayType } from '../services/api';
 import { successFeedback } from '../utils/sounds';
+import { logEvent } from '../services/tracking';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const isCompact = SCREEN_WIDTH / SCREEN_HEIGHT < 1.5;
@@ -127,6 +128,7 @@ export const ScreenPlay: React.FC = () => {
       animateCardSelect(index);
       setSelectedPlay(id);
       addStars(1);
+      logEvent('select_play_card', 'play', { playId: id });
     }
   };
 
@@ -145,6 +147,7 @@ export const ScreenPlay: React.FC = () => {
         setToastType('success');
         setToastMessage(`Đã chọn "${playTitle}"! Pika sẵn sàng rồi!`);
         setToastVisible(true);
+        logEvent('assign_by_play_type', 'play', { playType, playTitle });
       }
     } catch (err) {
       console.error('Failed to assign play:', err);

@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { logEvent } from '../services/tracking';
 
 export type AppScreen = 'welcome' | 'play' | 'topics' | 'journey' | 'parents' | 'faq';
 
@@ -22,6 +23,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [selectedPlay, setSelectedPlay] = useState<string | null>('story');
 
   const addStars = (n = 1) => setStars(prev => prev + n);
+
+  // Điểm chốt duy nhất cho screen_view: currentScreen đổi ở 7+ nơi khác nhau
+  // (Navigator, AppTopBar, ScreenWelcome/Parents/FAQ), theo dõi ở đây thay vì
+  // sửa từng nơi gọi setCurrentScreen.
+  useEffect(() => {
+    logEvent('screen_view', currentScreen);
+  }, [currentScreen]);
 
   return (
     <AppContext.Provider

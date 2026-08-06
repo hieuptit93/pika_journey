@@ -1,7 +1,7 @@
 import 'react-native-reanimated';
 import { useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, View } from 'react-native';
+import { AppState, StyleSheet, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider } from './src/context/AuthContext';
 import { AppProvider } from './src/context/AppContext';
@@ -9,6 +9,7 @@ import { Navigator } from './src/Navigator';
 import { Colors } from './src/constants/colors';
 import { ResponsiveContainer } from './src/components';
 import { initSounds, playBackgroundMusic, cleanupSounds } from './src/utils/sounds';
+import { endSession } from './src/services/tracking';
 
 export default function App() {
   useEffect(() => {
@@ -21,6 +22,15 @@ export default function App() {
     return () => {
       cleanupSounds();
     };
+  }, []);
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (state) => {
+      if (state === 'background') {
+        endSession();
+      }
+    });
+    return () => subscription.remove();
   }, []);
 
   return (

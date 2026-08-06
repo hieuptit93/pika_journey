@@ -1,10 +1,12 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { apiService } from '../services/api';
+import { startSession, endSession, logEvent } from '../services/tracking';
 
 interface User {
   phone: string;
   token?: string;
+  deviceId: string;
 }
 
 interface AuthContextType {
@@ -28,6 +30,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     console.log('🔒 Session expired - logging out');
     await AsyncStorage.removeItem(AUTH_STORAGE_KEY);
     setUser(null);
+    endSession();
   }, []);
 
   useEffect(() => {
@@ -39,7 +42,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     try {
       const stored = await AsyncStorage.getItem(AUTH_STORAGE_KEY);
       if (stored) {
-        setUser(JSON.parse(stored));
+        const storedUser: User = JSON.parse(stored);
+        setUser(storedUser);
+        // App bị đóng/mở lại trong khi vẫn đăng nhập không đi qua login(),
+        // nên phải tự mở phiên tracking mới ở đây, không thì mọi event sau đó
+        // bị writeEvent() âm thầm bỏ qua (thiếu currentPhone/sessionId).
+        startSession(storedUser.phone, storedUser.deviceId);
       }
     } catch (error) {
       console.error('Failed to load auth:', error);
@@ -50,6 +58,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const login = async (phone: string, password: string): Promise<{ success: boolean; error?: string }> => {
     try {
+      const deviceId = `pika_${Date.now()}`;
       const response = await fetch(API_URL, {
         method: 'POST',
         headers: {
@@ -58,7 +67,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         body: JSON.stringify({
           phone,
           password,
-          device_id: `pika_${Date.now()}`,
+          device_id: deviceId,
           device_token: `token_${Date.now()}`,
         }),
       });
@@ -74,9 +83,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           const userData: User = {
             phone,
             token,
+            deviceId,
           };
           await AsyncStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(userData));
           setUser(userData);
+          startSession(phone, deviceId);
+          logEvent('login', null);
           console.log('Token saved:', token.substring(0, 20) + '...');
           return { success: true };
         } else {
@@ -94,6 +106,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const logout = async () => {
     try {
+      logEvent('logout', null);
+      endSession();
       await AsyncStorage.removeItem(AUTH_STORAGE_KEY);
       setUser(null);
     } catch (error) {

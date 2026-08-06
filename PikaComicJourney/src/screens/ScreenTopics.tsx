@@ -7,6 +7,7 @@ import { buttonFeedback, successFeedback } from '../utils/sounds';
 import { apiService, ApiLesson } from '../services/api';
 import { Button3D } from '../components/Button3D';
 import { Toast } from '../components/Toast';
+import { logEvent } from '../services/tracking';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const isCompact = SCREEN_WIDTH / SCREEN_HEIGHT < 1.5;
@@ -284,6 +285,7 @@ export const ScreenTopics: React.FC = () => {
     setSelectedLesson(lessonId);
     setCurrentZone(zone);
     setModalVisible(true);
+    logEvent('select_lesson', 'topics', { lessonId, zoneId: zone.id });
   };
 
   const handleAssign = async () => {
@@ -298,6 +300,7 @@ export const ScreenTopics: React.FC = () => {
         addStars(2);
         setToastMessage(`Đã giao "${lessonTitle}" thành công!`);
         setToastVisible(true);
+        logEvent('assign_lesson', 'topics', { lessonId: selectedLesson, lessonTitle });
       }
     } catch (err) {
       console.error('Failed to assign lesson:', err);
