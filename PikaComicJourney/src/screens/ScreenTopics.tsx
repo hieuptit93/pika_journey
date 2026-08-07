@@ -11,6 +11,10 @@ import { logEvent } from '../services/tracking';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const isCompact = SCREEN_WIDTH / SCREEN_HEIGHT < 1.5;
+// Scale vertical spacing off screen height (clamped) so cards don't crowd together on any device.
+const CARD_STAGGER_OFFSET = Math.max(12, Math.min(SCREEN_HEIGHT * 0.02, 24));
+const ROW_VERTICAL_GAP = Math.max(16, Math.min(SCREEN_HEIGHT * 0.035, 40));
+const TITLE_GAP = Math.max(16, Math.min(SCREEN_HEIGHT * 0.03, 32));
 
 type Lesson = {
   id: string;
@@ -171,8 +175,8 @@ const ZoneCard = ({
         styles.cardOuter,
         { backgroundColor: zone.gradient[1] },
         {
-          marginTop: isEven ? 0 : 16,
-          marginBottom: isEven ? 16 : 0,
+          marginTop: isEven ? 0 : CARD_STAGGER_OFFSET,
+          marginBottom: isEven ? CARD_STAGGER_OFFSET : 0,
           transform: [{ rotate: isEven ? '-2deg' : '2deg' }],
         },
         isSelected && styles.cardOuterSelected,
@@ -397,13 +401,13 @@ export const ScreenTopics: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    justifyContent: 'center',
     paddingHorizontal: isCompact ? 10 : 16,
-    paddingTop: isCompact ? 4 : 8,
-    paddingBottom: isCompact ? 8 : 12,
+    paddingVertical: isCompact ? 4 : 8,
   },
   headerTitle: {
     alignItems: 'center',
-    marginBottom: isCompact ? 6 : 10,
+    marginBottom: TITLE_GAP,
   },
   headerTitleText: {
     fontSize: isCompact ? 16 : 20,
@@ -434,7 +438,7 @@ const styles = StyleSheet.create({
     gap: isCompact ? 8 : 12,
   },
   bottomRow: {
-    marginTop: isCompact ? 8 : 12,
+    marginTop: ROW_VERTICAL_GAP,
   },
   cardOuter: {
     width: isCompact ? '30%' : '28%',
