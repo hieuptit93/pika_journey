@@ -1,4 +1,8 @@
+import { Platform } from 'react-native';
+
 const API_BASE_URL = 'https://robot-api.hacknao.edu.vn/robot/api/v1';
+// Giữ đồng bộ tay với app.json > expo.version, giống APP_VERSION ở tracking.ts.
+const APP_VERSION = '1.0.0';
 
 export class UnauthorizedError extends Error {
   constructor(message = 'Phiên đăng nhập hết hạn') {
@@ -42,6 +46,19 @@ export interface AssignByPlayTypeResponse {
   };
 }
 
+interface ProfileSettingsResponse {
+  status: number;
+  message: string;
+  data: {
+    // Trên môi trường robot-api.hacknao.edu.vn, robot_id nằm phẳng ở data.robot_id
+    // (khác robotapp, nơi nó nằm trong 1 section "ROBOT_CARD" của data.sections —
+    // giữ cả 2 khả năng vì hai codebase gọi cùng path "/profiles/settings" nhưng
+    // có thể trỏ backend/version khác nhau).
+    robot_id?: string;
+    sections?: { section: string; robot_id?: string }[];
+  };
+}
+
 class ApiService {
   private token: string | null = null;
   private onUnauthorized: (() => void) | null = null;
@@ -54,7 +71,11 @@ class ApiService {
     this.onUnauthorized = handler;
   }
 
-  private async fetch<T>(endpoint: string, options?: RequestInit): Promise<T> {
+  private async fetch<T>(
+    endpoint: string,
+    options?: RequestInit,
+    params?: Record<string, string>
+  ): Promise<T> {
     const headers: HeadersInit = {
       'Content-Type': 'application/json',
     };
@@ -63,11 +84,14 @@ class ApiService {
       headers['Authorization'] = `Bearer ${this.token}`;
     }
 
-    const url = `${API_BASE_URL}${endpoint}`;
-    console.log('🔗 API Request:', options?.method || 'GET', url);
+    const url = new URL(`${API_BASE_URL}${endpoint}`);
+    if (params) {
+      for (const [key, value] of Object.entries(params)) url.searchParams.set(key, value);
+    }
+    console.log('🔗 API Request:', options?.method || 'GET', url.toString());
     console.log('📦 Body:', options?.body);
 
-    const response = await fetch(url, {
+    const response = await fetch(url.toString(), {
       ...options,
       headers: {
         ...headers,
@@ -117,6 +141,29 @@ class ApiService {
       method: 'POST',
       body: JSON.stringify({ play_type: playType }),
     });
+  }
+
+  /**
+   * robot_id đang gán cho tài khoản, đọc từ /profiles/settings (cùng API
+   * robotapp dùng để đọc robot đang active). Endpoint này đòi hỏi app_v/
+   * device_id/platform trên query string, không có thì trả 400 "Thiếu thông
+   * tin app_v" — đã verify trực tiếp với backend thật.
+   * Trả null nếu chưa pair robot nào hoặc API lỗi — chỉ dùng cho tracking nên
+   * không được throw.
+   */
+  async getConnectedRobotId(deviceId: string): Promise<string | null> {
+    try {
+      const res = await this.fetch<ProfileSettingsResponse>(
+        '/profiles/settings',
+        undefined,
+        { app_v: APP_VERSION, device_id: deviceId, platform: Platform.OS }
+      );
+      const robotCard = res.data?.sections?.find((s) => s.section === 'ROBOT_CARD');
+      return res.data?.robot_id || robotCard?.robot_id || null;
+    } catch (error) {
+      console.warn('Failed to fetch connected robot_id:', error);
+      return null;
+    }
   }
 }
 

@@ -20,6 +20,7 @@ const APP_VERSION = '1.0.0';
 let sessionId: string | null = null;
 let currentPhone: string | null = null;
 let currentDeviceId: string | null = null;
+let currentRobotId: string | null = null;
 let anonAuthReady: Promise<void> | null = null;
 
 function ensureAnonymousAuth(): Promise<void> {
@@ -47,18 +48,30 @@ async function writeEvent(
   screen: string | null,
   payload: Record<string, unknown> = {}
 ) {
-  if (!currentPhone || !sessionId) return;
+  // Chụp nhanh state ngay đầu hàm, TRƯỚC await đầu tiên: writeEvent chạy qua
+  // await ensureAnonymousAuth() rồi mới đọc các biến currentPhone/sessionId/...,
+  // mà startSession()/endSession() có thể đã đổi các biến module-level đó
+  // trong lúc await đang treo (ví dụ app background ngay sau khi mở phiên).
+  // Đọc thẳng biến module-level ở thời điểm đó sẽ dính giá trị đã bị ghi đè
+  // (từng thấy session_end ghi session_id: null vì endSession() set null
+  // ngay sau khi gọi writeEvent, trước khi addDoc thực sự chạy).
+  const phone = currentPhone;
+  const session = sessionId;
+  const deviceId = currentDeviceId;
+  const robotId = currentRobotId;
+  if (!phone || !session) return;
 
   try {
     await ensureAnonymousAuth();
     const db = getFirestore(getApp());
     await addDoc(collection(db, COLLECTION), {
-      phone: currentPhone,
-      session_id: sessionId,
+      phone,
+      session_id: session,
       event_type: eventType,
       screen,
       payload,
-      device_id: currentDeviceId,
+      device_id: deviceId,
+      robot_id: robotId,
       app_version: APP_VERSION,
       client_ts: Date.now(),
       created_at: serverTimestamp(),
@@ -69,9 +82,10 @@ async function writeEvent(
   }
 }
 
-export function startSession(phone: string, deviceId: string) {
+export function startSession(phone: string, deviceId: string, robotId: string | null = null) {
   currentPhone = normalizePhone(phone);
   currentDeviceId = deviceId;
+  currentRobotId = robotId;
   sessionId = generateSessionId();
   void writeEvent('session_start', null);
 }

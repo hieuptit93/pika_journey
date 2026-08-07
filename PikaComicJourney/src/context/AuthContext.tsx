@@ -47,7 +47,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         // App bị đóng/mở lại trong khi vẫn đăng nhập không đi qua login(),
         // nên phải tự mở phiên tracking mới ở đây, không thì mọi event sau đó
         // bị writeEvent() âm thầm bỏ qua (thiếu currentPhone/sessionId).
-        startSession(storedUser.phone, storedUser.deviceId);
+        if (storedUser.token) apiService.setToken(storedUser.token);
+        const robotId = await apiService.getConnectedRobotId(storedUser.deviceId);
+        startSession(storedUser.phone, storedUser.deviceId, robotId);
       }
     } catch (error) {
       console.error('Failed to load auth:', error);
@@ -87,7 +89,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           };
           await AsyncStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(userData));
           setUser(userData);
-          startSession(phone, deviceId);
+          apiService.setToken(token);
+          const robotId = await apiService.getConnectedRobotId(deviceId);
+          startSession(phone, deviceId, robotId);
           logEvent('login', null);
           console.log('Token saved:', token.substring(0, 20) + '...');
           return { success: true };
