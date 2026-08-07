@@ -83,6 +83,8 @@ export const ScreenWelcome: React.FC = () => {
                   },
                 ]}
                 onPress={() => handleCardPress(card.id)}
+                shouldRasterizeIOS
+                renderToHardwareTextureAndroid
               >
                 <View style={[styles.cardInner, { borderColor: card.color }]}>
                   <Image source={card.image} style={styles.cardImage} resizeMode="cover" />

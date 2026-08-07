@@ -178,6 +178,8 @@ const ZoneCard = ({
         isSelected && styles.cardOuterSelected,
       ]}
       onPress={onPress}
+      shouldRasterizeIOS
+      renderToHardwareTextureAndroid
     >
       <View style={[styles.cardInner, { borderColor: zone.gradient[0] }]}>
         {isSelected && (
