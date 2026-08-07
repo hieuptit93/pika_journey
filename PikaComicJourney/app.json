@@ -36,7 +36,8 @@
             "useFrameworks": "dynamic"
           }
         }
-      ]
+      ],
+      "./plugins/withFixRnfbEmbedFrameworks.js"
     ]
   }
 }
