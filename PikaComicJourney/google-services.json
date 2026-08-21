@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "215020803510",
+    "project_id": "pika-journey",
+    "storage_bucket": "pika-journey.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:215020803510:android:3d6885a8aff9dcb2a65d17",
+        "android_client_info": {
+          "package_name": "com.pikarobot.comicjourney"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCKB44qf65g5lqMQr9Izs8Vfbw8by-cDjs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
