@@ -2,6 +2,141 @@ import { TextStyle } from 'react-native';
 import { Colors } from './colors';
 import { fs } from './responsive';
 
+/**
+ * Fauna Theme - Dark night mode with amber accents
+ * Stage size: 952 x 1269 (portrait tablet)
+ * Matching pika-tablet-fauna-v134
+ */
+export const FaunaColors = {
+  // Night backgrounds
+  night0: '#080D22',
+  night1: '#0C1330',
+  night2: '#101A3B',
+  night3: '#16204A',
+  night4: '#1C2A56',
+
+  // Amber (primary accent)
+  amber: '#F5B94E',
+  amberHi: '#FFD98A',
+  amberDp: '#E09B21',
+  amberDk: '#B87B12',
+
+  // Cyan (app connection signal)
+  cyan: '#66C6E6',
+
+  // Text
+  paper: '#F8EFD9',
+  ink: '#141C3A',
+  t1: '#FFFFFF',
+  t2: '#D7E1F5',
+  t3: '#A9BBDD',
+  t4: '#7E8FB4',
+
+  // Lines
+  line: 'rgba(167,196,234,0.20)',
+  line2: 'rgba(167,196,234,0.34)',
+
+  // Card gradients — kept a few steps above the night background so an
+  // unselected card still reads as a raised surface, not a hole.
+  playStory: ['#254080', '#101F55'],
+  playSong: ['#473A76', '#1F2563'],
+  playEnglish: ['#3E3487', '#1B2359'],
+  playGuess: ['#22357A', '#16265A'],
+
+  // Zone/Learn
+  zone: ['#243466', '#131F45'],
+
+  // Panel
+  panelGrad: ['#131E42', '#0E1633'],
+  panelBg: ['#101A3B', '#0A1029'],
+};
+
+export const FaunaSpacing = {
+  s1: 4,
+  s2: 8,
+  s3: 12,
+  s4: 16,
+  s5: 20,
+  s6: 24,
+  s7: 28,
+  s8: 32,
+  s10: 40,
+};
+
+export const FaunaRadius = {
+  sm: 12,
+  md: 16,
+  lg: 24,
+  pill: 999,
+};
+
+export const FaunaFontSize = {
+  xs: 16,
+  sm: 19,
+  base: 22,
+  lg: 25,
+  xl: 29,
+  '2xl': 34,
+  '3xl': 40,
+  '4xl': 46,
+  '5xl': 58,
+};
+
+export const FaunaTouchTarget = {
+  min: 56,
+  chip: 56,
+  cta: 68,
+};
+
+/**
+ * Interactive element styling — makes tappable things obviously tappable.
+ * Applied to buttons, cards, chips so users spot them from across a room.
+ */
+export const FaunaInteractive = {
+  // Glow ring around primary actions
+  glowAmber: {
+    shadowColor: FaunaColors.amber,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.55,
+    shadowRadius: 22,
+    elevation: 12,
+  },
+  glowSoft: {
+    shadowColor: FaunaColors.amber,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  // 3D raised edges for pressable surfaces
+  raised: {
+    borderTopColor: 'rgba(255,255,255,0.35)',
+    borderLeftColor: 'rgba(255,255,255,0.22)',
+    borderRightColor: 'rgba(0,0,0,0.28)',
+    borderBottomColor: 'rgba(0,0,0,0.38)',
+  },
+  raisedAmber: {
+    borderTopColor: 'rgba(255,240,205,0.85)',
+    borderLeftColor: 'rgba(255,225,170,0.6)',
+    borderRightColor: 'rgba(180,130,30,0.55)',
+    borderBottomColor: 'rgba(150,95,15,0.7)',
+  },
+};
+
+// Stage dimensions for portrait tablet
+export const STAGE_WIDTH = 952;
+export const STAGE_HEIGHT = 1269;
+
+/**
+ * AppTopBar sits ABOVE the screen container in a flex column, so any screen
+ * rendered under it gets STAGE_HEIGHT minus this — NOT the full stage.
+ * Absolute layouts inside those screens must budget against CONTENT_HEIGHT,
+ * otherwise the bottom of the screen is clipped.
+ * Keep in sync with AppTopBar's container height.
+ */
+export const TOP_BAR_HEIGHT = 124;
+export const CONTENT_HEIGHT = STAGE_HEIGHT - TOP_BAR_HEIGHT; // 1145
+
 // Modern typography system - clean, readable, friendly
 // Uses responsive font scaling for tablet support
 export const Typography: Record<string, TextStyle> = {

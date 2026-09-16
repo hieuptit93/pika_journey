@@ -1,16 +1,19 @@
 import * as Haptics from 'expo-haptics';
 import { createAudioPlayer, AudioPlayer } from 'expo-audio';
 
-const BUTTON_PLAYER_POOL_SIZE = 3;
+const BUTTON_PLAYER_POOL_SIZE = 5;
 let buttonPlayers: AudioPlayer[] = [];
 let currentPlayerIndex = 0;
 let musicPlayer: AudioPlayer | null = null;
 let isMusicPlaying = false;
 let isAudioReady = false;
+let isInitializing = false;
 
 export const initSounds = async () => {
+  if (isInitializing || isAudioReady) return;
+  isInitializing = true;
+
   try {
-    // Create a pool of button players to handle rapid presses
     for (let i = 0; i < BUTTON_PLAYER_POOL_SIZE; i++) {
       const player = createAudioPlayer(require('../assets/sounds/button_press.mp3'));
       buttonPlayers.push(player);
@@ -21,48 +24,54 @@ export const initSounds = async () => {
   } catch (error) {
     console.log('Audio init error:', error);
     isAudioReady = false;
+  } finally {
+    isInitializing = false;
   }
 };
 
 export const playButtonSound = async () => {
   if (!isAudioReady || buttonPlayers.length === 0) return;
   try {
-    // Use round-robin to cycle through players
     const player = buttonPlayers[currentPlayerIndex];
     currentPlayerIndex = (currentPlayerIndex + 1) % BUTTON_PLAYER_POOL_SIZE;
 
-    player.seekTo(0);
-    player.play();
-  } catch (error) {
-    console.log('Button sound error:', error);
+    if (player) {
+      if (player.playing) {
+        player.pause();
+      }
+      await player.seekTo(0);
+      player.play();
+    }
+  } catch {
+    // Silently ignore audio errors
   }
 };
 
-export const playBackgroundMusic = async () => {
+export const playBackgroundMusic = () => {
   if (!isAudioReady || !musicPlayer) return;
   try {
     musicPlayer.play();
     isMusicPlaying = true;
-  } catch (error) {
-    console.log('Music play error:', error);
+  } catch {
+    // Silently ignore
   }
 };
 
-export const stopBackgroundMusic = async () => {
+export const stopBackgroundMusic = () => {
   if (!musicPlayer) return;
   try {
     musicPlayer.pause();
     isMusicPlaying = false;
-  } catch (error) {
-    console.log('Music stop error:', error);
+  } catch {
+    // Silently ignore
   }
 };
 
-export const toggleBackgroundMusic = async () => {
+export const toggleBackgroundMusic = () => {
   if (isMusicPlaying) {
-    await stopBackgroundMusic();
+    stopBackgroundMusic();
   } else {
-    await playBackgroundMusic();
+    playBackgroundMusic();
   }
   return isMusicPlaying;
 };
@@ -89,21 +98,21 @@ export const vibrate = (type: 'light' | 'medium' | 'heavy' | 'success' | 'warnin
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
         break;
     }
-  } catch (error) {
-    console.log('Haptics error:', error);
+  } catch {
+    // Silently ignore haptics errors
   }
 };
 
-export const buttonFeedback = async () => {
+export const buttonFeedback = () => {
   vibrate('light');
   playButtonSound();
 };
 
-export const successFeedback = async () => {
+export const successFeedback = () => {
   vibrate('success');
 };
 
-export const cleanupSounds = async () => {
+export const cleanupSounds = () => {
   try {
     for (const player of buttonPlayers) {
       player.remove();
@@ -116,8 +125,8 @@ export const cleanupSounds = async () => {
     }
     isMusicPlaying = false;
     isAudioReady = false;
-  } catch (error) {
-    console.log('Cleanup error:', error);
+  } catch {
+    // Silently ignore cleanup errors
   }
 };
 

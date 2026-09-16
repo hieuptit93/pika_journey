@@ -1,278 +1,301 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Pressable, ScrollView, Dimensions } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import {
+  View,
+  Text,
+  StyleSheet,
+  Pressable,
+  ImageBackground,
+  Dimensions,
+  Image,
+  ScrollView,
+} from 'react-native';
 import { useApp } from '../context/AppContext';
-import { Button3D } from '../components/Button3D';
+import { FaunaColors, FaunaFontSize, FaunaRadius, FaunaTouchTarget } from '../constants/theme';
+import { buttonFeedback } from '../utils/sounds';
+import { logEvent } from '../services/tracking';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
-const isCompact = SCREEN_WIDTH / SCREEN_HEIGHT < 1.5;
+const STAGE_RATIO = 952 / 1269;
+const screenRatio = SCREEN_WIDTH / SCREEN_HEIGHT;
+const scale = screenRatio > STAGE_RATIO
+  ? SCREEN_HEIGHT / 1269
+  : SCREEN_WIDTH / 952;
+const s = (v: number) => v * scale;
 
 const FAQS = [
-  // === CÂU HỎI MỚI ===
   {
-    id: 'price',
-    icon: '💳',
-    q: 'Chi phí sử dụng?',
-    a: 'Gói Cơ bản:\n• 3.420.000đ cho 6 tháng sử dụng phần mềm\n• 4.140.000đ cho 12 tháng + tặng thêm 2 tháng\n\nGồm robot và phần mềm.',
-    color: '#EF4444',
+    q: 'Có phần mềm đi kèm không?',
+    a: 'Có. Pika đi kèm ứng dụng di động dành cho phụ huynh để giao bài, theo dõi tiến độ và quản lý các thiết lập an toàn cho con.',
   },
   {
-    id: 'share',
-    icon: '👨‍👩‍👧‍👦',
-    q: 'Nhiều bạn nhỏ dùng chung 1 Pika được không?',
-    a: 'Hiện tại không.\n\nPika được thiết kế để cá nhân hoá hành trình học và theo dõi tiến bộ cho một bé duy nhất.',
-    color: '#6366F1',
+    q: 'Hết 6 tháng, gia hạn ở đâu?',
+    a: 'Ba mẹ có thể gia hạn trực tiếp trên app phụ huynh hoặc liên hệ các điểm bán Pika để mua mã kích hoạt gói phần mềm mới.',
   },
   {
-    id: 'reset',
-    icon: '🔄',
-    q: 'Pika có thể reset cho người dùng khác không?',
-    a: 'Có. Pika có thể reset để chuyển lượt sử dụng cho bạn nhỏ thứ 2, tối đa 2 bé/gia đình.\n\nVí dụ: Khi bé lớn đã lên cấp 2 hoặc vượt quá trình độ, phụ huynh có thể chuyển Pika cho em nhỏ sử dụng từ cấp 1.',
-    color: '#14B8A6',
+    q: 'Hết hạn phần mềm, Pika ra sao?',
+    a: 'Khi hết hạn Pika Pass, các tính năng AI nâng cao và kết nối app sẽ tạm dừng. Pika vẫn thực hiện được các lệnh cơ bản ngoại tuyến, nhưng để luyện nói thông minh thì ba mẹ cần gia hạn gói.',
   },
   {
-    id: 'warranty',
-    icon: '🛡️',
-    q: 'Chính sách bảo hành và hỗ trợ kỹ thuật?',
-    a: '• Bảo hành chính hãng 12 tháng cho lỗi kỹ thuật, linh kiện hoặc lỗi sản xuất\n• Đổi mới 1-1 trong 15 ngày nếu robot gặp lỗi nghiêm trọng\n• Sản phẩm cần còn nguyên tem niêm phong, tem bảo hành, số seri rõ ràng và không bị tự ý tháo lắp\n\nKhông bảo hành miễn phí nếu hư hỏng do rơi vỡ, va đập, ngấm nước, cháy nổ hoặc sử dụng sai hướng dẫn.',
-    color: '#F59E0B',
+    q: 'Có bảo hành không?',
+    a: 'Pika được bảo hành chính hãng 12 tháng cho các lỗi từ nhà sản xuất. Ba mẹ có thể mang đến bất kỳ điểm bán chính thức nào để được hỗ trợ kỹ thuật.',
   },
   {
-    id: 'software',
-    icon: '💻',
-    q: 'Robot Pika cần phần mềm để hoạt động không?',
-    a: 'Có. Pika cần phần mềm để hoạt động đầy đủ.\n\nPhần mềm giúp Pika:\n• Phản hồi nhanh hơn, nói chuyện tự nhiên hơn và hiểu con tốt hơn theo thời gian\n• Cập nhật liên tục bài học, chủ đề và hoạt động mới\n• Tăng tính ổn định và sửa lỗi định kỳ\n• Ghi nhớ, cá nhân hoá hành trình học của con\n• Cập nhật và phát triển tính năng liên tục\n\nPhí duy trì phần mềm sau khi hết hạn gói: 120.000đ/tháng.',
-    color: '#0EA5E9',
+    q: 'Pika có an toàn cho trẻ không?',
+    a: 'Pika có lớp lọc nội dung, ưu tiên chủ đề phù hợp với trẻ, sửa nhẹ theo tuổi và có app để phụ huynh theo dõi mọi lượt chơi.',
   },
   {
-    id: 'no-software',
-    icon: '🤖',
-    q: 'Không có phần mềm, robot Pika làm được gì?',
-    a: 'Khi không có phần mềm, Pika vẫn hoạt động ở chế độ cơ bản:\n• Trò chuyện đơn giản trong một vài chủ đề\n• Phản hồi chậm hơn và tối đa khoảng 20 phút mỗi ngày\n• Hát và kể chuyện trong kho nội dung có sẵn\n• Thực hiện một số tương tác cơ bản\n• Học 100 bài học có sẵn\n\nTuy nhiên, ở chế độ này Pika không cá nhân hoá, không còn trí nhớ về con và chưa phát huy hết khả năng đồng hành cùng bé.',
-    color: '#A855F7',
-  },
-  // === CÂU HỎI CŨ ===
-  {
-    id: 'age',
-    icon: '👶',
-    q: 'Độ tuổi phù hợp?',
-    a: 'Pika lý tưởng cho trẻ 4-10 tuổi.\n\nGiao diện và cách nói chuyện được thiết kế riêng cho từng độ tuổi.',
-    color: '#F5A623',
+    q: 'Nếu con chỉ muốn chơi thì sao?',
+    a: 'Pika có thể bắt đầu từ chơi, truyện, bài hát hoặc nhân vật con thích. Khi phù hợp, Pika gợi ý một câu tiếng Anh ngắn để con nói theo.',
   },
   {
-    id: 'screen',
-    icon: '📺',
-    q: 'Có cần dùng màn hình không?',
-    a: 'Pika hoạt động hoàn toàn bằng giọng nói.\n\nKhông cần điện thoại hay TV.',
-    color: '#3B82F6',
+    q: 'Ba mẹ không giỏi tiếng Anh, dùng được không?',
+    a: 'Có. Ba mẹ chỉ cần chọn tuổi, sở thích và kiểu bài. Pika lo phần dẫn dắt, nghe con nói, khen và sửa nhẹ.',
   },
   {
-    id: 'daily',
-    icon: '⏱️',
-    q: 'Mỗi ngày nên dùng bao lâu?',
-    a: '15-20 phút mỗi ngày là lý tưởng.\n\nPika sẽ tự động nghỉ sau thời gian này để bảo vệ mắt và giọng.',
-    color: '#10B981',
+    q: 'Reset tablet cho khách tiếp theo?',
+    a: 'Giữ nút bánh răng ở góc trên khoảng 1 giây rồi bấm "Reset lượt thử" để xoá lựa chọn, sao thưởng và đưa tablet về màn hình chào ban đầu.',
   },
   {
-    id: 'data',
-    icon: '🔒',
-    q: 'Dữ liệu con tôi có an toàn?',
-    a: 'Tất cả hội thoại được mã hoá và lưu riêng cho từng tài khoản.\n\nBa mẹ có quyền xoá bất cứ lúc nào.',
-    color: '#8B5CF6',
-  },
-  {
-    id: 'wifi',
-    icon: '📶',
-    q: 'Cần kết nối wifi không?',
-    a: 'Có, Pika cần wifi để xử lý giọng nói và tạo nội dung.\n\nKhông có chế độ offline.',
-    color: '#EC4899',
+    q: 'Mua xong, app dùng để làm gì?',
+    a: 'App dùng để giao bài, xem tiến độ, đặt giờ học, chọn nội dung theo sách và quản lý các thiết lập an toàn.',
   },
 ];
 
 export const ScreenFAQ: React.FC = () => {
   const { setCurrentScreen } = useApp();
-  const [expandedId, setExpandedId] = useState<string | null>('price');
+  const [openIndex, setOpenIndex] = useState(0);
 
-  const toggleExpand = (id: string) => {
-    setExpandedId(prev => (prev === id ? null : id));
+  const handleToggle = (index: number) => {
+    buttonFeedback();
+    const isOpening = openIndex !== index;
+    setOpenIndex(openIndex === index ? -1 : index);
+    if (isOpening) {
+      logEvent('open_faq', 'faq', { faqIndex: index, question: FAQS[index].q });
+    }
+  };
+
+  const handlePlayAgain = () => {
+    buttonFeedback();
+    setCurrentScreen('play');
   };
 
   return (
-    <View style={styles.container}>
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
-        {/* Header */}
-        <View style={styles.header}>
-          <View>
-            <Text style={styles.headerTitle}>Câu hỏi thường gặp</Text>
-            <Text style={styles.headerSub}>Chạm vào câu hỏi để xem chi tiết</Text>
-          </View>
-          <Button3D title="BẮT ĐẦU NGAY" onPress={() => setCurrentScreen('play')} color="green" size="medium" />
-        </View>
+    <ImageBackground
+      source={require('../../assets/fauna/bg-land.webp')}
+      style={styles.container}
+      resizeMode="cover"
+    >
+      {/* Header */}
+      <Text style={styles.eyebrow}>Hỏi đáp · Ba mẹ quan tâm</Text>
+      <Text style={styles.title}>Câu hỏi thường gặp</Text>
+      <Text style={styles.subtitle}>Những điều ba mẹ hay hỏi Pika nhất tại quầy trải nghiệm.</Text>
 
-        {/* FAQ Grid */}
-        <View style={styles.faqGrid}>
-          {FAQS.map(faq => {
-            const isExpanded = expandedId === faq.id;
-            return (
-              <Pressable
-                key={faq.id}
-                style={[styles.faqCard, isExpanded && styles.faqCardExpanded]}
-                onPress={() => toggleExpand(faq.id)}
-              >
-                <View style={styles.faqHeader}>
-                  <LinearGradient
-                    colors={[faq.color, faq.color]}
-                    style={styles.faqIcon}
-                  >
-                    <Text style={styles.iconText}>{faq.icon}</Text>
-                  </LinearGradient>
-                  <Text style={styles.faqQuestion}>{faq.q}</Text>
-                  <View style={[styles.expandIcon, isExpanded && styles.expandIconOpen]}>
-                    <Text style={[styles.expandIconText, isExpanded && styles.expandIconTextOpen]}>▼</Text>
-                  </View>
-                </View>
-                {isExpanded && (
-                  <View style={styles.faqAnswer}>
-                    <Text style={styles.answerText}>{faq.a}</Text>
-                  </View>
-                )}
+      {/* FAQ List */}
+      <ScrollView
+        style={styles.faqList}
+        contentContainerStyle={styles.faqListContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {FAQS.map((faq, index) => {
+          const isOpen = openIndex === index;
+          return (
+            <View key={index} style={[styles.faq, isOpen && styles.faqOpen]}>
+              <Pressable style={styles.faqQ} onPress={() => handleToggle(index)}>
+                <Text style={styles.faqQText}>{faq.q}</Text>
+                <Text style={styles.faqToggle}>{isOpen ? '−' : '+'}</Text>
               </Pressable>
-            );
-          })}
+              {isOpen && (
+                <View style={styles.faqA}>
+                  <Text style={styles.faqAText}>{faq.a}</Text>
+                </View>
+              )}
+            </View>
+          );
+        })}
+
+        {/* QR Section */}
+        <View style={styles.qrSection}>
+          <Image
+            source={require('../../assets/fauna/qr-zalo.png')}
+            style={styles.qrImage}
+            resizeMode="contain"
+          />
+          <View style={styles.qrText}>
+            <Text style={styles.qrTitle}>Còn thắc mắc khác? Nhắn Pika trên Zalo nhé!</Text>
+            <Text style={styles.qrDesc}>
+              Quét mã để kết nối Zalo OA — ba mẹ được tư vấn, giao bài và hỗ trợ nhanh chóng.
+            </Text>
+          </View>
         </View>
 
-        {/* Bottom CTA */}
-        <View style={styles.bottomCta}>
-          <LinearGradient colors={['#4A90E2', '#357ABD']} style={styles.bottomCard}>
-            <View style={styles.bottomContent}>
-              <Text style={styles.bottomTitle}>Vẫn còn thắc mắc?</Text>
-              <Text style={styles.bottomDesc}>
-                Liên hệ đội ngũ hỗ trợ của Pika qua Zalo hoặc email.
-              </Text>
-            </View>
-            <Button3D title="LIÊN HỆ HỖ TRỢ" onPress={() => {}} color="yellow" size="medium" />
-          </LinearGradient>
-        </View>
+        {/* CTA Button */}
+        <Pressable style={styles.ctaButton} onPress={handlePlayAgain}>
+          <Text style={styles.ctaText}>Cho con chơi lại</Text>
+        </Pressable>
       </ScrollView>
-    </View>
+    </ImageBackground>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#E8F4FD' },
-  scroll: { flex: 1 },
-  content: { padding: isCompact ? 16 : 24 },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
+  container: {
+    flex: 1,
+    backgroundColor: FaunaColors.night0,
   },
-  headerTitle: {
-    fontSize: isCompact ? 24 : 30,
+  eyebrow: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: s(52),
+    textAlign: 'center',
+    fontSize: s(FaunaFontSize.xs),
     fontWeight: '800',
-    color: '#1E293B',
-    marginBottom: 4,
+    letterSpacing: 2,
+    color: FaunaColors.amberHi,
+    textTransform: 'uppercase',
+    zIndex: 10,
   },
-  headerSub: {
-    fontSize: isCompact ? 13 : 15,
+  title: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: s(80),
+    textAlign: 'center',
+    fontSize: s(FaunaFontSize['4xl']),
+    fontWeight: '800',
+    lineHeight: s(FaunaFontSize['4xl'] * 1.16),
+    color: FaunaColors.t1,
+    zIndex: 10,
+  },
+  subtitle: {
+    position: 'absolute',
+    left: s(60),
+    right: s(60),
+    top: s(140),
+    textAlign: 'center',
+    fontSize: s(FaunaFontSize.sm),
     fontWeight: '600',
-    color: '#64748B',
+    lineHeight: s(FaunaFontSize.sm * 1.35),
+    color: FaunaColors.t3,
+    zIndex: 10,
   },
-  faqGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-    marginBottom: 24,
+  faqList: {
+    position: 'absolute',
+    left: s(70),
+    right: s(70),
+    top: s(190),
+    bottom: s(20),
   },
-  faqCard: {
-    width: '100%',
-    backgroundColor: '#fff',
-    borderRadius: 16,
+  faqListContent: {
+    paddingBottom: s(40),
+  },
+  faq: {
+    backgroundColor: 'rgba(22,32,74,0.9)',
+    borderRadius: s(24),
     borderWidth: 2,
-    borderColor: 'transparent',
-    elevation: 3,
+    borderColor: 'rgba(167,196,234,0.25)',
+    marginBottom: s(14),
+    overflow: 'hidden',
   },
-  faqCardExpanded: {
-    borderColor: '#3B82F6',
-    backgroundColor: '#F0F7FF',
+  faqOpen: {
+    borderColor: FaunaColors.amber,
+    backgroundColor: 'rgba(30,42,92,0.95)',
+    shadowColor: FaunaColors.amber,
+    shadowOffset: { width: 0, height: s(4) },
+    shadowOpacity: 0.35,
+    shadowRadius: s(18),
+    elevation: 8,
   },
-  faqHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    padding: isCompact ? 14 : 16,
-  },
-  faqIcon: {
-    width: isCompact ? 44 : 50,
-    height: isCompact ? 44 : 50,
-    borderRadius: 14,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  iconText: { fontSize: isCompact ? 20 : 24 },
-  faqQuestion: {
-    flex: 1,
-    fontSize: isCompact ? 14 : 16,
-    fontWeight: '800',
-    color: '#1E293B',
-  },
-  expandIcon: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: '#F1F5F9',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  expandIconOpen: {
-    backgroundColor: '#3B82F6',
-    transform: [{ rotate: '180deg' }],
-  },
-  expandIconText: {
-    fontSize: 12,
-    color: '#64748B',
-  },
-  expandIconTextOpen: {
-    color: '#fff',
-  },
-  faqAnswer: {
-    paddingHorizontal: isCompact ? 14 : 16,
-    paddingBottom: isCompact ? 14 : 16,
-  },
-  answerText: {
-    fontSize: isCompact ? 13 : 14,
-    fontWeight: '600',
-    color: '#475569',
-    lineHeight: isCompact ? 20 : 22,
-    backgroundColor: '#F8FAFC',
-    padding: 12,
-    borderRadius: 12,
-  },
-  bottomCta: {
-    marginTop: 8,
-  },
-  bottomCard: {
+  faqQ: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: isCompact ? 20 : 24,
-    borderRadius: 20,
+    padding: s(20),
+    paddingHorizontal: s(24),
+    minHeight: s(FaunaTouchTarget.min),
   },
-  bottomContent: {
+  faqQText: {
     flex: 1,
-    marginRight: 16,
+    fontSize: s(FaunaFontSize.base),
+    fontWeight: '700',
+    lineHeight: s(FaunaFontSize.base * 1.3),
+    color: FaunaColors.t1,
+    marginRight: s(14),
   },
-  bottomTitle: {
-    fontSize: isCompact ? 18 : 22,
-    fontWeight: '800',
-    color: '#fff',
-    marginBottom: 6,
+  faqToggle: {
+    fontSize: s(34),
+    fontWeight: '400',
+    color: FaunaColors.amberHi,
+    width: s(38),
+    textAlign: 'center',
   },
-  bottomDesc: {
-    fontSize: isCompact ? 13 : 14,
+  faqA: {
+    padding: s(20),
+    paddingTop: 0,
+    paddingHorizontal: s(24),
+  },
+  faqAText: {
+    fontSize: s(FaunaFontSize.sm),
     fontWeight: '600',
-    color: 'rgba(255,255,255,0.85)',
-    lineHeight: isCompact ? 19 : 21,
+    lineHeight: s(FaunaFontSize.sm * 1.55),
+    color: FaunaColors.t2,
+  },
+  qrSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: s(22),
+    padding: s(24),
+    backgroundColor: 'rgba(22,32,74,0.9)',
+    borderRadius: s(26),
+    borderWidth: 2,
+    borderColor: 'rgba(167,196,234,0.25)',
+    marginTop: s(24),
+    marginBottom: s(26),
+  },
+  qrImage: {
+    width: s(124),
+    height: s(124),
+    borderRadius: s(12),
+  },
+  qrText: {
+    flex: 1,
+  },
+  qrTitle: {
+    fontSize: s(FaunaFontSize.base),
+    fontWeight: '800',
+    lineHeight: s(FaunaFontSize.base * 1.3),
+    color: FaunaColors.t1,
+    marginBottom: s(8),
+  },
+  qrDesc: {
+    fontSize: s(FaunaFontSize.sm),
+    fontWeight: '600',
+    lineHeight: s(FaunaFontSize.sm * 1.45),
+    color: FaunaColors.t3,
+  },
+  ctaButton: {
+    alignSelf: 'center',
+    height: s(FaunaTouchTarget.cta),
+    paddingHorizontal: s(48),
+    borderRadius: FaunaRadius.pill,
+    backgroundColor: FaunaColors.amber,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 3,
+    borderTopColor: 'rgba(255,255,255,0.45)',
+    borderLeftColor: 'rgba(255,255,255,0.3)',
+    borderRightColor: 'rgba(180,130,30,0.5)',
+    borderBottomColor: 'rgba(160,100,20,0.7)',
+    shadowColor: FaunaColors.amber,
+    shadowOffset: { width: 0, height: s(8) },
+    shadowOpacity: 0.6,
+    shadowRadius: s(24),
+    elevation: 12,
+    marginBottom: s(40),
+  },
+  ctaText: {
+    fontSize: s(FaunaFontSize.lg),
+    fontWeight: '800',
+    color: '#26200A',
   },
 });

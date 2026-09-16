@@ -1,0 +1,55 @@
+/* ==========================================================================
+   TOKENS — nguồn sự thật cho màu / chữ / khoảng cách / bo góc / chuyển động
+   Sửa giá trị ở đây là đổi toàn cục. KHÔNG hard-code số lẻ trong file khác.
+   ========================================================================== */
+:root{
+  /* ---- màu nền đêm ---- */
+  --night-0:#080D22; --night-1:#0C1330; --night-2:#101A3B; --night-3:#16204A; --night-4:#1C2A56;
+
+  /* ---- ánh sáng amber (accent chính — tối đa 1 "đèn" pulse mỗi màn) ---- */
+  --amber:#F5B94E; --amber-hi:#FFD98A; --amber-dp:#E09B21; --amber-dk:#B87B12;
+
+  /* ---- cyan (vai trò cố định: tín hiệu "kết nối / app phụ huynh") ---- */
+  --cyan:#66C6E6;
+
+  /* ---- chữ ---- */
+  --paper:#F8EFD9; --ink:#141C3A;
+  --t-1:#FFFFFF; --t-2:#D7E1F5; --t-3:#A9BBDD; --t-4:#7E8FB4; /* t-4 KHÔNG dùng cho chữ < 14px */
+  --line:rgba(167,196,234,.20); --line-2:rgba(167,196,234,.34);
+  --glow-amber:0 0 0 1px rgba(245,185,78,.55), 0 0 26px rgba(245,185,78,.28);
+
+  /* ---- font ---- */
+  --f-disp:"Baloo 2", ui-rounded, "SF Pro Rounded", system-ui, sans-serif; /* hướng về TRẺ */
+  --f-serif:"Cormorant Garamond", Georgia, serif;                          /* storytelling cho BA MẸ */
+  --f-ui:"Be Vietnam Pro", system-ui, sans-serif;                          /* body / UI */
+
+  /* ---- type scale (sàn 12px cho kiosk đọc ở khoảng cách sải tay) ---- */
+  --fs-xs:12px;   /* kicker, chú thích */
+  --fs-sm:14px;   /* body phụ, chip */
+  --fs-base:16px; /* body chính, nút */
+  --fs-lg:18px;   /* nút lớn, subtitle */
+  --fs-xl:22px;   /* heading khối */
+  --fs-2xl:26px;  /* tên thẻ nhỏ */
+  --fs-3xl:31px;  /* tên thẻ lớn, title modal */
+  --fs-4xl:36px;  /* heading phụ màn */
+  --fs-5xl:48px;  /* title màn */
+
+  /* ---- spacing: bội số 4 ---- */
+  --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:20px; --s6:24px; --s7:28px; --s8:32px; --s10:40px;
+
+  /* ---- bo góc: 4 mức ---- */
+  --r-sm:12px;    /* chip, hàng nhỏ */
+  --r-md:16px;    /* thẻ nhỏ, panel nhỏ */
+  --r-lg:24px;    /* thẻ lớn, modal */
+  --r-pill:999px; /* nút tròn / pill */
+
+  /* ---- touch target (trẻ 4-10 tuổi) ---- */
+  --tap-min:44px;  /* tối thiểu cho mục tiêu phụ (nút đóng, toggle) */
+  --tap-chip:44px; /* chip bài học trẻ bấm */
+  --tap-cta:54px;  /* nút hành động chính */
+
+  /* ---- motion ---- */
+  --t-fast:.14s ease;                          /* phản hồi chạm */
+  --t-med:.22s ease;                           /* đổi trạng thái */
+  --t-pop:.3s cubic-bezier(.2,.9,.3,1.2);      /* pop-in vui */
+}

@@ -1,0 +1,100 @@
+/* ==========================================================================
+   SCENE 3 · JOURNEY — timeline 5 chặng + panel tổng kết (đã gộp 1 khối).
+   Node tròn trên timeline BẤM ĐƯỢC (mở đúng chặng — js/journey.js).
+   Minh hoạ chỉ bay ở chặng current. Demo chat = bottom-sheet trượt từ đáy.
+   ========================================================================== */
+.j-title{position:absolute; left:0; right:0; top:118px; font-size:var(--fs-5xl); line-height:1.14;}
+
+/* timeline */
+.j-path{position:absolute; left:471px; top:212px; width:10px; height:770px; border-radius:5px;
+  background-image:radial-gradient(circle, #C8A96A 40%, rgba(200,169,106,0) 46%);
+  background-size:10px 22px; background-repeat:repeat-y; opacity:.9;}
+.j-node{
+  position:absolute; left:455px; width:42px; height:42px; border-radius:50%; z-index:24;
+  display:grid; place-items:center; font-family:var(--f-ui); font-weight:800; font-size:var(--fs-base);
+  background:radial-gradient(circle at 40% 35%, #2A3564, #141C3E); color:#8FA3CC;
+  border:2px solid rgba(245,185,78,.45); transition:.28s ease; cursor:pointer;
+}
+.j-node:active{transform:scale(.9);}
+.j-node.current{background:linear-gradient(180deg,var(--amber-hi),var(--amber)); color:#2B2208;
+  border-color:rgba(255,240,205,.9); box-shadow:0 0 0 7px rgba(245,185,78,.12), 0 0 30px rgba(245,185,78,.55);}
+.j-node.done{background:linear-gradient(180deg,#FFE9BC,#EBAE3E); color:#2B2208; border-color:rgba(255,240,205,.7);}
+
+/* thẻ chặng */
+.jcard{
+  position:absolute; width:396px; height:150px; padding:15px 20px; border-radius:var(--r-md);
+  text-align:left; color:#fff; overflow:hidden;
+  background:linear-gradient(150deg,#182449 0%,#111A38 100%); border:1.5px solid var(--line);
+  box-shadow:0 16px 34px rgba(0,0,0,.38);
+  transition:transform .18s ease, border-color var(--t-med), box-shadow var(--t-med);
+}
+.jcard.current{border-color:rgba(245,185,78,.85); box-shadow:0 0 0 1px rgba(245,185,78,.45), 0 16px 34px rgba(0,0,0,.4), 0 0 38px rgba(245,185,78,.22);}
+.jcard.left{left:52px;} .jcard.right{right:52px; text-align:right;}
+.jc-kicker{display:block; max-width:250px; font-size:var(--fs-xs); font-weight:800; letter-spacing:.18em; color:#F0C273; text-transform:uppercase;}
+.jc-name{max-width:250px; margin:5px 0 5px; font-family:var(--f-serif); font-weight:600; font-size:var(--fs-2xl); line-height:1.14; letter-spacing:-.01em; position:relative; z-index:2;}
+.jc-desc{margin:0 0 9px; font-size:13px; font-weight:500; line-height:1.5; color:var(--t-3); max-width:226px; position:relative; z-index:2;}
+.jcard.right .jc-desc{max-width:230px; margin-left:auto;}
+.jcard.right .jc-name{margin-left:auto;}
+.jcard.right .jc-kicker{margin-left:auto;}
+.jc-quote{display:inline-block; padding:5px 11px; border-radius:9px; font-size:var(--fs-xs); line-height:1.3; font-style:italic;
+  color:#DCE6F8; background:rgba(167,196,234,.10); border:1px solid var(--line); position:relative; z-index:2;}
+.jc-art{position:absolute; top:50%; transform:translateY(-50%); width:112px; z-index:1; opacity:.95;}
+.jcard.left .jc-art{right:12px;} .jcard.right .jc-art{left:12px;}
+.jc-art img{width:100%; filter:drop-shadow(0 10px 18px rgba(0,0,0,.5));}
+.jcard.current .jc-art img{animation:islandDrift 3.8s ease-in-out infinite;}
+.jc-crys{position:absolute; bottom:10px; width:10px; height:10px; border-radius:50%;
+  background:rgba(167,196,234,.25); transition:background .3s, box-shadow .3s;}
+.jcard.left .jc-crys{right:16px;} .jcard.right .jc-crys{left:16px;}
+.jcard.done .jc-crys{background:var(--amber); box-shadow:0 0 12px rgba(245,185,78,.9);}
+
+/* panel tổng kết — 1 khối gộp: kicker + 4 stat + nhiệm vụ ngày + note */
+.j-panel{position:absolute; left:52px; top:980px; width:848px; padding:var(--s4) var(--s5); border-radius:var(--r-md);
+  background:linear-gradient(180deg,#131E42,#0E1633); border:1px solid var(--line);}
+.jp-head{display:block; margin:0 0 8px; font-family:var(--f-serif); font-weight:700;
+  font-size:var(--fs-xl); line-height:1.2; letter-spacing:-.01em;}
+.j-stats{display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:12px;}
+.stat{padding:10px 12px; border-radius:var(--r-sm); background:linear-gradient(180deg,#152046,#101838);
+  border:1px solid var(--line);}
+.stat.hi{border-color:rgba(245,185,78,.7); box-shadow:0 0 26px rgba(245,185,78,.18);}
+.stat b{display:block; font-family:var(--f-serif); font-weight:700; font-size:20px; line-height:1.15; color:#F7CE85; letter-spacing:-.01em;}
+.stat.hi b{font-size:18px;}
+.stat span{display:block; font-size:var(--fs-xs); font-weight:500; color:var(--t-3); margin-top:5px; line-height:1.35; white-space:nowrap;}
+.j-panel-top{display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;}
+.j-panel-top strong{font-family:var(--f-serif); font-weight:600; font-size:20px; line-height:1.2;}
+.crys-row{display:flex; gap:6px;}
+.crys{width:14px; height:14px; border-radius:4px; transform:rotate(45deg);
+  background:rgba(167,196,234,.2); border:1px solid var(--line); transition:.3s;}
+.crys.earned{background:linear-gradient(180deg,var(--amber-hi),var(--amber)); border-color:rgba(255,240,205,.8);
+  box-shadow:0 0 14px rgba(245,185,78,.7);}
+.demo-chips{display:grid; grid-template-columns:repeat(4,1fr); gap:10px;}
+.dchip{height:48px; border-radius:var(--r-sm); background:rgba(37,54,95,.9); border:1px solid var(--line);
+  font-size:var(--fs-sm); font-weight:600; color:#DCE6F8; transition:border-color .18s;}
+.dchip.active{background:linear-gradient(180deg,var(--amber-hi),var(--amber)); color:#26200A;
+  border-color:rgba(255,240,205,.85); box-shadow:0 8px 20px rgba(245,185,78,.24);}
+.jp-note{margin:10px 2px 0; font-size:var(--fs-xs); line-height:1.4; color:var(--t-3);}
+
+/* demo chat — bottom-sheet trượt từ đáy, KHÔNG đè lên panel */
+#demoPop{
+  position:absolute; left:0; right:0; bottom:0; padding:16px 52px 24px; z-index:50;
+  border-radius:22px 22px 0 0;
+  background:linear-gradient(180deg,rgba(24,36,78,.98),rgba(14,22,52,.98)); border:1px solid var(--line-2); border-bottom:none;
+  box-shadow:0 -18px 50px rgba(0,0,0,.55);
+  transform:translateY(105%); transition:transform var(--t-pop); pointer-events:none;
+}
+#demoPop.show{transform:none; pointer-events:auto;}
+.dp-top{display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;}
+.dp-top span{font-size:var(--fs-xs); font-weight:700; letter-spacing:.2em; color:#F0C273; text-transform:uppercase;}
+.dp-x{width:var(--tap-min); height:var(--tap-min); border-radius:var(--r-sm); display:grid; place-items:center; font-size:16px;
+  background:rgba(167,196,234,.1); border:1px solid var(--line); color:var(--t-2);}
+.chat-line{margin:0 0 7px; padding:10px 14px; border-radius:var(--r-sm); font-size:var(--fs-sm); font-weight:500; max-width:78%;
+  animation:cin .4s both;}
+.chat-line.pika{background:rgba(167,196,234,.10); border:1px solid var(--line); color:#E6EDFB;}
+.chat-line.kid{background:linear-gradient(180deg,rgba(245,185,78,.22),rgba(245,185,78,.12));
+  border:1px solid rgba(245,185,78,.45); color:#FFEFCE; margin-left:auto;}
+@keyframes cin{from{opacity:0; transform:translateY(8px)}to{opacity:1; transform:none}}
+
+@media (hover:hover){
+  .jcard:hover{transform:translateY(-2px);}
+  .dchip:hover{border-color:rgba(245,185,78,.5);}
+  .j-node:hover{border-color:rgba(245,185,78,.8);}
+}

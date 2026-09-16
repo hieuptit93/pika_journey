@@ -1,251 +1,277 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, Pressable, Image, Dimensions } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import { Svg, Path, Circle } from 'react-native-svg';
 import { useApp, AppScreen } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
-import { buttonFeedback, toggleBackgroundMusic } from '../utils/sounds';
+import { buttonFeedback, toggleBackgroundMusic, getIsMusicPlaying } from '../utils/sounds';
+import { FaunaColors, FaunaFontSize } from '../constants/theme';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
-const isCompact = SCREEN_WIDTH / SCREEN_HEIGHT < 1.5;
+const STAGE_RATIO = 952 / 1269;
+const screenRatio = SCREEN_WIDTH / SCREEN_HEIGHT;
+const scale = screenRatio > STAGE_RATIO
+  ? SCREEN_HEIGHT / 1269
+  : SCREEN_WIDTH / 952;
+const s = (v: number) => v * scale;
 
-const TABS: { id: AppScreen; icon: string; label: string; color: string; shadowColor: string }[] = [
-  { id: 'play', icon: '🎮', label: 'Chơi', color: '#FF6B6B', shadowColor: '#CC4444' },
-  { id: 'topics', icon: '🌳', label: 'Khu vườn', color: '#4ECB71', shadowColor: '#2E9B4E' },
-  { id: 'journey', icon: '🚀', label: 'Lộ trình', color: '#5B9DFF', shadowColor: '#3366CC' },
-  { id: 'parents', icon: '💜', label: 'Ba mẹ', color: '#A855F7', shadowColor: '#7C3AED' },
-  { id: 'faq', icon: '💡', label: 'Hỏi đáp', color: '#FBBF24', shadowColor: '#D97706' },
+const TABS: { id: AppScreen; icon: string; label: string }[] = [
+  { id: 'play', icon: 'play', label: 'Chơi' },
+  { id: 'topics', icon: 'book', label: 'Học tập' },
+  { id: 'journey', icon: 'flag', label: 'Lộ trình' },
+  { id: 'parents', icon: 'parents', label: 'Ba mẹ' },
+  { id: 'faq', icon: 'help', label: 'Hỏi đáp' },
 ];
 
+const TabIcon = ({ type, active }: { type: string; active: boolean }) => {
+  const color = active ? FaunaColors.amber : FaunaColors.t2;
+  const size = s(26);
+  const strokeWidth = active ? 2.2 : 1.9;
+
+  switch (type) {
+    case 'play':
+      return (
+        <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+          <Circle cx={12} cy={12} r={9} stroke={color} strokeWidth={strokeWidth} />
+          <Path d="M10 8.5l6 3.5-6 3.5z" fill={color} />
+        </Svg>
+      );
+    case 'book':
+      return (
+        <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+          <Path d="M4 5.5h6.5v13H4zM13.5 5.5H20v13h-6.5zM12 6v12" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" />
+        </Svg>
+      );
+    case 'flag':
+      return (
+        <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+          <Path d="M6 3.5v17M6 5h10l-2.2 3.4L16 12H6" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" />
+        </Svg>
+      );
+    case 'parents':
+      return (
+        <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+          <Circle cx={9} cy={9} r={3} stroke={color} strokeWidth={strokeWidth} />
+          <Path d="M3.5 19c.6-3.2 2.8-4.8 5.5-4.8S14 15.8 14.6 19" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+          <Circle cx={16.5} cy={10} r={2.3} stroke={color} strokeWidth={strokeWidth} />
+          <Path d="M15 19c.4-2.2 1.3-3.4 3-3.4 1.4 0 2.3.8 2.8 2.2" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+        </Svg>
+      );
+    default:
+      return (
+        <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+          <Circle cx={12} cy={12} r={9} stroke={color} strokeWidth={strokeWidth} />
+          <Path d="M9.6 9.4c.2-1.4 1.2-2.2 2.5-2.2 1.4 0 2.4.9 2.4 2.1 0 1.5-1.6 1.8-2.3 2.8-.3.4-.3.9-.3 1.4" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+          <Circle cx={12} cy={17} r={0.9} fill={color} />
+        </Svg>
+      );
+  }
+};
+
 export const AppTopBar: React.FC = () => {
-  const { currentScreen, setCurrentScreen, stars } = useApp();
+  const { currentScreen, setCurrentScreen } = useApp();
   const { logout } = useAuth();
-  const [isMusicOn, setIsMusicOn] = useState(true);
+  const [isMusicOn, setIsMusicOn] = useState(() => getIsMusicPlaying());
+
+  const showTabs = currentScreen !== 'welcome';
 
   const handleTabPress = (tabId: AppScreen) => {
     buttonFeedback();
     setCurrentScreen(tabId);
   };
 
-  const handleMusicToggle = async () => {
+  const handleMusicToggle = () => {
     buttonFeedback();
-    await toggleBackgroundMusic();
-    setIsMusicOn(!isMusicOn);
+    toggleBackgroundMusic();
+    setIsMusicOn(getIsMusicPlaying());
+  };
+
+  const handleHome = () => {
+    buttonFeedback();
+    setCurrentScreen('welcome');
   };
 
   return (
-    <LinearGradient
-      colors={['#FFE66D', '#FFD93D', '#FFC107']}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 1 }}
-      style={styles.container}
-    >
+    <View style={styles.container}>
       {/* Brand */}
-      <Pressable style={styles.brand} onPress={() => { buttonFeedback(); setCurrentScreen('welcome'); }}>
-        <View style={styles.brandOuter}>
-          <View style={styles.brandBadge}>
-            <Image
-              source={require('../assets/pika-wave.png')}
-              style={styles.brandImage}
-              resizeMode="cover"
-            />
-          </View>
-        </View>
-        {!isCompact && (
-          <Text style={styles.brandName}>Pika ở Fahasa</Text>
-        )}
+      <Pressable style={styles.brand} onPress={handleHome}>
+        <Image
+          source={require('../../assets/fauna/hero-pika.webp')}
+          style={styles.brandImage}
+          resizeMode="contain"
+        />
       </Pressable>
 
       {/* Nav tabs */}
-      <View style={styles.navTabs}>
-        {TABS.map(tab => {
-          const isActive = currentScreen === tab.id;
-          return (
-            <Pressable
-              key={tab.id}
-              style={[
-                styles.navTabOuter,
-                { backgroundColor: isActive ? tab.shadowColor : 'transparent' },
-              ]}
-              onPress={() => handleTabPress(tab.id)}
-            >
-              <View style={[
-                styles.navTab,
-                isActive && { backgroundColor: tab.color },
-              ]}>
-                <Text style={styles.tabIcon}>{tab.icon}</Text>
-                <Text style={[
-                  styles.tabLabel,
-                  isActive && styles.tabLabelActive,
-                ]}>
+      {showTabs && (
+        <View style={styles.navTabs}>
+          {TABS.map(tab => {
+            const isActive = currentScreen === tab.id;
+            return (
+              <Pressable
+                key={tab.id}
+                style={[styles.tab, isActive && styles.tabActive]}
+                onPress={() => handleTabPress(tab.id)}
+              >
+                <View style={styles.tabIcon}>
+                  <TabIcon type={tab.icon} active={isActive} />
+                </View>
+                <Text style={[styles.tabLabel, isActive && styles.tabLabelActive]}>
                   {tab.label}
                 </Text>
-              </View>
-            </Pressable>
-          );
-        })}
-      </View>
-
-      {/* Actions */}
-      <View style={styles.actions}>
-        <Pressable style={styles.actionBtnOuter} onPress={handleMusicToggle}>
-          <View style={styles.actionBtn}>
-            <Text style={styles.actionIcon}>{isMusicOn ? '🔊' : '🔇'}</Text>
-          </View>
-        </Pressable>
-
-        <View style={styles.starPillOuter}>
-          <View style={styles.starPill}>
-            <Text style={styles.starIcon}>⭐</Text>
-            <Text style={styles.starCount}>{stars}</Text>
-          </View>
+              </Pressable>
+            );
+          })}
         </View>
+      )}
 
-        <Pressable style={styles.signOutOuter} onPress={() => { buttonFeedback(); logout(); }}>
-          <View style={styles.signOutBtn}>
-            <Text style={styles.signOutText}>👋</Text>
-          </View>
-        </Pressable>
-      </View>
-    </LinearGradient>
+      {/* Sound toggle */}
+      <Pressable style={styles.soundBtn} onPress={handleMusicToggle}>
+        <View style={styles.soundBtnInner}>
+          {!isMusicOn && <Text style={styles.muteX}>✕</Text>}
+          <Svg width={s(24)} height={s(24)} viewBox="0 0 24 24" fill="none">
+            <Path
+              d="M11 5L6 9H2v6h4l5 4V5z"
+              stroke={FaunaColors.t1}
+              strokeWidth={2}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+            <Path
+              d="M15.54 8.46a5 5 0 010 7.07M19.07 4.93a10 10 0 010 14.14"
+              stroke={FaunaColors.t1}
+              strokeWidth={2}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </Svg>
+        </View>
+      </Pressable>
+
+      {/* Sign out */}
+      <Pressable style={styles.signOut} onPress={() => { buttonFeedback(); logout(); }}>
+        <Text style={styles.signOutText}>⏻</Text>
+      </Pressable>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    height: isCompact ? 62 : 72,
+    height: s(124),
+    paddingTop: s(26),
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: isCompact ? 12 : 20,
-    gap: isCompact ? 10 : 16,
-    borderBottomWidth: 4,
-    borderBottomColor: '#E6A800',
+    paddingHorizontal: s(20),
+    gap: s(14),
+    backgroundColor: FaunaColors.night1,
+    borderBottomWidth: 2,
+    borderBottomColor: 'rgba(245,185,78,0.22)',
   },
   brand: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-  },
-  brandOuter: {
-    backgroundColor: '#E6A800',
-    borderRadius: 16,
-    padding: 3,
-    paddingBottom: 5,
-  },
-  brandBadge: {
-    width: isCompact ? 40 : 48,
-    height: isCompact ? 40 : 48,
-    borderRadius: 14,
-    backgroundColor: '#fff',
-    overflow: 'hidden',
-    borderWidth: 2,
-    borderColor: '#FFE66D',
+    gap: s(10),
+    height: s(64),
+    paddingRight: s(14),
+    borderRightWidth: 1,
+    borderRightColor: FaunaColors.line,
   },
   brandImage: {
-    width: isCompact ? 44 : 52,
-    height: isCompact ? 44 : 52,
+    width: s(52),
+    height: s(52),
   },
   brandName: {
-    fontSize: 20,
-    fontWeight: '900',
-    color: '#8B4513',
-    textShadowColor: '#fff',
-    textShadowOffset: { width: 1, height: 1 },
-    textShadowRadius: 0,
+    fontSize: s(22),
+    fontWeight: '800',
+    color: FaunaColors.amber,
+    letterSpacing: -0.3,
   },
   navTabs: {
     flex: 1,
     flexDirection: 'row',
     justifyContent: 'center',
-    gap: isCompact ? 6 : 10,
+    gap: s(6),
   },
-  navTabOuter: {
-    borderRadius: 16,
-    paddingBottom: 3,
-  },
-  navTab: {
+  tab: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    height: isCompact ? 36 : 42,
-    paddingHorizontal: isCompact ? 10 : 14,
-    borderRadius: 14,
-    backgroundColor: 'rgba(255,255,255,0.7)',
-    borderWidth: 2,
-    borderColor: 'rgba(255,255,255,0.9)',
+    gap: s(8),
+    height: s(60),
+    paddingHorizontal: s(16),
+    borderRadius: s(18),
+    backgroundColor: 'rgba(167,196,234,0.06)',
+    borderWidth: 1,
+    borderColor: 'rgba(167,196,234,0.12)',
   },
-  tabIcon: { fontSize: isCompact ? 16 : 18 },
+  tabActive: {
+    backgroundColor: 'rgba(245,185,78,0.2)',
+    borderWidth: 2,
+    borderColor: 'rgba(245,185,78,0.75)',
+    shadowColor: FaunaColors.amber,
+    shadowOffset: { width: 0, height: s(3) },
+    shadowOpacity: 0.45,
+    shadowRadius: s(14),
+    elevation: 8,
+  },
+  tabIcon: {
+    width: s(26),
+    height: s(26),
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   tabLabel: {
-    fontSize: isCompact ? 11 : 13,
-    fontWeight: '800',
-    color: '#8B4513',
+    fontSize: s(FaunaFontSize.sm),
+    fontWeight: '700',
+    color: FaunaColors.t2,
   },
   tabLabelActive: {
-    color: '#fff',
-    textShadowColor: 'rgba(0,0,0,0.2)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 1,
+    color: FaunaColors.amberHi,
+    fontWeight: '800',
   },
-  actions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: isCompact ? 8 : 12,
-  },
-  actionBtnOuter: {
-    backgroundColor: '#E6A800',
-    borderRadius: 14,
-    paddingBottom: 3,
-  },
-  actionBtn: {
-    width: isCompact ? 38 : 44,
-    height: isCompact ? 38 : 44,
-    borderRadius: 12,
-    backgroundColor: '#fff',
+  soundBtn: {
+    width: s(58),
+    height: s(58),
+    borderRadius: s(29),
+    backgroundColor: 'rgba(167,196,234,0.14)',
+    borderWidth: 2,
+    borderColor: 'rgba(167,196,234,0.4)',
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 2,
-    borderColor: '#FFE66D',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: s(3) },
+    shadowOpacity: 0.3,
+    shadowRadius: s(8),
+    elevation: 5,
   },
-  actionIcon: {
-    fontSize: isCompact ? 18 : 22,
-  },
-  starPillOuter: {
-    backgroundColor: '#E6A800',
-    borderRadius: 18,
-    paddingBottom: 3,
-  },
-  starPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    height: isCompact ? 38 : 44,
-    paddingHorizontal: isCompact ? 12 : 16,
-    borderRadius: 16,
-    backgroundColor: '#fff',
-    borderWidth: 2,
-    borderColor: '#FFE66D',
-  },
-  starIcon: { fontSize: isCompact ? 18 : 22 },
-  starCount: {
-    fontSize: isCompact ? 16 : 18,
-    fontWeight: '900',
-    color: '#FF6B35',
-  },
-  signOutOuter: {
-    backgroundColor: '#CC4444',
-    borderRadius: 14,
-    paddingBottom: 3,
-  },
-  signOutBtn: {
-    width: isCompact ? 38 : 44,
-    height: isCompact ? 38 : 44,
-    borderRadius: 12,
-    backgroundColor: '#FF6B6B',
+  soundBtnInner: {
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  muteX: {
+    position: 'absolute',
+    fontSize: s(28),
+    fontWeight: '800',
+    color: '#FFE3C0',
+    zIndex: 1,
+  },
+  signOut: {
+    width: s(58),
+    height: s(58),
+    borderRadius: s(29),
+    backgroundColor: 'rgba(255,100,100,0.2)',
     borderWidth: 2,
-    borderColor: '#FFB4B4',
+    borderColor: 'rgba(255,120,120,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#FF6464',
+    shadowOffset: { width: 0, height: s(3) },
+    shadowOpacity: 0.35,
+    shadowRadius: s(10),
+    elevation: 5,
   },
   signOutText: {
-    fontSize: isCompact ? 18 : 22,
+    fontSize: s(24),
+    color: '#fff',
+    fontWeight: '700',
   },
 });

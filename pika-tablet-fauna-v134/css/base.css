@@ -1,0 +1,79 @@
+/* ==========================================================================
+   BASE — reset, sân khấu scale 952×1269, nền, hệ chữ dùng chung, scene engine
+   ========================================================================== */
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+html,body{height:100%; margin:0;}
+body{
+  background:#05081A; color:var(--t-1); font-family:var(--f-ui);
+  overflow:hidden; user-select:none; -webkit-user-select:none;
+}
+button{font:inherit; border:none; background:none; color:inherit; padding:0; cursor:pointer;}
+img{display:block;}
+article[role="button"]{cursor:pointer;}
+
+/* ---------- scaled stage ---------- */
+#viewport{position:fixed; inset:0; overflow:hidden; background:
+  radial-gradient(120% 90% at 50% 0%, #0E1738 0%, #05081A 70%);}
+#stage{
+  position:absolute; left:50%; top:50%; width:952px; height:1269px;
+  transform:translate(-50%,-50%) scale(var(--s,1)); transform-origin:center center;
+  background:var(--night-0); overflow:hidden;
+  box-shadow:0 40px 90px rgba(0,0,0,.55);
+}
+
+/* ---------- backgrounds ---------- */
+.plate{position:absolute; inset:0; background-size:cover; background-position:center;
+  opacity:0; transition:opacity .5s ease; pointer-events:none;}
+.plate.on{opacity:1;}
+.plate.flat{background:
+  radial-gradient(90% 55% at 50% -8%, #1B2652 0%, rgba(27,38,82,0) 62%),
+  linear-gradient(180deg,#101A3B 0%,#0C1330 52%,#090F26 100%);}
+.plate-welcome{background-image:url("../assets/img/bg-welcome.webp");}
+.plate-land{background-image:url("../assets/img/bg-land.webp");}
+.moon{
+  position:absolute; left:794px; top:10px; width:86px; height:86px; border-radius:50%;
+  background:
+    radial-gradient(circle at 30% 26%, rgba(226,238,255,.92) 0%, rgba(160,190,235,.72) 32%,
+      rgba(96,126,190,.55) 56%, rgba(44,62,116,.35) 76%, rgba(20,30,66,0) 100%);
+  box-shadow:0 0 50px rgba(140,175,235,.22), 0 0 120px rgba(110,150,220,.12);
+  filter:blur(.4px);
+  opacity:0; transition:opacity .5s ease; pointer-events:none;
+}
+.moon.on{opacity:.85;}
+.dots-field{position:absolute; inset:0; pointer-events:none; opacity:.5;
+  background-image:radial-gradient(rgba(200,220,255,.30) 1px, transparent 1px);
+  background-size:26px 26px; mask-image:linear-gradient(180deg,rgba(0,0,0,.55),rgba(0,0,0,0) 70%);
+  -webkit-mask-image:linear-gradient(180deg,rgba(0,0,0,.55),rgba(0,0,0,0) 70%);}
+.twinkle{position:absolute; width:3px; height:3px; border-radius:50%; background:#FFF6DA;
+  box-shadow:0 0 8px rgba(255,238,190,.9); animation:tw 5s ease-in-out infinite; pointer-events:none;}
+@keyframes tw{0%,100%{opacity:.15; transform:scale(.7)}50%{opacity:.85; transform:scale(1.2)}}
+
+/* ---------- scene system ---------- */
+#scenes{position:absolute; inset:0; z-index:20;}
+.scene{
+  position:absolute; inset:0; opacity:0; pointer-events:none;
+  transform:translateX(52px); transition:opacity .38s ease, transform .46s cubic-bezier(.2,.85,.3,1.05);
+}
+.scene.exit-left{transform:translateX(-52px);}
+.scene.active{opacity:1; transform:none; pointer-events:auto; z-index:21;}
+
+/* ---------- hệ tiêu đề màn (nhịp chung: eyebrow 96 → title 118 → sub 184) ---------- */
+.eyebrow{position:absolute; left:0; right:0; top:96px; margin:0;
+  font-family:var(--f-ui); font-weight:700; font-size:var(--fs-xs); letter-spacing:.22em;
+  text-transform:uppercase; color:#F0C273; text-align:center; line-height:1.25;}
+.h-round{font-family:var(--f-disp); font-weight:800; letter-spacing:-.01em; text-align:center; margin:0;
+  text-shadow:0 4px 24px rgba(0,0,0,.5);}
+.h-serif{font-family:var(--f-serif); font-weight:700; letter-spacing:-.02em; text-align:center; margin:0;}
+.h-serif,.z1-name,.z-name,.jc-name,.jp-head,.stat b,.m-title,.kp-row b,.r-badge strong,
+.j-panel-top strong,.reward h3,.spell span,.t-row b{font-variant-numeric:lining-nums; font-feature-settings:"lnum" 1,"pnum" 1;}
+.sub{position:absolute; left:0; right:0; top:184px; font-size:var(--fs-sm); font-weight:500;
+  color:var(--t-3); text-align:center; margin:0; line-height:1.6;}
+.amber{color:var(--amber-hi);}
+
+/* ---------- hệ nút 3 cấp ----------
+   Cấp 1 (primary): .btn-a, .pill-amber trong thẻ .is-selected — amber + glow, DUY NHẤT 1 pulse/màn
+   Cấp 2 (secondary): .btn-g, .pill-amber mặc định, chip — navy nhạt + viền, không animation
+   Cấp 3 (nav/ghost): .arrow, .round-btn.ghost, .m-x — nền mờ, icon sáng                         */
+
+/* ---------- reduced motion ---------- */
+@media (prefers-reduced-motion:reduce){*{animation:none !important; transition-duration:.01s !important;}}

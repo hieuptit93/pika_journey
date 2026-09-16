@@ -11,14 +11,21 @@ import {
   Dimensions,
   KeyboardAvoidingView,
   Platform,
-  Keyboard,
+  ImageBackground,
+  Animated,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '../context/AuthContext';
 import { buttonFeedback } from '../utils/sounds';
+import { FaunaColors, FaunaFontSize, FaunaRadius } from '../constants/theme';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
-const isLandscape = SCREEN_WIDTH > SCREEN_HEIGHT;
+const STAGE_RATIO = 952 / 1269;
+const screenRatio = SCREEN_WIDTH / SCREEN_HEIGHT;
+const scale = screenRatio > STAGE_RATIO
+  ? SCREEN_HEIGHT / 1269
+  : SCREEN_WIDTH / 952;
+const s = (v: number) => v * scale;
 
 export const ScreenLogin: React.FC = () => {
   const { login } = useAuth();
@@ -26,34 +33,50 @@ export const ScreenLogin: React.FC = () => {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
 
-  const scrollViewRef = useRef<ScrollView>(null);
+  const floatAnim = useRef(new Animated.Value(0)).current;
+  const glowAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    const showSub = Keyboard.addListener('keyboardDidShow', () => {
-      setIsKeyboardVisible(true);
-    });
-    const hideSub = Keyboard.addListener('keyboardDidHide', () => {
-      setIsKeyboardVisible(false);
-      scrollViewRef.current?.scrollTo({ y: 0, animated: true });
-    });
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(floatAnim, {
+          toValue: 1,
+          duration: 2000,
+          useNativeDriver: true,
+        }),
+        Animated.timing(floatAnim, {
+          toValue: 0,
+          duration: 2000,
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
 
-    return () => {
-      showSub.remove();
-      hideSub.remove();
-    };
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(glowAnim, {
+          toValue: 1,
+          duration: 1500,
+          useNativeDriver: true,
+        }),
+        Animated.timing(glowAnim, {
+          toValue: 0,
+          duration: 1500,
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
   }, []);
 
   const handleLogin = async () => {
-    Keyboard.dismiss();
     buttonFeedback();
     if (!phone.trim()) {
-      setError('Nhập số điện thoại nào! 📱');
+      setError('Nhập số điện thoại nào!');
       return;
     }
     if (!password.trim()) {
-      setError('Quên mật khẩu rồi! 🔑');
+      setError('Quên mật khẩu rồi!');
       return;
     }
 
@@ -64,16 +87,25 @@ export const ScreenLogin: React.FC = () => {
 
     setIsLoading(false);
     if (!result.success) {
-      setError(result.error || 'Ôi không! Thử lại nhé 😅');
+      setError(result.error || 'Ôi không! Thử lại nhé');
     }
   };
 
+  const floatTranslate = floatAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, -s(4)],
+  });
+
+  const glowOpacity = glowAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.3, 0.6],
+  });
+
   return (
-    <LinearGradient
-      colors={['#FFE66D', '#FFD93D', '#FFC107']}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 1 }}
+    <ImageBackground
+      source={require('../../assets/fauna/bg-land.webp')}
       style={styles.container}
+      resizeMode="cover"
     >
       <KeyboardAvoidingView
         style={styles.keyboardAvoid}
@@ -81,140 +113,140 @@ export const ScreenLogin: React.FC = () => {
         keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
       >
         <ScrollView
-          ref={scrollViewRef}
-          contentContainerStyle={[
-            styles.scrollContent,
-            isKeyboardVisible && styles.scrollContentKeyboard,
-          ]}
+          contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          <View style={[
-            styles.mainLayout,
-            isKeyboardVisible && styles.mainLayoutKeyboard,
-          ]}>
-            {/* Form - hiển thị đầu tiên */}
-            <View style={[
-              styles.formSection,
-              isKeyboardVisible && styles.formSectionKeyboard,
-            ]}>
-              <View style={[
-                styles.formCard,
-                isKeyboardVisible && styles.formCardKeyboard,
-              ]}>
-                {!isKeyboardVisible && (
-                  <Text style={styles.formTitle}>🎮 Đăng nhập</Text>
-                )}
-
-                <View style={styles.inputGroup}>
-                  <Text style={styles.inputLabel}>📱 Số điện thoại</Text>
-                  <View style={styles.inputOuter}>
-                    <TextInput
-                      style={[styles.input, isKeyboardVisible && styles.inputFocused]}
-                      placeholder="VD: 0962367123"
-                      placeholderTextColor="#A0AEC0"
-                      value={phone}
-                      onChangeText={setPhone}
-                      keyboardType="phone-pad"
-                      autoCapitalize="none"
-                      editable={!isLoading}
-                    />
-                  </View>
-                </View>
-
-                <View style={styles.inputGroup}>
-                  <Text style={styles.inputLabel}>🔑 Mật khẩu</Text>
-                  <View style={styles.inputOuter}>
-                    <TextInput
-                      style={[styles.input, isKeyboardVisible && styles.inputFocused]}
-                      placeholder="Nhập mật khẩu bí mật"
-                      placeholderTextColor="#A0AEC0"
-                      value={password}
-                      onChangeText={setPassword}
-                      secureTextEntry
-                      editable={!isLoading}
-                    />
-                  </View>
-                </View>
-
-                {error ? (
-                  <View style={styles.errorBubble}>
-                    <Text style={styles.errorText}>{error}</Text>
-                  </View>
-                ) : null}
-
-                <Pressable
-                  style={[
-                    styles.buttonOuter,
-                    isKeyboardVisible && styles.buttonOuterKeyboard,
-                  ]}
-                  onPress={handleLogin}
-                  disabled={isLoading}
+          <View style={styles.mainLayout}>
+            {/* Branding */}
+            <Animated.View
+              style={[
+                styles.brandSection,
+                { transform: [{ translateY: floatTranslate }] }
+              ]}
+            >
+              <View style={styles.mascotOuter}>
+                <LinearGradient
+                  colors={[FaunaColors.night2, FaunaColors.night1]}
+                  style={styles.mascotGradient}
                 >
-                  <View style={[styles.button, isLoading && styles.buttonDisabled]}>
-                    {isLoading ? (
-                      <ActivityIndicator color="#fff" />
-                    ) : (
-                      <Text style={styles.buttonText}>🚀 Vào chơi thôi!</Text>
-                    )}
-                  </View>
-                </Pressable>
-
-                {!isKeyboardVisible && (
-                  <Text style={styles.helpText}>
-                    Chưa có tài khoản? Nhờ ba mẹ gọi hotline nhé! 📞
-                  </Text>
-                )}
-              </View>
-            </View>
-
-            {/* Branding - ẩn khi keyboard hiện */}
-            {!isKeyboardVisible && (
-              <View style={styles.brandSection}>
-                <View style={styles.mascotOuter}>
-                  <View style={styles.mascotCircle}>
+                  <View style={styles.mascotInner}>
                     <Image
                       source={require('../assets/pika-wave.png')}
                       style={styles.mascotImage}
                       resizeMode="cover"
                     />
                   </View>
-                </View>
-                <Text style={styles.welcomeText}>Xin chào! 👋</Text>
-                <Text style={styles.brandName}>Pika World</Text>
-                <View style={styles.taglineBubble}>
-                  <Text style={styles.tagline}>Cùng học và chơi với Pika nào!</Text>
-                </View>
+                </LinearGradient>
               </View>
-            )}
+              <Text style={styles.welcomeText}>Xin chào!</Text>
+              <Text style={styles.brandName}>Pika World</Text>
+              <Text style={styles.tagline}>Cùng học và chơi với Pika nào!</Text>
+            </Animated.View>
+
+            {/* Form */}
+            <View style={styles.formSection}>
+              <View style={styles.formCard3D}>
+                <LinearGradient
+                  colors={[FaunaColors.night2, FaunaColors.night1]}
+                  style={styles.formCardGradient}
+                >
+                  <View style={styles.formHeader}>
+                    <Text style={styles.formTitle}>Đăng nhập</Text>
+                    <Text style={styles.formSubtitle}>Nhập thông tin để vào chơi</Text>
+                  </View>
+
+                  <View style={styles.inputGroup}>
+                    <Text style={styles.inputLabel}>Số điện thoại</Text>
+                    <View style={styles.inputWrapper3D}>
+                      <TextInput
+                        style={styles.input}
+                        placeholder="VD: 0962367123"
+                        placeholderTextColor={FaunaColors.t4}
+                        value={phone}
+                        onChangeText={setPhone}
+                        keyboardType="phone-pad"
+                        autoCapitalize="none"
+                        editable={!isLoading}
+                      />
+                    </View>
+                  </View>
+
+                  <View style={styles.inputGroup}>
+                    <Text style={styles.inputLabel}>Mật khẩu</Text>
+                    <View style={styles.inputWrapper3D}>
+                      <TextInput
+                        style={styles.input}
+                        placeholder="Nhập mật khẩu bí mật"
+                        placeholderTextColor={FaunaColors.t4}
+                        value={password}
+                        onChangeText={setPassword}
+                        secureTextEntry
+                        editable={!isLoading}
+                      />
+                    </View>
+                  </View>
+
+                  {error ? (
+                    <View style={styles.errorBubble}>
+                      <Text style={styles.errorText}>{error}</Text>
+                    </View>
+                  ) : null}
+
+                  <Pressable
+                    style={styles.buttonWrapper}
+                    onPress={handleLogin}
+                    disabled={isLoading}
+                  >
+                    <Animated.View style={[
+                      styles.buttonGlow,
+                      { opacity: glowOpacity }
+                    ]} />
+                    <View style={styles.button3D}>
+                      <LinearGradient
+                        colors={['#F5B94E', '#E5A73E', '#D4962E']}
+                        style={[styles.button, isLoading && styles.buttonDisabled]}
+                      >
+                        {isLoading ? (
+                          <ActivityIndicator color={FaunaColors.night0} />
+                        ) : (
+                          <Text style={styles.buttonText}>Vào chơi thôi!</Text>
+                        )}
+                      </LinearGradient>
+                    </View>
+                  </Pressable>
+
+                  <Text style={styles.helpText}>
+                    Chưa có tài khoản? Nhờ ba mẹ gọi hotline nhé!
+                  </Text>
+                </LinearGradient>
+              </View>
+            </View>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
 
-      {/* Decorations - ẩn khi keyboard hiện */}
-      {!isKeyboardVisible && (
-        <>
-          <View style={styles.starTL}>
-            <Text style={styles.starEmoji}>⭐</Text>
-          </View>
-          <View style={styles.starTR}>
-            <Text style={styles.starEmoji}>✨</Text>
-          </View>
-          <View style={styles.starBL}>
-            <Text style={styles.starEmoji}>🌟</Text>
-          </View>
-          <View style={styles.starBR}>
-            <Text style={styles.starEmoji}>💫</Text>
-          </View>
-        </>
-      )}
-    </LinearGradient>
+      {/* Decorative sparkles */}
+      <Animated.View style={[styles.sparkle, styles.sparkleTL, { opacity: glowOpacity }]}>
+        <Text style={styles.sparkleText}>✦</Text>
+      </Animated.View>
+      <Animated.View style={[styles.sparkle, styles.sparkleTR, { opacity: glowOpacity }]}>
+        <Text style={styles.sparkleText}>✧</Text>
+      </Animated.View>
+      <Animated.View style={[styles.sparkle, styles.sparkleBL, { opacity: glowOpacity }]}>
+        <Text style={styles.sparkleText}>✦</Text>
+      </Animated.View>
+      <Animated.View style={[styles.sparkle, styles.sparkleBR, { opacity: glowOpacity }]}>
+        <Text style={styles.sparkleText}>✧</Text>
+      </Animated.View>
+    </ImageBackground>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: FaunaColors.night0,
   },
   keyboardAvoid: {
     flex: 1,
@@ -222,185 +254,199 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     justifyContent: 'center',
-    padding: isLandscape ? 20 : 16,
-  },
-  scrollContentKeyboard: {
-    justifyContent: 'flex-start',
-    paddingTop: 10,
+    padding: s(24),
+    paddingTop: s(60),
+    paddingBottom: s(40),
   },
   mainLayout: {
-    flexDirection: isLandscape ? 'row' : 'column',
+    flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: isLandscape ? 40 : 20,
-  },
-  mainLayoutKeyboard: {
-    justifyContent: 'flex-start',
+    gap: s(24),
   },
   brandSection: {
     alignItems: 'center',
-    flex: isLandscape ? 1 : undefined,
   },
   mascotOuter: {
-    backgroundColor: '#E6A800',
-    borderRadius: 60,
-    padding: 5,
-    paddingBottom: 8,
-    marginBottom: 12,
+    borderRadius: s(70),
+    padding: s(3),
+    marginBottom: s(12),
+    borderWidth: 2,
+    borderTopColor: 'rgba(245, 185, 78, 0.5)',
+    borderLeftColor: 'rgba(245, 185, 78, 0.3)',
+    borderRightColor: 'rgba(0, 0, 0, 0.3)',
+    borderBottomColor: 'rgba(0, 0, 0, 0.4)',
   },
-  mascotCircle: {
-    width: isLandscape ? 100 : 90,
-    height: isLandscape ? 100 : 90,
-    borderRadius: 50,
-    backgroundColor: '#fff',
+  mascotGradient: {
+    borderRadius: s(64),
+    padding: s(5),
+  },
+  mascotInner: {
+    width: s(104),
+    height: s(104),
+    borderRadius: s(52),
+    backgroundColor: FaunaColors.night3,
     overflow: 'hidden',
-    borderWidth: 3,
-    borderColor: '#FFE66D',
+    borderWidth: 2,
+    borderColor: FaunaColors.amber,
   },
   mascotImage: {
-    width: isLandscape ? 110 : 100,
-    height: isLandscape ? 110 : 100,
+    width: s(116),
+    height: s(116),
   },
   welcomeText: {
-    fontSize: isLandscape ? 20 : 18,
-    fontWeight: '700',
-    color: '#8B4513',
-    marginBottom: 4,
+    fontSize: s(FaunaFontSize.base),
+    fontWeight: '600',
+    color: FaunaColors.t2,
+    marginBottom: s(2),
   },
   brandName: {
-    fontSize: isLandscape ? 36 : 32,
-    fontWeight: '900',
-    color: '#8B4513',
-    textShadowColor: '#fff',
-    textShadowOffset: { width: 2, height: 2 },
-    textShadowRadius: 0,
-    marginBottom: 8,
-  },
-  taglineBubble: {
-    backgroundColor: '#fff',
-    borderRadius: 20,
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderWidth: 3,
-    borderColor: '#E6A800',
+    fontSize: s(FaunaFontSize['3xl']),
+    fontWeight: '800',
+    color: FaunaColors.amber,
+    textShadowColor: 'rgba(245, 185, 78, 0.4)',
+    textShadowOffset: { width: 0, height: s(3) },
+    textShadowRadius: s(10),
+    marginBottom: s(4),
   },
   tagline: {
-    fontSize: isLandscape ? 14 : 13,
-    fontWeight: '700',
-    color: '#8B4513',
+    fontSize: s(FaunaFontSize.sm),
+    fontWeight: '500',
+    color: FaunaColors.t3,
   },
   formSection: {
-    flex: isLandscape ? 1 : undefined,
-    width: isLandscape ? undefined : '100%',
-    maxWidth: 400,
-  },
-  formSectionKeyboard: {
-    flex: undefined,
     width: '100%',
-    maxWidth: isLandscape ? 500 : 400,
+    maxWidth: s(520),
   },
-  formCard: {
-    backgroundColor: '#fff',
-    borderRadius: 24,
-    padding: isLandscape ? 20 : 24,
-    borderWidth: 4,
-    borderColor: '#E6A800',
-    elevation: 8,
+  formCard3D: {
+    borderRadius: s(36),
+    borderWidth: 2,
+    borderTopColor: 'rgba(255, 255, 255, 0.15)',
+    borderLeftColor: 'rgba(255, 255, 255, 0.1)',
+    borderRightColor: 'rgba(0, 0, 0, 0.3)',
+    borderBottomColor: 'rgba(0, 0, 0, 0.4)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: s(12) },
+    shadowOpacity: 0.4,
+    shadowRadius: s(24),
+    elevation: 12,
   },
-  formCardKeyboard: {
-    padding: isLandscape ? 16 : 20,
-    borderRadius: 20,
+  formCardGradient: {
+    borderRadius: s(34),
+    padding: s(24),
+  },
+  formHeader: {
+    alignItems: 'center',
+    marginBottom: s(16),
   },
   formTitle: {
-    fontSize: isLandscape ? 20 : 22,
-    fontWeight: '900',
-    color: '#8B4513',
-    textAlign: 'center',
-    marginBottom: isLandscape ? 12 : 16,
+    fontSize: s(FaunaFontSize.xl),
+    fontWeight: '700',
+    color: FaunaColors.t1,
+    marginBottom: s(2),
+  },
+  formSubtitle: {
+    fontSize: s(FaunaFontSize.xs),
+    fontWeight: '500',
+    color: FaunaColors.t3,
   },
   inputGroup: {
-    marginBottom: isLandscape ? 10 : 14,
+    marginBottom: s(14),
   },
   inputLabel: {
-    fontSize: isLandscape ? 12 : 13,
-    fontWeight: '800',
-    color: '#8B4513',
-    marginBottom: 6,
+    fontSize: s(FaunaFontSize.xs),
+    fontWeight: '600',
+    color: FaunaColors.t2,
+    marginBottom: s(6),
   },
-  inputOuter: {
-    backgroundColor: '#E6A800',
-    borderRadius: 14,
-    paddingBottom: 3,
+  inputWrapper3D: {
+    borderRadius: s(18),
+    borderWidth: 2,
+    borderTopColor: 'rgba(0, 0, 0, 0.3)',
+    borderLeftColor: 'rgba(0, 0, 0, 0.2)',
+    borderRightColor: 'rgba(255, 255, 255, 0.1)',
+    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: FaunaColors.night3,
   },
   input: {
-    backgroundColor: '#FFF9E6',
-    borderRadius: 12,
-    paddingVertical: isLandscape ? 10 : 12,
-    paddingHorizontal: 14,
-    fontSize: isLandscape ? 14 : 16,
-    color: '#1E293B',
-    fontWeight: '600',
-    borderWidth: 2,
-    borderColor: '#FFE66D',
-  },
-  inputFocused: {
-    backgroundColor: '#fff',
-    borderColor: '#FF6B35',
-    fontSize: isLandscape ? 16 : 18,
+    backgroundColor: FaunaColors.night3,
+    borderRadius: s(16),
+    paddingVertical: s(16),
+    paddingHorizontal: s(18),
+    fontSize: s(FaunaFontSize.sm),
+    color: FaunaColors.t1,
+    fontWeight: '500',
   },
   errorBubble: {
-    backgroundColor: '#FFE4E4',
-    borderRadius: 12,
-    padding: 10,
-    marginBottom: 10,
-    borderWidth: 2,
-    borderColor: '#FF9999',
+    backgroundColor: 'rgba(239, 68, 68, 0.15)',
+    borderRadius: s(16),
+    padding: s(12),
+    marginBottom: s(12),
+    borderWidth: 1,
+    borderColor: 'rgba(239, 68, 68, 0.3)',
   },
   errorText: {
-    fontSize: isLandscape ? 12 : 13,
-    fontWeight: '700',
-    color: '#CC4444',
+    fontSize: s(FaunaFontSize.sm),
+    fontWeight: '600',
+    color: '#EF4444',
     textAlign: 'center',
   },
-  buttonOuter: {
-    backgroundColor: '#CC4D1A',
-    borderRadius: 18,
-    paddingBottom: 5,
-    marginTop: isLandscape ? 4 : 8,
+  buttonWrapper: {
+    marginTop: s(8),
+    position: 'relative',
   },
-  buttonOuterKeyboard: {
-    marginTop: 4,
+  buttonGlow: {
+    position: 'absolute',
+    top: -s(8),
+    left: -s(8),
+    right: -s(8),
+    bottom: -s(8),
+    borderRadius: s(36),
+    backgroundColor: FaunaColors.amber,
+  },
+  button3D: {
+    borderRadius: s(28),
+    borderWidth: 2,
+    borderTopColor: 'rgba(255, 255, 255, 0.4)',
+    borderLeftColor: 'rgba(255, 255, 255, 0.3)',
+    borderRightColor: 'rgba(0, 0, 0, 0.2)',
+    borderBottomColor: 'rgba(0, 0, 0, 0.3)',
+    shadowColor: FaunaColors.amber,
+    shadowOffset: { width: 0, height: s(8) },
+    shadowOpacity: 0.4,
+    shadowRadius: s(16),
+    elevation: 8,
   },
   button: {
-    backgroundColor: '#FF6B35',
-    borderRadius: 14,
-    paddingVertical: isLandscape ? 12 : 14,
+    borderRadius: s(26),
+    paddingVertical: s(18),
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: '#FF9966',
   },
   buttonDisabled: {
     opacity: 0.7,
   },
   buttonText: {
-    fontSize: isLandscape ? 16 : 18,
-    fontWeight: '900',
-    color: '#fff',
-    textShadowColor: 'rgba(0,0,0,0.2)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
+    fontSize: s(FaunaFontSize.base),
+    fontWeight: '700',
+    color: FaunaColors.night0,
   },
   helpText: {
-    fontSize: isLandscape ? 11 : 12,
-    fontWeight: '600',
-    color: '#8B4513',
+    fontSize: s(FaunaFontSize.xs),
+    fontWeight: '500',
+    color: FaunaColors.t3,
     textAlign: 'center',
-    marginTop: isLandscape ? 10 : 14,
+    marginTop: s(16),
   },
-  starTL: { position: 'absolute', top: 20, left: 20 },
-  starTR: { position: 'absolute', top: 30, right: 30 },
-  starBL: { position: 'absolute', bottom: 30, left: 30 },
-  starBR: { position: 'absolute', bottom: 20, right: 20 },
-  starEmoji: { fontSize: 24, opacity: 0.6 },
+  sparkle: {
+    position: 'absolute',
+  },
+  sparkleTL: { top: s(60), left: s(40) },
+  sparkleTR: { top: s(100), right: s(50) },
+  sparkleBL: { bottom: s(80), left: s(60) },
+  sparkleBR: { bottom: s(60), right: s(40) },
+  sparkleText: {
+    fontSize: s(24),
+    color: FaunaColors.amber,
+  },
 });

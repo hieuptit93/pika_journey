@@ -1,20 +1,32 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Image, Pressable, ImageBackground, Dimensions, Modal, ActivityIndicator } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  Pressable,
+  ImageBackground,
+  Dimensions,
+  Modal,
+  ActivityIndicator,
+  Animated,
+  Image,
+} from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useApp } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
 import { buttonFeedback, successFeedback } from '../utils/sounds';
 import { apiService, ApiLesson } from '../services/api';
-import { Button3D } from '../components/Button3D';
 import { Toast } from '../components/Toast';
 import { logEvent } from '../services/tracking';
+import { FaunaColors, FaunaFontSize, FaunaTouchTarget } from '../constants/theme';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
-const isCompact = SCREEN_WIDTH / SCREEN_HEIGHT < 1.5;
-// Scale vertical spacing off screen height (clamped) so cards don't crowd together on any device.
-const CARD_STAGGER_OFFSET = Math.max(12, Math.min(SCREEN_HEIGHT * 0.02, 24));
-const ROW_VERTICAL_GAP = Math.max(16, Math.min(SCREEN_HEIGHT * 0.035, 40));
-const TITLE_GAP = Math.max(16, Math.min(SCREEN_HEIGHT * 0.03, 32));
+const STAGE_RATIO = 952 / 1269;
+const screenRatio = SCREEN_WIDTH / SCREEN_HEIGHT;
+const scale = screenRatio > STAGE_RATIO
+  ? SCREEN_HEIGHT / 1269
+  : SCREEN_WIDTH / 952;
+const s = (v: number) => v * scale;
 
 type Lesson = {
   id: string;
@@ -28,200 +40,78 @@ type Lesson = {
 const ZONES = [
   {
     id: 1,
+    badge: '1',
+    kicker: 'CHÀO PIKA',
     title: 'Làm quen với Pika',
-    zone: 'Khu 1 · Làm quen',
-    image: require('../assets/zone-1.png'),
+    desc: 'Bắt đầu bằng những cuộc trò chuyện thật vui.',
+    info: 'Ốc đảo Làm quen nè! Pika chào con, mình khám phá âm thanh và trò chuyện đầu tiên nhé!',
+    image: require('../../assets/fauna/isl-meet.webp'),
     lessons: ['z1a', 'z1b', 'z1c'],
-    gradient: ['#F5A623', '#CC7A00'] as const,
+    isHero: true,
+    position: { left: s(80), top: s(150), width: s(792), height: s(296) },
   },
   {
     id: 2,
-    title: 'Học tiếng Anh (Pre-A1)',
-    zone: 'Khu 2 · Pre-A1',
-    image: require('../assets/zone-2.png'),
+    badge: '2',
+    title: 'Tiếng Anh Pre-A1',
+    info: 'Ốc đảo Pre-A1 nè! Con học từ vựng, nạp cụm và hát cùng Pika — vui lắm đó!',
+    image: require('../../assets/fauna/isl-prea1.webp'),
     lessons: ['z2a', 'z2b', 'z2c', 'z2d'],
-    gradient: ['#3B82F6', '#1D4ED8'] as const,
+    isHero: false,
+    position: { left: s(80), top: s(458), width: s(386), height: s(283) },
   },
   {
     id: 3,
-    title: 'Học tiếng Anh (A1/A2)',
-    zone: 'Khu 3 · A1/A2',
-    image: require('../assets/zone-3.png'),
+    badge: '3',
+    title: 'Tiếng Anh A1–A2',
+    info: 'Ốc đảo A1–A2, thử thách hơn nè! Role-play, luyện nói và sửa phát âm cùng Pika!',
+    image: require('../../assets/fauna/isl-castle.webp'),
     lessons: ['z3a', 'z3b', 'z3c', 'z3d'],
-    gradient: ['#10B981', '#047857'] as const,
+    isHero: false,
+    position: { left: s(486), top: s(458), width: s(386), height: s(283) },
   },
   {
     id: 4,
+    badge: '4',
     title: 'Mở rộng cùng Pika',
-    zone: 'Khu 4 · Mở rộng',
-    image: require('../assets/zone-4.png'),
+    info: 'Ốc đảo Mở rộng — khám phá kiến thức, đọc hiểu và thảo luận đủ điều thú vị!',
+    image: require('../../assets/fauna/isl-explore.webp'),
     lessons: ['z4a', 'z4b', 'z4c', 'z4d'],
-    gradient: ['#8B5CF6', '#6D28D9'] as const,
+    isHero: false,
+    position: { left: s(80), top: s(753), width: s(386), height: s(283) },
   },
   {
     id: 5,
+    badge: '5',
     title: 'Dịp đặc biệt',
-    zone: 'Khu 5 · Dịp đặc biệt',
-    image: require('../assets/zone-5.png'),
+    info: 'Ốc đảo Dịp đặc biệt — lễ hội, sinh nhật, sự kiện! Cùng Pika mở tiệc nào!',
+    image: require('../../assets/fauna/isl-party.webp'),
     lessons: ['z5a', 'z5b', 'z5c', 'z5d'],
-    gradient: ['#EC4899', '#BE185D'] as const,
+    isHero: false,
+    position: { left: s(486), top: s(753), width: s(386), height: s(283) },
   },
 ];
 
-const LessonModal = ({
-  visible,
-  lesson,
-  zoneName,
-  zoneColor,
-  onClose,
-  onAssign,
-}: {
-  visible: boolean;
-  lesson: Lesson | null;
-  zoneName: string;
-  zoneColor: string;
-  onClose: () => void;
-  onAssign: () => void;
-}) => {
-  if (!lesson) return null;
-
-  return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <Pressable style={styles.modalOverlay} onPress={onClose}>
-        <Pressable style={styles.modalContent} onPress={e => e.stopPropagation()}>
-          {/* Decorations */}
-          <Text style={styles.modalStarTL}>⭐</Text>
-          <Text style={styles.modalStarTR}>✨</Text>
-          <Text style={styles.modalStarBL}>🌟</Text>
-          <Text style={styles.modalStarBR}>💫</Text>
-
-          {/* Close button - fun style */}
-          <Pressable style={styles.modalClose} onPress={onClose}>
-            <View style={styles.modalCloseInner}>
-              <Text style={styles.modalCloseText}>✖️</Text>
-            </View>
-          </Pressable>
-
-          {/* Ribbon banner */}
-          <View style={[styles.modalRibbon, { backgroundColor: zoneColor }]}>
-            <Text style={styles.modalRibbonText}>{zoneName}</Text>
-          </View>
-
-          {/* Icon bubble */}
-          <View style={styles.modalIconOuter}>
-            <View style={[styles.modalIcon, { backgroundColor: zoneColor + '30', borderColor: zoneColor }]}>
-              <Text style={styles.modalIconText}>{lesson.ico}</Text>
-            </View>
-          </View>
-
-          {/* Title & description */}
-          <Text style={styles.modalTitle}>{lesson.title}</Text>
-          <View style={styles.modalTimeBadge}>
-            <Text style={styles.modalTimeText}>⏱️ {lesson.time}</Text>
-          </View>
-          <Text style={styles.modalDesc}>{lesson.desc}</Text>
-
-          {/* Tasks with fun bullets */}
-          <View style={styles.modalTasks}>
-            <Text style={styles.tasksTitle}>🎯 Nhiệm vụ của con:</Text>
-            {(lesson.tasks || []).map((task, idx) => (
-              <View key={idx} style={[styles.taskRow, { borderLeftColor: zoneColor }]}>
-                <View style={[styles.taskBullet, { backgroundColor: zoneColor }]}>
-                  <Text style={styles.taskBulletText}>{idx + 1}</Text>
-                </View>
-                <View style={styles.taskContent}>
-                  <Text style={styles.taskIcon}>{task[0]}</Text>
-                  <Text style={styles.taskText}>{task[1]}</Text>
-                </View>
-              </View>
-            ))}
-          </View>
-
-          {/* Actions - Button3D */}
-          <View style={styles.modalActions}>
-            <View style={styles.btnWrapper}>
-              <Button3D title="Để sau" onPress={onClose} color="yellow" size="small" />
-            </View>
-            <View style={styles.btnWrapperLarge}>
-              <Button3D title="📚 Giao bài" onPress={onAssign} color="green" size="small" />
-            </View>
-          </View>
-        </Pressable>
-      </Pressable>
-    </Modal>
-  );
-};
-
-const ZoneCard = ({
-  zone,
-  index,
-  isSelected,
-  onPress,
-  onLessonPress,
-  lessons,
-}: {
-  zone: typeof ZONES[0];
-  index: number;
-  isSelected: boolean;
-  onPress: () => void;
-  onLessonPress: (lessonId: string) => void;
-  lessons: Record<string, Lesson>;
-}) => {
-  const isEven = index % 2 === 0;
-
-  return (
-    <Pressable
-      style={[
-        styles.cardOuter,
-        { backgroundColor: zone.gradient[1] },
-        {
-          marginTop: isEven ? 0 : CARD_STAGGER_OFFSET,
-          marginBottom: isEven ? CARD_STAGGER_OFFSET : 0,
-          transform: [{ rotate: isEven ? '-2deg' : '2deg' }],
-        },
-        isSelected && styles.cardOuterSelected,
-      ]}
-      onPress={onPress}
-      shouldRasterizeIOS
-      renderToHardwareTextureAndroid
-    >
-      <View style={[styles.cardInner, { borderColor: zone.gradient[0] }]}>
-        {isSelected && (
-          <View style={styles.checkBadge}>
-            <Text style={styles.checkText}>✓</Text>
-          </View>
-        )}
-
-        <Image source={zone.image} style={styles.cardImage} resizeMode="cover" />
-
-        <LinearGradient colors={zone.gradient} style={styles.titleBar}>
-          <View style={styles.numBadge}>
-            <Text style={styles.numText}>{zone.id}</Text>
-          </View>
-          <Text style={styles.titleText} numberOfLines={1}>{zone.title}</Text>
-        </LinearGradient>
-
-        <View style={styles.lessonsWrap}>
-          {zone.lessons.map((lessonId) => {
-            const lesson = lessons[lessonId];
-            if (!lesson) return null;
-            return (
-              <Pressable
-                key={lessonId}
-                style={[styles.lessonBtn, { borderColor: zone.gradient[0] }]}
-                onPress={(e) => {
-                  e.stopPropagation();
-                  onLessonPress(lessonId);
-                }}
-              >
-                <Text style={styles.lessonBtnText} numberOfLines={1}>{lesson.title}</Text>
-              </Pressable>
-            );
-          })}
-        </View>
-      </View>
-    </Pressable>
-  );
+const CHIP_LABELS: Record<string, string> = {
+  z1a: 'Khám phá cùng Pika',
+  z1b: 'Trò chuyện cùng Pika',
+  z1c: 'Làm quen âm thanh',
+  z2a: 'Khám phá cùng Pika',
+  z2b: 'Nạp cụm từ',
+  z2c: 'Hát cùng Pika',
+  z2d: 'Luyện tập',
+  z3a: 'Nạp cụm nâng cao',
+  z3b: 'Role-play',
+  z3c: 'Luyện tập nói',
+  z3d: 'Sửa phát âm',
+  z4a: 'Khám phá kiến thức',
+  z4b: 'Đọc hiểu & trả lời',
+  z4c: 'Thảo luận',
+  z4d: 'Từ vựng nâng cao',
+  z5a: 'Lễ hội & sự kiện',
+  z5b: 'Từ vựng theo chủ đề',
+  z5c: 'Trò chuyện chủ đề',
+  z5d: 'Dự án nhỏ',
 };
 
 export const ScreenTopics: React.FC = () => {
@@ -232,13 +122,42 @@ export const ScreenTopics: React.FC = () => {
   const [currentZone, setCurrentZone] = useState<typeof ZONES[0] | null>(null);
   const [lessons, setLessons] = useState<Record<string, Lesson>>({});
   const [isLoading, setIsLoading] = useState(true);
-  const [, setError] = useState<string | null>(null);
   const [toastVisible, setToastVisible] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
+
+  const artAnims = useRef(ZONES.map(() => new Animated.Value(0))).current;
+  const bottomBarAnim = useRef(new Animated.Value(0)).current;
+  const [typedText, setTypedText] = useState('');
+  const typewriterRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [sparkles, setSparkles] = useState<{id: number; x: number; y: number; emoji: string}[]>([]);
+  const [sparkleCenter, setSparkleCenter] = useState({ x: 0, y: 0 });
+  const sparkleAnims = useRef<Animated.Value[]>([]).current;
 
   useEffect(() => {
     fetchLessons();
   }, [user?.token]);
+
+  useEffect(() => {
+    const selectedIndex = ZONES.findIndex(z => z.id === selectedZone);
+    if (selectedIndex >= 0) {
+      const anim = Animated.loop(
+        Animated.sequence([
+          Animated.timing(artAnims[selectedIndex], {
+            toValue: 1,
+            duration: 1800,
+            useNativeDriver: true,
+          }),
+          Animated.timing(artAnims[selectedIndex], {
+            toValue: 0,
+            duration: 1800,
+            useNativeDriver: true,
+          }),
+        ])
+      );
+      anim.start();
+      return () => anim.stop();
+    }
+  }, [selectedZone]);
 
   const fetchLessons = async () => {
     if (!user?.token) {
@@ -248,12 +167,8 @@ export const ScreenTopics: React.FC = () => {
 
     try {
       setIsLoading(true);
-      setError(null);
       apiService.setToken(user.token);
       const response = await apiService.getExperienceMap();
-
-      console.log('📦 Experience Map Response:', JSON.stringify(response, null, 2));
-      console.log('📋 Lesson IDs from API:', response.data?.lessons?.map((l: ApiLesson) => l.id));
 
       if (response.status === 200 && response.data?.lessons) {
         const lessonsMap: Record<string, Lesson> = {};
@@ -271,20 +186,100 @@ export const ScreenTopics: React.FC = () => {
       }
     } catch (err) {
       console.error('Failed to fetch lessons:', err);
-      const errorMessage = err instanceof Error ? err.message : 'Không thể tải dữ liệu';
-      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleSelectZone = (id: number) => {
+  const handleSelectZone = (id: number, zoneIndex: number) => {
     buttonFeedback();
     if (id !== selectedZone) {
       setSelectedZone(id);
       addStars(1);
+      logEvent('select_zone', 'topics', { zoneId: id, zoneTitle: ZONES[zoneIndex].title });
+
+      // Get zone position for sparkles
+      const zone = ZONES[zoneIndex];
+      const centerX = zone.position.left + zone.position.width / 2;
+      const centerY = zone.position.top + zone.position.height / 2;
+      setSparkleCenter({ x: centerX, y: centerY });
+
+      // Sparkle/firework effect
+      const emojis = ['✨', '⭐', '🌟', '💫', '✦', '★'];
+      const newSparkles = Array.from({ length: 8 }, (_, i) => ({
+        id: Date.now() + i,
+        x: Math.random() * s(200) - s(100),
+        y: Math.random() * s(150) - s(75),
+        emoji: emojis[Math.floor(Math.random() * emojis.length)],
+      }));
+
+      setSparkles(newSparkles);
+
+      const anims = newSparkles.map(() => new Animated.Value(0));
+      sparkleAnims.length = 0;
+      sparkleAnims.push(...anims);
+
+      anims.forEach((anim, i) => {
+        Animated.sequence([
+          Animated.delay(i * 50),
+          Animated.timing(anim, {
+            toValue: 1,
+            duration: 400,
+            useNativeDriver: true,
+          }),
+          Animated.timing(anim, {
+            toValue: 0,
+            duration: 300,
+            useNativeDriver: true,
+          }),
+        ]).start();
+      });
+
+      setTimeout(() => setSparkles([]), 1000);
     }
   };
+
+  // Bottom bar typewriter effect
+  useEffect(() => {
+    if (typewriterRef.current) {
+      clearInterval(typewriterRef.current);
+    }
+
+    if (selectedZone) {
+      const zone = ZONES.find(z => z.id === selectedZone);
+      if (zone) {
+        const fullText = zone.info;
+        setTypedText('');
+
+        Animated.spring(bottomBarAnim, {
+          toValue: 1,
+          friction: 8,
+          tension: 100,
+          useNativeDriver: true,
+        }).start();
+
+        let i = 0;
+        typewriterRef.current = setInterval(() => {
+          if (i < fullText.length) {
+            setTypedText(fullText.slice(0, i + 1));
+            i++;
+          } else {
+            if (typewriterRef.current) clearInterval(typewriterRef.current);
+          }
+        }, 25);
+      }
+    } else {
+      Animated.timing(bottomBarAnim, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }).start();
+    }
+
+    return () => {
+      if (typewriterRef.current) clearInterval(typewriterRef.current);
+    };
+  }, [selectedZone]);
 
   const handleLessonPress = (lessonId: string, zone: typeof ZONES[0]) => {
     buttonFeedback();
@@ -318,76 +313,272 @@ export const ScreenTopics: React.FC = () => {
     }
   };
 
-  const topRow = ZONES.slice(0, 3);
-  const bottomRow = ZONES.slice(3, 5);
-
   if (isLoading) {
     return (
       <ImageBackground
-        source={require('../../assets/graden_pika.png')}
+        source={require('../../assets/fauna/bg-land.webp')}
         style={styles.container}
         resizeMode="cover"
       >
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#F5A623" />
-          <Text style={styles.loadingText}>Đang tải khu vườn...</Text>
+          <ActivityIndicator size="large" color={FaunaColors.amber} />
+          <Text style={styles.loadingText}>Đang tải ốc đảo...</Text>
         </View>
       </ImageBackground>
     );
   }
 
+  const lesson = selectedLesson ? lessons[selectedLesson] : null;
+
   return (
     <ImageBackground
-      source={require('../../assets/graden_pika.png')}
+      source={require('../../assets/fauna/bg-land.webp')}
       style={styles.container}
       resizeMode="cover"
     >
-      {/* Header title */}
-      <View style={styles.headerTitle}>
-        <Text style={styles.headerTitleText}>Hãy chọn thử một bài học muốn giao thử cho con</Text>
-      </View>
+      {/* Title */}
+      <Text style={styles.title}>Ốc đảo tri thức</Text>
+      <Text style={styles.subtitle}>Con muốn khám phá ốc đảo nào hôm nay?</Text>
 
-      {/* Top row - 3 cards */}
-      <View style={styles.cardsRow}>
-        {topRow.map((zone, index) => (
-          <ZoneCard
-            key={zone.id}
-            zone={zone}
-            index={index}
-            isSelected={selectedZone === zone.id}
-            onPress={() => handleSelectZone(zone.id)}
-            onLessonPress={(lessonId) => handleLessonPress(lessonId, zone)}
-            lessons={lessons}
-          />
-        ))}
-      </View>
+      {/* Zones */}
+      {ZONES.map((zone, index) => {
+        const isSelected = selectedZone === zone.id;
 
-      {/* Bottom row - 2 cards */}
-      <View style={[styles.cardsRow, styles.bottomRow]}>
-        {bottomRow.map((zone, index) => (
-          <ZoneCard
+        if (zone.isHero) {
+          return (
+            <Pressable
+              key={zone.id}
+              onPress={() => handleSelectZone(zone.id, index)}
+              style={[styles.zoneHero, zone.position, isSelected && styles.zoneSelected]}
+            >
+              <LinearGradient
+                colors={FaunaColors.zone as [string, string]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.zoneHeroGradient}
+              >
+                {/* Header */}
+                <View style={styles.zoneHeroHead}>
+                  <View style={styles.badge}>
+                    <Text style={styles.badgeText}>{zone.badge}</Text>
+                  </View>
+                  <Text style={styles.heroKicker}>{zone.kicker}</Text>
+                </View>
+
+                {/* Title */}
+                <Text style={styles.heroTitle}>{zone.title}</Text>
+                <Text style={styles.heroDesc}>{zone.desc}</Text>
+
+                {/* Chips */}
+                <View style={styles.heroChips}>
+                  {zone.lessons.map(lessonId => (
+                    <Pressable
+                      key={lessonId}
+                      style={styles.chip}
+                      onPress={() => handleLessonPress(lessonId, zone)}
+                    >
+                      <Text style={styles.chipText}>{CHIP_LABELS[lessonId]}</Text>
+                    </Pressable>
+                  ))}
+                </View>
+
+                {/* Art */}
+                <Animated.Image
+                  source={zone.image}
+                  style={[
+                    styles.heroArt,
+                    isSelected && {
+                      transform: [
+                        {
+                          translateY: artAnims[index].interpolate({
+                            inputRange: [0, 1],
+                            outputRange: [0, -s(9)],
+                          }),
+                        },
+                        {
+                          rotate: artAnims[index].interpolate({
+                            inputRange: [0, 0.5, 1],
+                            outputRange: ['-0.6deg', '0.6deg', '-0.6deg'],
+                          }),
+                        },
+                      ],
+                    },
+                  ]}
+                  resizeMode="contain"
+                />
+              </LinearGradient>
+            </Pressable>
+          );
+        }
+
+        return (
+          <Pressable
             key={zone.id}
-            zone={zone}
-            index={index}
-            isSelected={selectedZone === zone.id}
-            onPress={() => handleSelectZone(zone.id)}
-            onLessonPress={(lessonId) => handleLessonPress(lessonId, zone)}
-            lessons={lessons}
-          />
-        ))}
-      </View>
+            onPress={() => handleSelectZone(zone.id, index)}
+            style={[styles.zone, zone.position, isSelected && styles.zoneSelected]}
+          >
+            <LinearGradient
+              colors={FaunaColors.zone as [string, string]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.zoneGradient}
+            >
+              {/* Art */}
+              <View style={styles.zoneArt}>
+                <Animated.Image
+                  source={zone.image}
+                  style={[
+                    styles.zoneArtImage,
+                    isSelected && {
+                      transform: [
+                        {
+                          translateY: artAnims[index].interpolate({
+                            inputRange: [0, 1],
+                            outputRange: [0, -s(9)],
+                          }),
+                        },
+                        {
+                          rotate: artAnims[index].interpolate({
+                            inputRange: [0, 0.5, 1],
+                            outputRange: ['-0.6deg', '0.6deg', '-0.6deg'],
+                          }),
+                        },
+                      ],
+                    },
+                  ]}
+                  resizeMode="contain"
+                />
+              </View>
+
+              {/* Name Row */}
+              <View style={styles.zoneNameRow}>
+                <View style={styles.badgeSmall}>
+                  <Text style={styles.badgeTextSmall}>{zone.badge}</Text>
+                </View>
+                <Text style={styles.zoneName}>{zone.title}</Text>
+              </View>
+
+              {/* Chips Grid */}
+              <View style={styles.zoneChips}>
+                {zone.lessons.map(lessonId => (
+                  <Pressable
+                    key={lessonId}
+                    style={styles.zoneChip}
+                    onPress={() => handleLessonPress(lessonId, zone)}
+                  >
+                    <Text style={styles.zoneChipText}>{CHIP_LABELS[lessonId]}</Text>
+                  </Pressable>
+                ))}
+              </View>
+            </LinearGradient>
+          </Pressable>
+        );
+      })}
+
+      {/* Sparkles */}
+      {sparkles.map((spark, i) => (
+        <Animated.Text
+          key={spark.id}
+          style={[
+            styles.sparkle,
+            {
+              left: sparkleCenter.x + spark.x,
+              top: sparkleCenter.y + spark.y,
+              opacity: sparkleAnims[i] || 0,
+              transform: [
+                {
+                  scale: sparkleAnims[i]?.interpolate?.({
+                    inputRange: [0, 0.5, 1],
+                    outputRange: [0, 1.5, 0.8],
+                  }) || 1,
+                },
+              ],
+            },
+          ]}
+        >
+          {spark.emoji}
+        </Animated.Text>
+      ))}
+
+      {/* Bottom Bar with Typewriter */}
+      {selectedZone && (
+        <Animated.View
+          style={[
+            styles.bottomBar,
+            {
+              opacity: bottomBarAnim,
+              transform: [
+                {
+                  translateY: bottomBarAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [s(60), 0],
+                  }),
+                },
+              ],
+            },
+          ]}
+        >
+          <View style={styles.bottomBarContent}>
+            <Text style={styles.bottomBarIcon}>🏝️</Text>
+            <Text style={styles.bottomBarText} numberOfLines={2}>
+              {typedText}
+              <Text style={styles.cursor}>|</Text>
+            </Text>
+          </View>
+        </Animated.View>
+      )}
 
       {/* Lesson Modal */}
-      <LessonModal
-        visible={modalVisible}
-        lesson={selectedLesson ? lessons[selectedLesson] : null}
-        zoneName={currentZone?.zone || ''}
-        zoneColor={currentZone?.gradient[0] || '#F5A623'}
-        onClose={() => setModalVisible(false)}
-        onAssign={handleAssign}
-      />
+      <Modal visible={modalVisible} transparent animationType="fade">
+        <Pressable style={styles.overlay} onPress={() => setModalVisible(false)}>
+          <Pressable style={styles.modal} onPress={e => e.stopPropagation()}>
+            <Pressable style={styles.closeBtn} onPress={() => setModalVisible(false)}>
+              <Text style={styles.closeText}>✕</Text>
+            </Pressable>
 
-      {/* Toast */}
+            <View style={styles.modalHead}>
+              <View style={styles.modalIconWrap}>
+                <Image
+                  source={require('../../assets/fauna/pika-lesson.webp')}
+                  style={styles.modalIcon}
+                  resizeMode="contain"
+                />
+              </View>
+              <View style={styles.modalHeadText}>
+                <Text style={styles.modalKicker}>{currentZone?.title}</Text>
+                <Text style={styles.modalTitle}>{lesson?.title}</Text>
+              </View>
+            </View>
+
+            <Text style={styles.modalDesc}>{lesson?.desc}</Text>
+
+            <View style={styles.tasks}>
+              {lesson?.tasks?.map((task, i) => (
+                <View key={i} style={styles.taskRow}>
+                  <Text style={styles.taskIcon}>{task[0]}</Text>
+                  <Text style={styles.taskText}>{task[1]}</Text>
+                </View>
+              ))}
+            </View>
+
+            <View style={styles.modalMeta}>
+              <Text style={styles.metaItem}>⏱️ {lesson?.time}</Text>
+              <Text style={styles.metaItem}>🎯 1 nhiệm vụ nói</Text>
+              <Text style={styles.metaItem}>⭐ +1 sao</Text>
+            </View>
+
+            <View style={styles.modalActions}>
+              <Pressable style={styles.btnAmber} onPress={handleAssign}>
+                <Text style={styles.btnAmberText}>Giao cho Pika</Text>
+              </Pressable>
+              <Pressable style={styles.btnGhost} onPress={() => setModalVisible(false)}>
+                <Text style={styles.btnGhostText}>Để sau</Text>
+              </Pressable>
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
+
       <Toast
         visible={toastVisible}
         type="success"
@@ -401,24 +592,7 @@ export const ScreenTopics: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    paddingHorizontal: isCompact ? 10 : 16,
-    paddingVertical: isCompact ? 4 : 8,
-  },
-  headerTitle: {
-    alignItems: 'center',
-    marginBottom: TITLE_GAP,
-  },
-  headerTitleText: {
-    fontSize: isCompact ? 16 : 20,
-    fontWeight: '800',
-    color: '#1E293B',
-    textAlign: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.85)',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 12,
-    overflow: 'hidden',
+    backgroundColor: FaunaColors.night0,
   },
   loadingContainer: {
     flex: 1,
@@ -426,269 +600,439 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   loadingText: {
-    marginTop: 12,
-    fontSize: 16,
+    marginTop: s(14),
+    fontSize: s(FaunaFontSize.base),
     fontWeight: '700',
-    color: '#8B4513',
+    color: FaunaColors.t2,
   },
-  cardsRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: isCompact ? 8 : 12,
-  },
-  bottomRow: {
-    marginTop: ROW_VERTICAL_GAP,
-  },
-  cardOuter: {
-    width: isCompact ? '30%' : '28%',
-    borderRadius: 16,
-    paddingBottom: 4,
-    elevation: 8,
-  },
-  cardOuterSelected: {
-    elevation: 12,
-  },
-  cardInner: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    borderWidth: 3,
-    overflow: 'hidden',
-  },
-  checkBadge: {
+  title: {
     position: 'absolute',
-    top: 5,
-    right: 5,
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    backgroundColor: '#10B981',
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 10,
+    left: 0,
+    right: 0,
+    top: s(24),
+    textAlign: 'center',
+    fontSize: s(FaunaFontSize['5xl']),
+    fontWeight: '800',
+    lineHeight: s(FaunaFontSize['5xl'] * 1.2),
+    color: FaunaColors.t1,
+  },
+  subtitle: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: s(100),
+    textAlign: 'center',
+    fontSize: s(FaunaFontSize.xl),
+    fontWeight: '700',
+    lineHeight: s(FaunaFontSize.xl * 1.25),
+    color: '#F0C273',
+  },
+  // Hero Zone (z1)
+  zoneHero: {
+    position: 'absolute',
+    borderRadius: s(30),
+    overflow: 'hidden',
     borderWidth: 2,
-    borderColor: '#fff',
-    elevation: 4,
+    borderColor: 'rgba(167,196,234,0.3)',
   },
-  checkText: { fontSize: 11, fontWeight: '900', color: '#fff' },
-  cardImage: {
-    width: '100%',
-    height: isCompact ? 55 : 70,
+  zoneHeroGradient: {
+    flex: 1,
+    padding: s(20),
+    paddingRight: s(26),
   },
-  titleBar: {
+  zoneHeroHead: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
-    paddingVertical: isCompact ? 5 : 6,
-    paddingHorizontal: isCompact ? 6 : 8,
+    gap: s(14),
   },
-  numBadge: {
-    width: isCompact ? 18 : 22,
-    height: isCompact ? 18 : 22,
-    borderRadius: 11,
-    backgroundColor: 'rgba(255,255,255,0.95)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  numText: {
-    fontSize: isCompact ? 10 : 12,
-    fontWeight: '900',
-    color: '#333',
-  },
-  titleText: {
-    flex: 1,
-    fontSize: isCompact ? 9 : 11,
+  heroKicker: {
+    fontSize: s(FaunaFontSize.xs),
     fontWeight: '800',
-    color: '#fff',
-    textShadowColor: 'rgba(0,0,0,0.2)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
+    letterSpacing: 2.4,
+    color: FaunaColors.amberHi,
   },
-  lessonsWrap: {
+  heroTitle: {
+    marginTop: s(6),
+    marginBottom: s(4),
+    fontSize: s(FaunaFontSize['2xl']),
+    fontWeight: '800',
+    letterSpacing: -0.3,
+    color: FaunaColors.t1,
+    maxWidth: s(490),
+  },
+  heroDesc: {
+    marginBottom: s(10),
+    fontSize: s(FaunaFontSize.sm),
+    fontWeight: '600',
+    lineHeight: s(FaunaFontSize.sm * 1.35),
+    color: '#C6D4EE',
+    maxWidth: s(490),
+  },
+  heroChips: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: isCompact ? 4 : 5,
-    padding: isCompact ? 5 : 6,
-    backgroundColor: '#F8FAFC',
+    gap: s(10),
+    maxWidth: s(510),
   },
-  lessonBtn: {
-    backgroundColor: '#fff',
-    paddingVertical: isCompact ? 5 : 6,
-    paddingHorizontal: isCompact ? 7 : 8,
-    borderRadius: 8,
+  heroArt: {
+    position: 'absolute',
+    right: s(26),
+    top: s(32),
+    width: s(216),
+    height: s(228),
+  },
+  // Regular Zones (z2-z5)
+  zone: {
+    position: 'absolute',
+    borderRadius: s(30),
+    overflow: 'hidden',
     borderWidth: 2,
-    elevation: 2,
+    borderColor: 'rgba(167,196,234,0.3)',
   },
-  lessonBtnText: {
-    fontSize: isCompact ? 8 : 9,
-    fontWeight: '800',
-    color: '#1E293B',
-  },
-  // Modal styles - Compact cartoon style for kids
-  modalOverlay: {
+  zoneGradient: {
     flex: 1,
-    backgroundColor: 'rgba(30,42,74,0.6)',
+  },
+  zoneSelected: {
+    borderWidth: 3,
+    borderColor: FaunaColors.amber,
+    shadowColor: FaunaColors.amber,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.45,
+    shadowRadius: s(40),
+    elevation: 12,
+  },
+  zoneArt: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: s(8),
+    height: s(92),
     justifyContent: 'center',
     alignItems: 'center',
   },
-  modalContent: {
-    width: isCompact ? '92%' : '80%',
-    maxWidth: 380,
-    backgroundColor: '#FFF9E6',
-    borderRadius: 20,
-    padding: isCompact ? 12 : 14,
-    paddingTop: isCompact ? 32 : 36,
-    borderWidth: 4,
-    borderColor: '#FFD93D',
+  zoneArtImage: {
+    maxHeight: s(90),
+    maxWidth: s(220),
+  },
+  zoneNameRow: {
+    position: 'absolute',
+    left: s(22),
+    right: s(22),
+    top: s(104),
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: s(12),
+  },
+  zoneName: {
+    flex: 1,
+    fontSize: s(FaunaFontSize.xl),
+    fontWeight: '800',
+    letterSpacing: -0.3,
+    color: FaunaColors.t1,
+  },
+  zoneChips: {
+    position: 'absolute',
+    left: s(20),
+    right: s(20),
+    top: s(150),
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: s(10),
+  },
+  zoneChip: {
+    width: '47.5%',
+    height: s(54),
+    paddingHorizontal: s(8),
+    borderRadius: s(18),
+    backgroundColor: 'rgba(245,185,78,0.14)',
+    borderWidth: 2,
+    borderColor: 'rgba(245,185,78,0.42)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  zoneChipText: {
+    fontSize: s(FaunaFontSize.xs),
+    fontWeight: '700',
+    color: FaunaColors.amberHi,
+    textAlign: 'center',
+  },
+  // Shared
+  badge: {
+    width: s(48),
+    height: s(48),
+    borderRadius: s(24),
+    backgroundColor: FaunaColors.amber,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'rgba(255,240,205,0.85)',
+    shadowColor: FaunaColors.amber,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.6,
+    shadowRadius: s(18),
+    elevation: 8,
+  },
+  badgeText: {
+    fontSize: s(FaunaFontSize.base),
+    fontWeight: '800',
+    color: '#26200A',
+  },
+  badgeSmall: {
+    width: s(42),
+    height: s(42),
+    borderRadius: s(21),
+    backgroundColor: FaunaColors.amber,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'rgba(255,240,205,0.85)',
+    shadowColor: FaunaColors.amber,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.55,
+    shadowRadius: s(16),
+    elevation: 6,
+  },
+  badgeTextSmall: {
+    fontSize: s(FaunaFontSize.sm),
+    fontWeight: '800',
+    color: '#26200A',
+  },
+  chip: {
+    height: s(54),
+    paddingHorizontal: s(18),
+    borderRadius: s(20),
+    backgroundColor: 'rgba(245,185,78,0.14)',
+    borderWidth: 2,
+    borderColor: 'rgba(245,185,78,0.42)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  chipText: {
+    fontSize: s(FaunaFontSize.xs),
+    fontWeight: '700',
+    color: FaunaColors.amberHi,
+  },
+  // Modal
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.75)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modal: {
+    width: s(700),
+    backgroundColor: 'rgba(20,32,72,0.98)',
+    borderRadius: s(40),
+    padding: s(32),
+    borderWidth: 2,
+    borderTopColor: 'rgba(245,185,78,0.4)',
+    borderLeftColor: 'rgba(167,196,234,0.25)',
+    borderRightColor: 'rgba(10,20,50,0.6)',
+    borderBottomColor: 'rgba(5,10,30,0.8)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: s(20) },
+    shadowOpacity: 0.6,
+    shadowRadius: s(40),
     elevation: 20,
   },
-  modalStarTL: { position: 'absolute', top: -6, left: 15, fontSize: 18 },
-  modalStarTR: { position: 'absolute', top: 6, right: 40, fontSize: 14 },
-  modalStarBL: { position: 'absolute', bottom: 6, left: 10, fontSize: 14 },
-  modalStarBR: { position: 'absolute', bottom: -4, right: 20, fontSize: 16 },
-  modalClose: {
+  closeBtn: {
     position: 'absolute',
-    top: -10,
-    right: -10,
-    zIndex: 10,
-    backgroundColor: '#CC4444',
-    borderRadius: 16,
-    padding: 2,
-    paddingBottom: 4,
-  },
-  modalCloseInner: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
-    backgroundColor: '#FF6B6B',
+    right: s(22),
+    top: s(22),
+    width: s(56),
+    height: s(56),
+    borderRadius: s(28),
+    backgroundColor: 'rgba(167,196,234,0.16)',
+    borderWidth: 2,
+    borderColor: 'rgba(167,196,234,0.4)',
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 2,
-    borderColor: '#FFB4B4',
+    zIndex: 10,
   },
-  modalCloseText: {
-    fontSize: 12,
+  closeText: {
+    fontSize: s(22),
+    fontWeight: '700',
+    color: FaunaColors.t1,
   },
-  modalRibbon: {
-    position: 'absolute',
-    top: 8,
-    left: -4,
-    paddingVertical: 4,
-    paddingHorizontal: 10,
-    borderRadius: 6,
-    borderTopLeftRadius: 0,
-    elevation: 4,
-  },
-  modalRibbonText: {
-    fontSize: isCompact ? 9 : 10,
-    fontWeight: '900',
-    color: '#fff',
-  },
-  modalIconOuter: {
+  modalHead: {
+    flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 4,
+    gap: s(20),
+    marginBottom: s(22),
+    paddingRight: s(60),
+  },
+  modalIconWrap: {
+    width: s(86),
+    height: s(86),
+    borderRadius: s(30),
+    backgroundColor: 'rgba(245,185,78,0.14)',
+    borderWidth: 2,
+    borderColor: 'rgba(245,185,78,0.35)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   modalIcon: {
-    width: isCompact ? 44 : 50,
-    height: isCompact ? 44 : 50,
-    borderRadius: 25,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 3,
+    width: s(70),
+    height: s(70),
   },
-  modalIconText: {
-    fontSize: isCompact ? 22 : 26,
+  modalHeadText: {
+    flex: 1,
+  },
+  modalKicker: {
+    fontSize: s(FaunaFontSize.xs),
+    fontWeight: '800',
+    letterSpacing: s(1.5),
+    color: FaunaColors.amberHi,
+    textTransform: 'uppercase',
+    marginBottom: s(6),
   },
   modalTitle: {
-    fontSize: isCompact ? 15 : 17,
-    fontWeight: '900',
-    color: '#8B4513',
-    textAlign: 'center',
-    marginBottom: 2,
-  },
-  modalTimeBadge: {
-    alignSelf: 'center',
-    backgroundColor: '#fff',
-    paddingVertical: 2,
-    paddingHorizontal: 8,
-    borderRadius: 8,
-    borderWidth: 2,
-    borderColor: '#E6A800',
-    marginBottom: 4,
-  },
-  modalTimeText: {
-    fontSize: isCompact ? 9 : 10,
+    fontSize: s(FaunaFontSize['2xl']),
     fontWeight: '800',
-    color: '#8B4513',
+    color: FaunaColors.t1,
+    lineHeight: s(FaunaFontSize['2xl'] * 1.2),
   },
   modalDesc: {
-    fontSize: isCompact ? 10 : 11,
+    fontSize: s(FaunaFontSize.sm),
     fontWeight: '600',
-    color: '#64748B',
-    lineHeight: isCompact ? 14 : 15,
-    textAlign: 'center',
-    marginBottom: 8,
+    lineHeight: s(FaunaFontSize.sm * 1.45),
+    color: FaunaColors.t2,
+    marginBottom: s(22),
   },
-  modalTasks: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: isCompact ? 8 : 10,
-    borderWidth: 2,
-    borderColor: '#FFE66D',
-    marginBottom: 10,
-  },
-  tasksTitle: {
-    fontSize: isCompact ? 11 : 12,
-    fontWeight: '900',
-    color: '#8B4513',
-    marginBottom: 6,
+  tasks: {
+    marginBottom: s(22),
+    gap: s(12),
   },
   taskRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    backgroundColor: '#FFFDF7',
-    padding: isCompact ? 6 : 7,
-    borderRadius: 8,
-    marginBottom: 4,
-    borderLeftWidth: 3,
-  },
-  taskBullet: {
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  taskBulletText: {
-    fontSize: 10,
-    fontWeight: '900',
-    color: '#fff',
-  },
-  taskContent: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
+    gap: s(16),
+    paddingVertical: s(16),
+    paddingHorizontal: s(20),
+    backgroundColor: 'rgba(255,255,255,0.97)',
+    borderRadius: s(22),
+    borderWidth: 1,
+    borderColor: 'rgba(200,200,200,0.3)',
+    shadowColor: '#1B2A57',
+    shadowOffset: { width: 0, height: s(2) },
+    shadowOpacity: 0.06,
+    shadowRadius: s(4),
   },
   taskIcon: {
-    fontSize: isCompact ? 12 : 14,
+    fontSize: s(26),
   },
   taskText: {
     flex: 1,
-    fontSize: isCompact ? 9 : 10,
+    fontSize: s(FaunaFontSize.sm),
     fontWeight: '700',
-    color: '#475569',
+    lineHeight: s(FaunaFontSize.sm * 1.35),
+    color: '#1B2A57',
+  },
+  modalMeta: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: s(24),
+    marginBottom: s(26),
+    paddingVertical: s(16),
+    backgroundColor: 'rgba(167,196,234,0.1)',
+    borderRadius: s(22),
+    borderWidth: 1,
+    borderColor: 'rgba(167,196,234,0.2)',
+  },
+  metaItem: {
+    fontSize: s(FaunaFontSize.sm),
+    fontWeight: '700',
+    color: FaunaColors.t2,
   },
   modalActions: {
     flexDirection: 'row',
-    gap: 10,
-    justifyContent: 'center',
+    gap: s(14),
   },
-  btnWrapper: {
+  btnAmber: {
     flex: 1,
+    height: s(FaunaTouchTarget.cta),
+    borderRadius: s(34),
+    backgroundColor: FaunaColors.amber,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 3,
+    borderTopColor: 'rgba(255,255,255,0.45)',
+    borderLeftColor: 'rgba(255,255,255,0.3)',
+    borderRightColor: 'rgba(180,130,30,0.5)',
+    borderBottomColor: 'rgba(160,100,20,0.7)',
+    shadowColor: FaunaColors.amber,
+    shadowOffset: { width: 0, height: s(8) },
+    shadowOpacity: 0.6,
+    shadowRadius: s(22),
+    elevation: 12,
   },
-  btnWrapperLarge: {
-    flex: 1.5,
+  btnAmberText: {
+    fontSize: s(FaunaFontSize.lg),
+    fontWeight: '800',
+    color: '#26200A',
+  },
+  btnGhost: {
+    flex: 1,
+    height: s(FaunaTouchTarget.cta),
+    borderRadius: s(34),
+    backgroundColor: 'rgba(167,196,234,0.14)',
+    borderWidth: 2,
+    borderColor: 'rgba(167,196,234,0.4)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  btnGhostText: {
+    fontSize: s(FaunaFontSize.base),
+    fontWeight: '700',
+    color: FaunaColors.t1,
+  },
+  // Sparkle
+  sparkle: {
+    position: 'absolute',
+    fontSize: s(30),
+    textShadowColor: 'rgba(255,220,150,0.9)',
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: s(12),
+    zIndex: 100,
+  },
+  // Bottom Bar
+  bottomBar: {
+    position: 'absolute',
+    bottom: s(14),
+    left: s(60),
+    right: s(60),
+    backgroundColor: 'rgba(20,32,72,0.96)',
+    borderRadius: s(26),
+    padding: s(16),
+    borderWidth: 2,
+    borderTopColor: 'rgba(245,185,78,0.4)',
+    borderLeftColor: 'rgba(167,196,234,0.22)',
+    borderRightColor: 'rgba(10,20,50,0.6)',
+    borderBottomColor: 'rgba(5,10,30,0.8)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: s(10) },
+    shadowOpacity: 0.5,
+    shadowRadius: s(20),
+    elevation: 12,
+    zIndex: 50,
+  },
+  bottomBarContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: s(16),
+  },
+  bottomBarIcon: {
+    fontSize: s(36),
+  },
+  bottomBarText: {
+    flex: 1,
+    fontSize: s(FaunaFontSize.sm),
+    fontWeight: '600',
+    lineHeight: s(FaunaFontSize.sm * 1.42),
+    color: FaunaColors.t2,
+  },
+  cursor: {
+    color: FaunaColors.amber,
+    fontWeight: '400',
   },
 });

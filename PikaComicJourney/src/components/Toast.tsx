@@ -136,22 +136,22 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   iconContainer: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+    width: 62,
+    height: 62,
+    borderRadius: 31,
     backgroundColor: 'rgba(255,255,255,0.3)',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: Spacing.md,
   },
   icon: {
-    fontSize: 28,
+    fontSize: 34,
   },
   textContainer: {
     flex: 1,
   },
   title: {
-    fontSize: 16,
+    fontSize: 22,
     fontWeight: '800',
     color: Colors.white,
     textShadowColor: 'rgba(0,0,0,0.2)',
@@ -159,10 +159,11 @@ const styles = StyleSheet.create({
     textShadowRadius: 2,
   },
   message: {
-    fontSize: 13,
+    fontSize: 17,
     fontWeight: '600',
+    lineHeight: 23,
     color: 'rgba(255,255,255,0.95)',
-    marginTop: 2,
+    marginTop: 3,
   },
   starLeft: {
     position: 'absolute',

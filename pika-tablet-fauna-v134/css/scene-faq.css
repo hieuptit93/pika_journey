@@ -1,0 +1,40 @@
+/* ==========================================================================
+   SCENE 5 · FAQ — accordion + khối QR Zalo.
+   CTA "Cho con chơi lại" đã TÁCH khỏi khối QR (2 thông điệp ≠ nhau):
+   QR = liên hệ tư vấn, CTA = chơi tiếp. CTA là "1 đèn amber" của màn này.
+   ========================================================================== */
+.f-title{position:absolute; left:0; right:0; top:118px; font-size:var(--fs-5xl); line-height:1.2;}
+
+.faq-list{position:absolute; left:64px; top:226px; width:824px; display:flex; flex-direction:column; gap:10px;}
+.faq{border-radius:var(--r-md); background:linear-gradient(180deg,#142046,#0F1734); border:1px solid var(--line);
+  overflow:hidden; transition:border-color var(--t-med), box-shadow var(--t-med);}
+.faq.open{border-color:rgba(245,185,78,.7); box-shadow:0 0 28px rgba(245,185,78,.14);}
+.faq-q{width:100%; display:flex; align-items:center; justify-content:space-between; gap:14px;
+  padding:14px 20px; text-align:left; font-size:var(--fs-base); font-weight:700; color:#EAF0FF;}
+.faq-tg{width:40px; height:40px; border-radius:var(--r-sm); flex:none; display:grid; place-items:center; font-size:18px;
+  background:rgba(167,196,234,.1); border:1px solid var(--line); color:var(--amber-hi); transition:.24s;}
+.faq.open .faq-tg{transform:rotate(45deg); background:linear-gradient(180deg,var(--amber-hi),var(--amber)); color:#26200A;}
+.faq-a{max-height:0; overflow:hidden; transition:max-height .3s ease, padding .3s ease;
+  padding:0 20px; font-size:var(--fs-sm); font-weight:500; line-height:1.65; color:#B9C7E6;}
+.faq.open .faq-a{max-height:180px; padding:0 20px 16px;}
+
+/* khối QR — chỉ nói 1 chuyện: kết nối Zalo OA */
+.faq-qr{position:absolute; left:64px; right:64px; bottom:104px; display:flex; align-items:center; gap:20px;
+  padding:16px 20px; border-radius:var(--r-md); background:#FAF7EC; border:2px solid #D9E3D6;
+  box-shadow:0 16px 34px rgba(0,0,0,.4), inset 0 0 0 1px rgba(255,255,255,.7);}
+.faq-qr img{width:110px; height:110px; flex:none; border-radius:8px;}
+.faq-qr-txt{display:flex; flex-direction:column; gap:6px;}
+.faq-qr-txt strong{font-family:var(--f-disp); font-weight:700; font-size:19px; color:#1F6FA8;}
+.faq-qr-txt p{margin:0; font-size:var(--fs-sm); font-weight:600; line-height:1.5; color:#33465F;}
+
+/* CTA cấp 1 của màn — đứng riêng, canh giữa */
+.f-cta{position:absolute; left:50%; transform:translateX(-50%); bottom:30px; height:56px; padding:0 30px;
+  border-radius:var(--r-pill); font-family:var(--f-disp); font-weight:700; font-size:var(--fs-lg);
+  background:linear-gradient(180deg,var(--amber-hi),var(--amber)); color:#26200A;
+  box-shadow:0 12px 26px rgba(245,185,78,.26);
+  transition:transform var(--t-fast), filter .18s;}
+.f-cta:active{transform:translateX(-50%) scale(.97);}
+
+@media (hover:hover){
+  .f-cta:hover{filter:brightness(1.05);}
+}

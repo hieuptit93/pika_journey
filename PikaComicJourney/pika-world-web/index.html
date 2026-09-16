@@ -1,0 +1,2527 @@
+<title>Pika World</title>
+<style>
+  :root {
+    --yellow-light: #FFE66D;
+    --yellow-mid: #FFD93D;
+    --yellow-dark: #FFC107;
+    --yellow-border: #E6A800;
+    --orange: #FF6B35;
+    --orange-dark: #CC4D1A;
+    --brown: #5D3A1A;
+    --brown-light: #7A4F2B;
+    --sky-light: #F0F7FF;
+    --sky-mid: #E8F4FD;
+    --sky-dark: #C5E4F9;
+    --white: #FFFFFF;
+    --cream: #FFFDF7;
+    --cream-dark: #FFF9E6;
+    --text-dark: #1a1a2e;
+    --text-mid: #2d3748;
+    --text-muted: #4a5568;
+    --text-light: #718096;
+    --red: #FF6B6B;
+    --red-dark: #CC4444;
+    --green: #10B981;
+    --green-dark: #059669;
+    --blue: #3B82F6;
+    --blue-dark: #2563EB;
+    --purple: #8B5CF6;
+    --purple-dark: #6D28D9;
+    --pink: #EC4899;
+    --pink-dark: #BE185D;
+    --bg: #1a1a2e;
+    --card-bg: var(--white);
+    --shadow: rgba(0,0,0,0.15);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --sky-light: #1a2744;
+      --sky-mid: #0f1a2e;
+      --sky-dark: #0a1220;
+      --cream: #1e2a3d;
+      --cream-dark: #253347;
+      --white: #2a3a52;
+      --card-bg: #2a3a52;
+      --bg: #0f1a2e;
+      --text-dark: #f1f5f9;
+      --text-mid: #cbd5e1;
+      --text-muted: #94a3b8;
+      --shadow: rgba(0,0,0,0.3);
+    }
+  }
+  :root[data-theme="dark"] {
+    --sky-light: #1a2744;
+    --sky-mid: #0f1a2e;
+    --sky-dark: #0a1220;
+    --cream: #1e2a3d;
+    --cream-dark: #253347;
+    --white: #2a3a52;
+    --card-bg: #2a3a52;
+    --bg: #0f1a2e;
+    --text-dark: #f1f5f9;
+    --text-mid: #cbd5e1;
+    --text-muted: #94a3b8;
+    --shadow: rgba(0,0,0,0.3);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body {
+    height: 100%;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text-dark);
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .app {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: 1024px;
+    aspect-ratio: 4 / 3;
+    max-height: 100vh;
+    margin: 0 auto;
+    background: var(--cream);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  }
+
+  @media (max-height: 768px) {
+    .app {
+      aspect-ratio: auto;
+      height: 100vh;
+      border-radius: 0;
+    }
+  }
+
+  /* ==================== LOGIN SCREEN ==================== */
+  .screen-login {
+    flex: 1;
+    background: linear-gradient(135deg, var(--yellow-light), var(--yellow-mid), var(--yellow-dark));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .login-container {
+    display: flex;
+    align-items: center;
+    gap: 40px;
+    max-width: 800px;
+    width: 100%;
+  }
+
+  .login-brand {
+    flex: 1;
+    text-align: center;
+  }
+
+  .mascot-outer {
+    background: #E6A800;
+    border-radius: 60px;
+    padding: 5px 5px 8px;
+    display: inline-block;
+    margin-bottom: 12px;
+  }
+
+  .mascot-circle {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    background: #fff;
+    border: 3px solid #FFE66D;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 60px;
+    overflow: hidden;
+  }
+
+  .mascot-circle img, .top-brand-badge img {
+    width: 110%;
+    height: 110%;
+    object-fit: cover;
+  }
+
+  .play-card-image img, .zone-image img, .stage-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .play-card-img img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .stage-pika img {
+    width: 85%;
+    height: 85%;
+    object-fit: contain;
+  }
+
+  .welcome-text {
+    font-size: 20px;
+    font-weight: 700;
+    color: #5D3A1A;
+    margin-bottom: 4px;
+  }
+
+  .brand-name {
+    font-size: 36px;
+    font-weight: 900;
+    color: #5D3A1A;
+    text-shadow: 2px 2px 0 #fff;
+    margin-bottom: 8px;
+  }
+
+  .tagline-bubble {
+    background: #fff;
+    border-radius: 20px;
+    padding: 8px 16px;
+    border: 3px solid #E6A800;
+    display: inline-block;
+  }
+
+  .tagline {
+    font-size: 14px;
+    font-weight: 700;
+    color: #5D3A1A;
+  }
+
+  .login-form {
+    flex: 1;
+    max-width: 400px;
+  }
+
+  .form-card {
+    background: #FFFDF7;
+    border-radius: 24px;
+    padding: 24px;
+    border: 4px solid #E6A800;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+  }
+
+  .form-title {
+    font-size: 22px;
+    font-weight: 900;
+    color: #5D3A1A;
+    text-align: center;
+    margin-bottom: 16px;
+  }
+
+  .input-group {
+    margin-bottom: 14px;
+  }
+
+  .input-label {
+    font-size: 13px;
+    font-weight: 800;
+    color: #5D3A1A;
+    margin-bottom: 6px;
+    display: block;
+  }
+
+  .input-outer {
+    background: #E6A800;
+    border-radius: 14px;
+    padding-bottom: 3px;
+  }
+
+  .input-field {
+    width: 100%;
+    background: #FFF9E6;
+    border: 2px solid #FFE66D;
+    border-radius: 12px;
+    padding: 12px 14px;
+    font-size: 16px;
+    font-weight: 600;
+    color: #1a1a2e;
+    outline: none;
+    transition: all 0.2s;
+  }
+
+  .input-field:focus {
+    background: #fff;
+    border-color: #FF6B35;
+  }
+
+  .input-field::placeholder {
+    color: #8B7355;
+  }
+
+  .error-bubble {
+    background: #FFE4E4;
+    border: 2px solid #FF9999;
+    border-radius: 12px;
+    padding: 10px;
+    margin-bottom: 10px;
+    text-align: center;
+  }
+
+  .error-text {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--red-dark);
+  }
+
+  .help-text {
+    font-size: 13px;
+    font-weight: 700;
+    color: #5D3A1A;
+    text-align: center;
+    margin-top: 14px;
+  }
+
+  .login-stars {
+    position: absolute;
+    font-size: 24px;
+    opacity: 0.6;
+    animation: float 3s ease-in-out infinite;
+  }
+  .star-tl { top: 20px; left: 20px; }
+  .star-tr { top: 30px; right: 30px; animation-delay: 0.5s; }
+  .star-bl { bottom: 30px; left: 30px; animation-delay: 1s; }
+  .star-br { bottom: 20px; right: 20px; animation-delay: 1.5s; }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+  }
+
+  /* ==================== BUTTON 3D ==================== */
+  .btn-3d {
+    position: relative;
+    cursor: pointer;
+    border: none;
+    background: none;
+    padding: 0;
+    transition: all 0.1s;
+  }
+
+  .btn-3d-outer {
+    border-radius: 18px;
+    padding-bottom: 5px;
+    display: inline-block;
+  }
+
+  .btn-3d-inner {
+    padding: 14px 28px;
+    border-radius: 14px;
+    font-size: 15px;
+    font-weight: 900;
+    letter-spacing: 0.5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    white-space: nowrap;
+  }
+
+  .btn-3d:active .btn-3d-outer {
+    padding-bottom: 1px;
+    margin-top: 4px;
+  }
+
+  .btn-orange .btn-3d-outer { background: var(--orange-dark); }
+  .btn-orange .btn-3d-inner { background: #FF6B35; color: #fff; }
+
+  .btn-green .btn-3d-outer { background: #059669; }
+  .btn-green .btn-3d-inner { background: #10B981; color: #fff; }
+
+  .btn-purple .btn-3d-outer { background: #6D28D9; }
+  .btn-purple .btn-3d-inner { background: #8B5CF6; color: #fff; }
+
+  .btn-yellow .btn-3d-outer { background: #D97706; }
+  .btn-yellow .btn-3d-inner { background: #FBBF24; color: #8B4513; }
+
+  .btn-blue .btn-3d-outer { background: #2563EB; }
+  .btn-blue .btn-3d-inner { background: #3B82F6; color: #fff; }
+
+  .btn-small .btn-3d-inner {
+    padding: 10px 20px;
+    font-size: 13px;
+    border-radius: 12px;
+  }
+  .btn-small .btn-3d-outer { border-radius: 14px; padding-bottom: 4px; }
+
+  .btn-large .btn-3d-inner {
+    padding: 18px 36px;
+    font-size: 18px;
+    border-radius: 18px;
+  }
+  .btn-large .btn-3d-outer { border-radius: 22px; padding-bottom: 6px; }
+
+  /* ==================== TOP BAR ==================== */
+  .top-bar {
+    height: 72px;
+    background: linear-gradient(135deg, var(--yellow-light), var(--yellow-mid), var(--yellow-dark));
+    display: flex;
+    align-items: center;
+    padding: 0 20px;
+    gap: 16px;
+    border-bottom: 4px solid var(--yellow-border);
+  }
+
+  .top-brand {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+  }
+
+  .top-brand-outer {
+    background: var(--yellow-border);
+    border-radius: 16px;
+    padding: 3px 3px 5px;
+  }
+
+  .top-brand-badge {
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
+    background: #fff;
+    border: 2px solid #FFE66D;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    overflow: hidden;
+  }
+
+  .top-brand-name {
+    font-size: 20px;
+    font-weight: 900;
+    color: #5D3A1A;
+    text-shadow: 1px 1px 0 #fff;
+  }
+
+  .nav-tabs {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+  }
+
+  .nav-tab-outer {
+    border-radius: 16px;
+    padding-bottom: 3px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .nav-tab {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    height: 42px;
+    padding: 0 14px;
+    border-radius: 14px;
+    background: rgba(255,255,255,0.85);
+    border: 2px solid rgba(255,255,255,0.95);
+    transition: all 0.2s;
+  }
+
+  .nav-tab-icon { font-size: 18px; }
+  .nav-tab-label {
+    font-size: 13px;
+    font-weight: 800;
+    color: #5D3A1A;
+  }
+
+  .nav-tab-outer.active {
+    background: #CC4444;
+  }
+  .nav-tab-outer.active .nav-tab {
+    background: #FF6B6B;
+  }
+  .nav-tab-outer.active .nav-tab-label {
+    color: #fff;
+    text-shadow: 0 1px 1px rgba(0,0,0,0.2);
+  }
+
+  .nav-tab-outer[data-tab="topics"] { }
+  .nav-tab-outer[data-tab="topics"].active { background: #2E9B4E; }
+  .nav-tab-outer[data-tab="topics"].active .nav-tab { background: #4ECB71; }
+
+  .nav-tab-outer[data-tab="journey"].active { background: #3366CC; }
+  .nav-tab-outer[data-tab="journey"].active .nav-tab { background: #5B9DFF; }
+
+  .nav-tab-outer[data-tab="parents"].active { background: #7C3AED; }
+  .nav-tab-outer[data-tab="parents"].active .nav-tab { background: #A855F7; }
+
+  .nav-tab-outer[data-tab="faq"].active { background: #D97706; }
+  .nav-tab-outer[data-tab="faq"].active .nav-tab { background: #FBBF24; }
+  .nav-tab-outer[data-tab="faq"].active .nav-tab-label { color: #8B4513; }
+
+  .top-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .action-btn-outer {
+    background: var(--yellow-border);
+    border-radius: 14px;
+    padding-bottom: 3px;
+    cursor: pointer;
+  }
+
+  .action-btn {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: #fff;
+    border: 2px solid #FFE66D;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+  }
+
+  .star-pill-outer {
+    background: #E6A800;
+    border-radius: 18px;
+    padding-bottom: 3px;
+  }
+
+  .star-pill {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    height: 44px;
+    padding: 0 16px;
+    border-radius: 16px;
+    background: #fff;
+    border: 2px solid #FFE66D;
+  }
+
+  .star-icon { font-size: 22px; }
+  .star-count {
+    font-size: 18px;
+    font-weight: 900;
+    color: #FF6B35;
+  }
+
+  .signout-outer {
+    background: #CC4444;
+    border-radius: 14px;
+    padding-bottom: 3px;
+    cursor: pointer;
+  }
+
+  .signout-btn {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: #FF6B6B;
+    border: 2px solid #FFB4B4;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+  }
+
+  /* ==================== SCREENS ==================== */
+  .screens-container {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .screen {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s;
+    overflow-y: auto;
+  }
+
+  .screen.active {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  /* Navigation Arrows */
+  .nav-arrow {
+    position: absolute;
+    top: 50%;
+    margin-top: -24px;
+    width: 48px;
+    height: 48px;
+    background: rgba(0,0,0,0.25);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 32px;
+    font-weight: 300;
+    cursor: pointer;
+    z-index: 100;
+    transition: background 0.2s;
+    border: none;
+  }
+  .nav-arrow:hover { background: rgba(0,0,0,0.4); }
+  .nav-arrow-left { left: 10px; }
+  .nav-arrow-right { right: 10px; }
+
+  /* ==================== SCREEN WELCOME ==================== */
+  .screen-welcome {
+    background: url('assets/home_pika.png') center/cover no-repeat;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 20px;
+  }
+
+  .welcome-hero {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 205px;
+  }
+
+  @keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-20px); }
+  }
+
+  .play-cards {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 14px;
+    padding-bottom: 10px;
+  }
+
+  .play-card-outer {
+    flex: 1;
+    max-width: 180px;
+    border-radius: 18px;
+    padding-bottom: 5px;
+    cursor: pointer;
+    transition: transform 0.2s;
+  }
+
+  .play-card-outer:nth-child(odd) {
+    transform: rotate(-2deg);
+    margin-bottom: 20px;
+  }
+  .play-card-outer:nth-child(even) {
+    transform: rotate(2deg);
+    margin-top: 20px;
+  }
+
+  .play-card-outer:hover {
+    transform: scale(1.05) rotate(0deg);
+  }
+
+  .play-card {
+    background: #fff;
+    border-radius: 14px;
+    border-width: 3px;
+    border-style: solid;
+    overflow: hidden;
+  }
+
+  .play-card-image {
+    width: 100%;
+    height: 95px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 48px;
+    background: #E8F4FD;
+  }
+
+  .play-card-title {
+    padding: 10px 8px;
+    font-size: 14px;
+    font-weight: 900;
+    color: #fff;
+    text-align: center;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+  }
+
+  /* ==================== SCREEN PLAY ==================== */
+  .screen-play {
+    background: url('assets/pika_play.jpeg') center/cover no-repeat;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .play-header {
+    text-align: center;
+    margin-bottom: 14px;
+    background: rgba(255,255,255,0.9);
+    padding: 12px 20px;
+    border-radius: 16px;
+    backdrop-filter: blur(8px);
+  }
+
+  .play-header-title {
+    font-size: 24px;
+    font-weight: 800;
+    color: #1a1a2e;
+    margin-bottom: 4px;
+  }
+
+  .play-header-sub {
+    font-size: 14px;
+    font-weight: 600;
+    color: #4a5568;
+  }
+
+  .play-main {
+    flex: 1;
+    display: flex;
+    gap: 16px;
+  }
+
+  .play-cards-grid {
+    flex: 3;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .play-card-item {
+    background: #3B4A6B;
+    border-radius: 16px;
+    border: 3px solid #4A5A7A;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  }
+
+  .play-card-item:hover {
+    transform: scale(1.02);
+    border-color: #5A6A8A;
+  }
+
+  .play-card-item.selected {
+    border-color: #3B82F6;
+  }
+
+  .play-card-check {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: #10B981;
+    border: 2px solid #fff;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 900;
+    color: #fff;
+    z-index: 10;
+  }
+
+  .play-card-item.selected .play-card-check {
+    display: flex;
+  }
+
+  .play-card-img {
+    flex: 1;
+    min-height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 56px;
+    background: #E8F4FD;
+    border-radius: 12px;
+    margin: 6px;
+    overflow: hidden;
+  }
+
+  .play-card-bottom {
+    padding: 10px 12px;
+    background: #3B4A6B;
+  }
+
+  .play-card-name {
+    font-size: 15px;
+    font-weight: 800;
+    color: #fff;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+  }
+
+  .play-card-desc {
+    font-size: 11px;
+    font-weight: 600;
+    color: rgba(255,255,255,0.8);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .pika-stage {
+    flex: 2;
+    display: flex;
+    flex-direction: column;
+    padding: 16px;
+    gap: 12px;
+  }
+
+  .stage-bubble {
+    background: rgba(255,255,255,0.95);
+    border-radius: 14px;
+    padding: 14px;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    backdrop-filter: blur(8px);
+  }
+
+  .bubble-title {
+    font-size: 15px;
+    font-weight: 800;
+    color: #1a1a2e;
+    margin-bottom: 4px;
+  }
+
+  .bubble-text {
+    font-size: 12px;
+    font-weight: 600;
+    color: #4a5568;
+    line-height: 1.5;
+  }
+
+  .stage-pika {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 100px;
+    animation: pikaFloat 3s ease-in-out infinite;
+  }
+
+  @keyframes pikaFloat {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    50% { transform: translateY(-10px) rotate(5deg); }
+  }
+
+  .stage-button {
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  /* ==================== SCREEN TOPICS ==================== */
+  .screen-topics {
+    background: url('assets/graden_pika.png') center/cover no-repeat;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  .topics-header {
+    text-align: center;
+    margin-bottom: 24px;
+  }
+
+  .topics-header-text {
+    font-size: 18px;
+    font-weight: 800;
+    color: #1a1a2e;
+    background: rgba(255,255,255,0.95);
+    padding: 12px 24px;
+    border-radius: 16px;
+    display: inline-block;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    backdrop-filter: blur(8px);
+  }
+
+  .zones-row {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+
+  .zone-card-outer {
+    width: 200px;
+    border-radius: 16px;
+    padding-bottom: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .zone-card-outer:nth-child(odd) {
+    transform: rotate(-2deg);
+  }
+  .zone-card-outer:nth-child(even) {
+    transform: rotate(2deg);
+    margin-top: 12px;
+  }
+
+  .zone-card-outer:hover {
+    transform: scale(1.03) rotate(0deg);
+  }
+
+  .zone-card {
+    background: #fff;
+    border-radius: 12px;
+    border-width: 3px;
+    border-style: solid;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .zone-check {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: #10B981;
+    border: 2px solid #fff;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 900;
+    color: #fff;
+    z-index: 10;
+  }
+
+  .zone-card-outer.selected .zone-check {
+    display: flex;
+  }
+
+  .zone-image {
+    height: 70px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 40px;
+    background: #E8F4FD;
+  }
+
+  .zone-title-bar {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 6px 8px;
+  }
+
+  .zone-num {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.95);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 900;
+    color: #333;
+  }
+
+  .zone-title-text {
+    flex: 1;
+    font-size: 11px;
+    font-weight: 800;
+    color: #fff;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .zone-lessons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    padding: 6px;
+    background: #F8FAFC;
+  }
+
+  .lesson-btn {
+    background: #fff;
+    padding: 6px 8px;
+    border-radius: 8px;
+    border-width: 2px;
+    border-style: solid;
+    font-size: 9px;
+    font-weight: 800;
+    color: #1a1a2e;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .lesson-btn:hover {
+    transform: scale(1.05);
+  }
+
+  /* ==================== SCREEN JOURNEY ==================== */
+  .screen-journey {
+    background: var(--sky-mid);
+    padding: 24px;
+    overflow-y: auto;
+  }
+
+  .journey-header {
+    margin-bottom: 16px;
+  }
+
+  .journey-title {
+    font-size: 30px;
+    font-weight: 800;
+    color: #1a1a2e;
+    margin-bottom: 4px;
+  }
+
+  .journey-sub {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--blue);
+    letter-spacing: 1px;
+  }
+
+  .stages-scroll {
+    display: flex;
+    gap: 14px;
+    overflow-x: auto;
+    padding-bottom: 16px;
+    margin-bottom: 24px;
+  }
+
+  .stage-card {
+    min-width: 220px;
+    background: #fff;
+    border-radius: 20px;
+    overflow: hidden;
+    flex-shrink: 0;
+    position: relative;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+  }
+
+  .stage-image {
+    height: 120px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 64px;
+    background: #E8F4FD;
+  }
+
+  .stage-badge {
+    position: absolute;
+    top: 102px;
+    left: 14px;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    border: 3px solid #fff;
+  }
+
+  .stage-content {
+    padding: 14px;
+    padding-top: 22px;
+  }
+
+  .stage-title {
+    font-size: 18px;
+    font-weight: 800;
+    margin-bottom: 6px;
+  }
+
+  .stage-subtitle {
+    font-size: 13px;
+    font-weight: 600;
+    color: #4a5568;
+    line-height: 1.5;
+    margin-bottom: 10px;
+  }
+
+  .quote-box {
+    border-radius: 8px;
+    padding: 8px;
+  }
+
+  .quote-text {
+    font-size: 11px;
+    font-weight: 700;
+    font-style: italic;
+  }
+
+  .proof-section {
+    background: #fff;
+    border-radius: 20px;
+    padding: 20px;
+    margin-bottom: 16px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+  }
+
+  .proof-title {
+    font-size: 18px;
+    font-weight: 800;
+    color: #1a1a2e;
+    text-align: center;
+    margin-bottom: 16px;
+  }
+
+  .proof-row {
+    display: flex;
+    gap: 12px;
+  }
+
+  .proof-card {
+    flex: 1;
+    text-align: center;
+    padding: 12px;
+    background: #F8FAFC;
+    border-radius: 14px;
+  }
+
+  .proof-icon { font-size: 28px; margin-bottom: 8px; }
+  .proof-stat { font-size: 15px; font-weight: 800; color: #1a1a2e; }
+  .proof-desc { font-size: 11px; font-weight: 600; color: #4a5568; margin-top: 2px; }
+
+  .activity-section {
+    background: #fff;
+    border-radius: 20px;
+    padding: 20px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+  }
+
+  .activity-title {
+    font-size: 16px;
+    font-weight: 800;
+    color: #1a1a2e;
+    text-align: center;
+    margin-bottom: 16px;
+  }
+
+  .activity-content {
+    display: flex;
+    gap: 16px;
+  }
+
+  .activity-left { flex: 2; }
+
+  .activity-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .activity-tab {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 10px 6px;
+    background: #F1F5F9;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+  }
+
+  .activity-tab.active {
+    background: var(--orange);
+  }
+
+  .tab-icon { font-size: 16px; }
+  .tab-label { font-size: 11px; font-weight: 700; color: #4a5568; }
+  .activity-tab.active .tab-label { color: #fff; }
+
+  .demo-chat {
+    background: #F8FAFC;
+    border-radius: 14px;
+    padding: 12px;
+    min-height: 120px;
+  }
+
+  .chat-line {
+    margin-bottom: 8px;
+  }
+
+  .chat-line.left { text-align: left; }
+  .chat-line.right { text-align: right; }
+
+  .chat-bubble {
+    display: inline-block;
+    max-width: 85%;
+    padding: 10px;
+    border-radius: 12px;
+    text-align: left;
+  }
+
+  .chat-bubble.pika {
+    background: #E0F2FE;
+    border-bottom-left-radius: 4px;
+  }
+
+  .chat-bubble.user {
+    background: #FEF3C7;
+    border-bottom-right-radius: 4px;
+  }
+
+  .chat-speaker {
+    font-size: 11px;
+    font-weight: 800;
+    color: #4a5568;
+    margin-bottom: 2px;
+  }
+
+  .chat-text {
+    font-size: 13px;
+    font-weight: 600;
+    color: #1a1a2e;
+    line-height: 1.4;
+  }
+
+  .crystal-col {
+    flex: 1;
+    background: #FEF3C7;
+    border-radius: 14px;
+    padding: 12px;
+    text-align: center;
+  }
+
+  .crystal-title {
+    font-size: 14px;
+    font-weight: 800;
+    color: #92400E;
+    margin-bottom: 10px;
+  }
+
+  .crystal-row {
+    display: flex;
+    gap: 6px;
+    justify-content: center;
+    margin-bottom: 12px;
+  }
+
+  .crystal {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: #E5E7EB;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+  }
+
+  .crystal.filled { background: #DBEAFE; }
+
+  .chest-box {
+    background: #FDE68A;
+    border-radius: 10px;
+    padding: 8px;
+  }
+
+  .chest-icon { font-size: 28px; margin-bottom: 4px; }
+  .chest-text { font-size: 11px; font-weight: 700; color: #92400E; }
+
+  /* ==================== SCREEN PARENTS ==================== */
+  .screen-parents {
+    background: var(--sky-mid);
+    padding: 24px;
+    overflow-y: auto;
+  }
+
+  .parents-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+
+  .parents-title {
+    font-size: 30px;
+    font-weight: 800;
+    color: #1a1a2e;
+    margin-bottom: 4px;
+  }
+
+  .parents-sub {
+    font-size: 15px;
+    font-weight: 600;
+    color: #4a5568;
+  }
+
+  .parents-main {
+    display: flex;
+    gap: 24px;
+  }
+
+  .features-col {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .feature-card {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: #fff;
+    border-radius: 16px;
+    padding: 18px;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+
+  .feature-card:hover {
+    transform: translateX(4px);
+  }
+
+  .feature-card.active {
+    border-color: var(--blue);
+    background: #F0F7FF;
+  }
+
+  .feature-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 26px;
+  }
+
+  .feature-text { flex: 1; }
+  .feature-title { font-size: 17px; font-weight: 800; color: #1a1a2e; margin-bottom: 4px; }
+  .feature-desc { font-size: 13px; font-weight: 600; color: #4a5568; line-height: 1.5; }
+
+  .active-indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--blue);
+  }
+
+  .phone-section {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .phone-mockup {
+    width: 240px;
+    background: #1a1a2e;
+    border-radius: 28px;
+    padding: 10px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+  }
+
+  .phone-notch {
+    width: 60px;
+    height: 6px;
+    border-radius: 3px;
+    background: #475569;
+    margin: 0 auto 10px;
+  }
+
+  .phone-screen {
+    background: #F8FAFC;
+    border-radius: 20px;
+    padding: 12px;
+    min-height: 260px;
+  }
+
+  .phone-row {
+    background: #fff;
+    border-radius: 10px;
+    padding: 12px;
+    margin-bottom: 8px;
+  }
+
+  .phone-row-text {
+    font-size: 14px;
+    font-weight: 700;
+    color: #1a1a2e;
+  }
+
+  .phone-caption {
+    margin-top: 16px;
+    font-size: 14px;
+    font-weight: 700;
+    color: #4a5568;
+  }
+
+  /* ==================== SCREEN FAQ ==================== */
+  .screen-faq {
+    background: var(--sky-mid);
+    padding: 24px;
+    overflow-y: auto;
+  }
+
+  .faq-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+
+  .faq-title {
+    font-size: 30px;
+    font-weight: 800;
+    color: #1a1a2e;
+    margin-bottom: 4px;
+  }
+
+  .faq-sub {
+    font-size: 15px;
+    font-weight: 600;
+    color: #4a5568;
+  }
+
+  .faq-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+
+  .faq-card {
+    background: #fff;
+    border-radius: 16px;
+    border: 2px solid transparent;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+
+  .faq-card.expanded {
+    border-color: #3B82F6;
+    background: #F0F7FF;
+  }
+
+  .faq-header-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px;
+  }
+
+  .faq-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+  }
+
+  .faq-question {
+    flex: 1;
+    font-size: 16px;
+    font-weight: 800;
+    color: #1a1a2e;
+  }
+
+  .expand-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: #E2E8F0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    color: #4a5568;
+    transition: all 0.2s;
+  }
+
+  .faq-card.expanded .expand-icon {
+    background: #3B82F6;
+    color: #fff;
+    transform: rotate(180deg);
+  }
+
+  .faq-answer {
+    padding: 0 16px 16px;
+    display: none;
+  }
+
+  .faq-card.expanded .faq-answer {
+    display: block;
+  }
+
+  .answer-text {
+    font-size: 14px;
+    font-weight: 600;
+    color: #2d3748;
+    line-height: 1.6;
+    background: #F1F5F9;
+    padding: 14px;
+    border-radius: 12px;
+    white-space: pre-line;
+  }
+
+  .bottom-cta {
+    background: linear-gradient(135deg, #4A90E2, #357ABD);
+    border-radius: 20px;
+    padding: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .bottom-content { flex: 1; margin-right: 16px; }
+  .bottom-title { font-size: 22px; font-weight: 800; color: #fff; margin-bottom: 6px; }
+  .bottom-desc { font-size: 14px; font-weight: 600; color: rgba(255,255,255,0.85); line-height: 1.5; }
+
+  /* ==================== MODAL ==================== */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(30,42,74,0.6);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+  }
+
+  .modal-overlay.active {
+    display: flex;
+  }
+
+  .modal-content {
+    width: 90%;
+    max-width: 380px;
+    background: var(--cream-dark);
+    border-radius: 20px;
+    padding: 14px;
+    padding-top: 36px;
+    border: 4px solid var(--yellow-mid);
+    position: relative;
+  }
+
+  .modal-star { position: absolute; }
+  .modal-star-tl { top: -6px; left: 15px; font-size: 18px; }
+  .modal-star-tr { top: 6px; right: 40px; font-size: 14px; }
+  .modal-star-bl { bottom: 6px; left: 10px; font-size: 14px; }
+  .modal-star-br { bottom: -4px; right: 20px; font-size: 16px; }
+
+  .modal-close {
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    background: var(--red-dark);
+    border-radius: 16px;
+    padding: 2px 2px 4px;
+    cursor: pointer;
+    border: none;
+  }
+
+  .modal-close-inner {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: var(--red);
+    border: 2px solid #FFB4B4;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+  }
+
+  .modal-ribbon {
+    position: absolute;
+    top: 8px;
+    left: -4px;
+    padding: 4px 10px;
+    border-radius: 6px;
+    border-top-left-radius: 0;
+    font-size: 10px;
+    font-weight: 900;
+    color: #fff;
+  }
+
+  .modal-icon-outer { text-align: center; margin-bottom: 4px; }
+
+  .modal-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    border: 3px solid;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 26px;
+  }
+
+  .modal-title {
+    font-size: 17px;
+    font-weight: 900;
+    color: var(--brown);
+    text-align: center;
+    margin-bottom: 2px;
+  }
+
+  .modal-time {
+    text-align: center;
+    margin-bottom: 4px;
+  }
+
+  .modal-time-badge {
+    display: inline-block;
+    background: #fff;
+    padding: 2px 8px;
+    border-radius: 8px;
+    border: 2px solid #E6A800;
+    font-size: 10px;
+    font-weight: 800;
+    color: #5D3A1A;
+  }
+
+  .modal-desc {
+    font-size: 12px;
+    font-weight: 600;
+    color: #4a5568;
+    line-height: 1.5;
+    text-align: center;
+    margin-bottom: 8px;
+  }
+
+  .modal-tasks {
+    background: #fff;
+    border-radius: 12px;
+    padding: 10px;
+    border: 2px solid #FFE66D;
+    margin-bottom: 10px;
+  }
+
+  .tasks-title {
+    font-size: 12px;
+    font-weight: 900;
+    color: #5D3A1A;
+    margin-bottom: 6px;
+  }
+
+  .task-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #FFFDF7;
+    padding: 7px;
+    border-radius: 8px;
+    margin-bottom: 4px;
+    border-left: 3px solid;
+  }
+
+  .task-bullet {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 900;
+    color: #fff;
+  }
+
+  .task-content {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .task-icon { font-size: 14px; }
+  .task-text { font-size: 11px; font-weight: 700; color: #1a1a2e; }
+
+  .modal-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+  }
+
+  .btn-wrapper { flex: 1; }
+  .btn-wrapper-large { flex: 1.5; }
+
+  /* ==================== TOAST ==================== */
+  .toast {
+    position: fixed;
+    top: -150px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 9999;
+    transition: top 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    width: 85%;
+    max-width: 340px;
+  }
+
+  .toast.visible {
+    top: 80px;
+  }
+
+  .toast-inner {
+    border-radius: 20px;
+    padding: 16px;
+    border: 3px solid;
+    border-bottom-width: 5px;
+    display: flex;
+    align-items: center;
+    position: relative;
+    box-shadow: 0 4px 16px var(--shadow);
+  }
+
+  .toast-inner.success {
+    background: #4ADE80;
+    border-color: #22C55E;
+  }
+
+  .toast-inner.error {
+    background: #FB7185;
+    border-color: #F43F5E;
+  }
+
+  .toast-star { position: absolute; font-size: 16px; }
+  .toast-star-left { top: -8px; left: 20px; }
+  .toast-star-right { top: -8px; right: 20px; }
+
+  .toast-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    margin-right: 12px;
+  }
+
+  .toast-text { flex: 1; }
+  .toast-title { font-size: 16px; font-weight: 800; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.2); }
+  .toast-message { font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.95); margin-top: 2px; }
+
+  /* ==================== RESPONSIVE ==================== */
+  @media (max-width: 768px) {
+    .login-container { flex-direction: column; gap: 20px; }
+    .login-brand { display: none; }
+    .top-brand-name { display: none; }
+    .nav-tabs { gap: 6px; }
+    .nav-tab { padding: 0 10px; height: 36px; }
+    .nav-tab-label { font-size: 11px; }
+    .nav-tab-icon { font-size: 16px; }
+    .play-main { flex-direction: column; }
+    .pika-stage { flex-direction: row; flex-wrap: wrap; }
+    .stage-bubble { flex: 1; min-width: 200px; }
+    .stage-pika { font-size: 80px; }
+    .stage-button { width: 100%; justify-content: center; }
+    .zones-row { flex-wrap: wrap; }
+    .zone-card-outer { width: calc(50% - 6px); }
+    .stages-scroll { flex-wrap: nowrap; }
+    .activity-content { flex-direction: column; }
+    .parents-main { flex-direction: column; }
+    .phone-section { order: -1; }
+  }
+</style>
+
+<div class="app" id="app">
+  <!-- Login Screen -->
+  <div class="screen-login" id="screen-login">
+    <span class="login-stars star-tl">⭐</span>
+    <span class="login-stars star-tr">✨</span>
+    <span class="login-stars star-bl">🌟</span>
+    <span class="login-stars star-br">💫</span>
+
+    <div class="login-container">
+      <div class="login-brand">
+        <div class="mascot-outer">
+          <div class="mascot-circle"><img src="assets/pika-wave.png" alt="Pika"></div>
+        </div>
+        <div class="welcome-text">Xin chào! 👋</div>
+        <div class="brand-name">Pika World</div>
+        <div class="tagline-bubble">
+          <div class="tagline">Cùng học và chơi với Pika nào!</div>
+        </div>
+      </div>
+
+      <div class="login-form">
+        <div class="form-card">
+          <div class="form-title">🎮 Đăng nhập</div>
+
+          <div class="input-group">
+            <label class="input-label">📱 Số điện thoại</label>
+            <div class="input-outer">
+              <input type="tel" class="input-field" id="phone" placeholder="VD: 0962367123">
+            </div>
+          </div>
+
+          <div class="input-group">
+            <label class="input-label">🔑 Mật khẩu</label>
+            <div class="input-outer">
+              <input type="password" class="input-field" id="password" placeholder="Nhập mật khẩu bí mật">
+            </div>
+          </div>
+
+          <div class="error-bubble" id="login-error" style="display: none;">
+            <div class="error-text" id="error-text"></div>
+          </div>
+
+          <button class="btn-3d btn-orange btn-large" onclick="handleLogin()" style="width: 100%;">
+            <div class="btn-3d-outer">
+              <div class="btn-3d-inner">🚀 Vào chơi thôi!</div>
+            </div>
+          </button>
+
+          <div class="help-text">Chưa có tài khoản? Nhờ ba mẹ gọi hotline nhé! 📞</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main App -->
+  <div id="main-app" style="display: none; flex-direction: column;">
+    <!-- Top Bar -->
+    <div class="top-bar">
+      <div class="top-brand" onclick="navigateTo('welcome')">
+        <div class="top-brand-outer">
+          <div class="top-brand-badge"><img src="assets/pika-wave.png" alt="Pika"></div>
+        </div>
+        <div class="top-brand-name">Pika ở Fahasa</div>
+      </div>
+
+      <div class="nav-tabs">
+        <div class="nav-tab-outer" data-tab="play" onclick="navigateTo('play')">
+          <div class="nav-tab">
+            <span class="nav-tab-icon">🎮</span>
+            <span class="nav-tab-label">Chơi</span>
+          </div>
+        </div>
+        <div class="nav-tab-outer" data-tab="topics" onclick="navigateTo('topics')">
+          <div class="nav-tab">
+            <span class="nav-tab-icon">🌳</span>
+            <span class="nav-tab-label">Khu vườn</span>
+          </div>
+        </div>
+        <div class="nav-tab-outer" data-tab="journey" onclick="navigateTo('journey')">
+          <div class="nav-tab">
+            <span class="nav-tab-icon">🚀</span>
+            <span class="nav-tab-label">Lộ trình</span>
+          </div>
+        </div>
+        <div class="nav-tab-outer" data-tab="parents" onclick="navigateTo('parents')">
+          <div class="nav-tab">
+            <span class="nav-tab-icon">💜</span>
+            <span class="nav-tab-label">Ba mẹ</span>
+          </div>
+        </div>
+        <div class="nav-tab-outer" data-tab="faq" onclick="navigateTo('faq')">
+          <div class="nav-tab">
+            <span class="nav-tab-icon">💡</span>
+            <span class="nav-tab-label">Hỏi đáp</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="top-actions">
+        <div class="action-btn-outer" onclick="toggleMusic()">
+          <div class="action-btn" id="music-btn">🔊</div>
+        </div>
+        <div class="star-pill-outer">
+          <div class="star-pill">
+            <span class="star-icon">⭐</span>
+            <span class="star-count" id="star-count">0</span>
+          </div>
+        </div>
+        <div class="signout-outer" onclick="handleLogout()">
+          <div class="signout-btn">👋</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Screens Container -->
+    <div class="screens-container">
+      <!-- Nav Arrows -->
+      <button class="nav-arrow nav-arrow-left" id="nav-prev" onclick="navigatePrev()">&lt;</button>
+      <button class="nav-arrow nav-arrow-right" id="nav-next" onclick="navigateNext()">&gt;</button>
+
+      <!-- Screen Welcome -->
+      <div class="screen screen-welcome" id="screen-welcome">
+        <div class="welcome-hero">
+          <button class="btn-3d btn-orange btn-large" onclick="navigateTo('play'); addStars(1);">
+            <div class="btn-3d-outer">
+              <div class="btn-3d-inner">BẮT ĐẦU NGAY</div>
+            </div>
+          </button>
+        </div>
+
+        <div class="play-cards">
+          <div class="play-card-outer" style="background: #CC7A00;" onclick="selectPlayCard('story'); navigateTo('play');">
+            <div class="play-card" style="border-color: #F5A623;">
+              <div class="play-card-image"><img src="assets/story.png" alt="Kể chuyện"></div>
+              <div class="play-card-title" style="background: #F5A623;">Kể chuyện</div>
+            </div>
+          </div>
+          <div class="play-card-outer" style="background: #BE185D;" onclick="selectPlayCard('song'); navigateTo('play');">
+            <div class="play-card" style="border-color: #EC4899;">
+              <div class="play-card-image"><img src="assets/song.png" alt="Hát"></div>
+              <div class="play-card-title" style="background: #EC4899;">Hát</div>
+            </div>
+          </div>
+          <div class="play-card-outer" style="background: #047857;" onclick="selectPlayCard('english'); navigateTo('play');">
+            <div class="play-card" style="border-color: #10B981;">
+              <div class="play-card-image"><img src="assets/speak.png" alt="Nói tiếng Anh"></div>
+              <div class="play-card-title" style="background: #10B981;">Nói tiếng Anh</div>
+            </div>
+          </div>
+          <div class="play-card-outer" style="background: #6D28D9;" onclick="selectPlayCard('guess'); navigateTo('play');">
+            <div class="play-card" style="border-color: #8B5CF6;">
+              <div class="play-card-image"><img src="assets/explore.png" alt="Chơi game"></div>
+              <div class="play-card-title" style="background: #8B5CF6;">Chơi game</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Screen Play -->
+      <div class="screen screen-play" id="screen-play">
+        <div class="play-header">
+          <div class="play-header-title">Con muốn chơi gì với Pika?</div>
+          <div class="play-header-sub">Chọn một hoạt động bên dưới</div>
+        </div>
+
+        <div class="play-main">
+          <div class="play-cards-grid" id="play-cards-grid">
+            <!-- Cards will be rendered by JS -->
+          </div>
+
+          <div class="pika-stage">
+            <div class="stage-bubble">
+              <div class="bubble-title" id="bubble-title">Bắt đầu bằng một câu chuyện 📖</div>
+              <div class="bubble-text" id="bubble-text">Pika rủ con chọn nhân vật, rồi để con quyết định diễn biến tiếp theo bằng câu rất ngắn.</div>
+            </div>
+            <div class="stage-pika" id="stage-pika"><img src="assets/pika-story.png" alt="Pika"></div>
+            <div class="stage-button">
+              <button class="btn-3d btn-orange" onclick="handlePlay()">
+                <div class="btn-3d-outer">
+                  <div class="btn-3d-inner">CHƠI NGAY</div>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Screen Topics -->
+      <div class="screen screen-topics" id="screen-topics">
+        <div class="topics-header">
+          <div class="topics-header-text">Hãy chọn thử một bài học muốn giao thử cho con</div>
+        </div>
+
+        <div class="zones-row" id="zones-row">
+          <!-- Zones will be rendered by JS -->
+        </div>
+      </div>
+
+      <!-- Screen Journey -->
+      <div class="screen screen-journey" id="screen-journey">
+        <div class="journey-header">
+          <div class="journey-title">Lộ trình 24 tháng</div>
+          <div class="journey-sub">CHUẨN CAMBRIDGE YLE</div>
+        </div>
+
+        <div class="stages-scroll" id="stages-scroll">
+          <!-- Stages will be rendered by JS -->
+        </div>
+
+        <div class="proof-section">
+          <div class="proof-title">Vì sao ba mẹ tin được?</div>
+          <div class="proof-row">
+            <div class="proof-card">
+              <div class="proof-icon">⏱️</div>
+              <div class="proof-stat">15 phút/ngày</div>
+              <div class="proof-desc">90+ giờ nói mỗi năm</div>
+            </div>
+            <div class="proof-card">
+              <div class="proof-icon">🗣️</div>
+              <div class="proof-stat">3.195 lượt</div>
+              <div class="proof-desc">bé nói trong tháng đầu</div>
+            </div>
+            <div class="proof-card">
+              <div class="proof-icon">📈</div>
+              <div class="proof-stat">115 từ mới</div>
+              <div class="proof-desc">nhớ qua trò chuyện</div>
+            </div>
+            <div class="proof-card">
+              <div class="proof-icon">🏅</div>
+              <div class="proof-stat">Cambridge YLE</div>
+              <div class="proof-desc">Starters → Flyers</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="activity-section">
+          <div class="activity-title">Mỗi ngày 1 nhiệm vụ 15 phút — luyện qua 4 kiểu hoạt động 🎮</div>
+          <div class="activity-content">
+            <div class="activity-left">
+              <div class="activity-tabs" id="activity-tabs">
+                <!-- Tabs will be rendered by JS -->
+              </div>
+              <div class="demo-chat" id="demo-chat">
+                <!-- Chat will be rendered by JS -->
+              </div>
+            </div>
+            <div class="crystal-col">
+              <div class="crystal-title">Đủ 5 💎 mở rương</div>
+              <div class="crystal-row">
+                <div class="crystal filled">💎</div>
+                <div class="crystal filled">💎</div>
+                <div class="crystal filled">💎</div>
+                <div class="crystal">◇</div>
+                <div class="crystal">◇</div>
+              </div>
+              <div class="chest-box">
+                <div class="chest-icon">🎁</div>
+                <div class="chest-text">Còn 2 💎 nữa!</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Screen Parents -->
+      <div class="screen screen-parents" id="screen-parents">
+        <div class="parents-header">
+          <div>
+            <div class="parents-title">App Phụ huynh</div>
+            <div class="parents-sub">Ba mẹ cầm lái từ một app duy nhất</div>
+          </div>
+          <button class="btn-3d btn-purple" onclick="navigateTo('topics')">
+            <div class="btn-3d-outer">
+              <div class="btn-3d-inner">THỬ NGAY</div>
+            </div>
+          </button>
+        </div>
+
+        <div class="parents-main">
+          <div class="features-col" id="features-col">
+            <!-- Features will be rendered by JS -->
+          </div>
+          <div class="phone-section">
+            <div class="phone-mockup">
+              <div class="phone-notch"></div>
+              <div class="phone-screen" id="phone-screen">
+                <!-- Phone content will be rendered by JS -->
+              </div>
+            </div>
+            <div class="phone-caption">Giao diện app dành cho ba mẹ</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Screen FAQ -->
+      <div class="screen screen-faq" id="screen-faq">
+        <div class="faq-header">
+          <div>
+            <div class="faq-title">Câu hỏi thường gặp</div>
+            <div class="faq-sub">Chạm vào câu hỏi để xem chi tiết</div>
+          </div>
+          <button class="btn-3d btn-green" onclick="navigateTo('play')">
+            <div class="btn-3d-outer">
+              <div class="btn-3d-inner">BẮT ĐẦU NGAY</div>
+            </div>
+          </button>
+        </div>
+
+        <div class="faq-grid" id="faq-grid">
+          <!-- FAQs will be rendered by JS -->
+        </div>
+
+        <div class="bottom-cta">
+          <div class="bottom-content">
+            <div class="bottom-title">Vẫn còn thắc mắc?</div>
+            <div class="bottom-desc">Liên hệ đội ngũ hỗ trợ của Pika qua Zalo hoặc email.</div>
+          </div>
+          <button class="btn-3d btn-yellow">
+            <div class="btn-3d-outer">
+              <div class="btn-3d-inner">LIÊN HỆ HỖ TRỢ</div>
+            </div>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="modal-overlay" id="lesson-modal">
+  <div class="modal-content">
+    <span class="modal-star modal-star-tl">⭐</span>
+    <span class="modal-star modal-star-tr">✨</span>
+    <span class="modal-star modal-star-bl">🌟</span>
+    <span class="modal-star modal-star-br">💫</span>
+
+    <button class="modal-close" onclick="closeModal()">
+      <div class="modal-close-inner">✖️</div>
+    </button>
+
+    <div class="modal-ribbon" id="modal-ribbon">Khu 1 · Làm quen</div>
+
+    <div class="modal-icon-outer">
+      <div class="modal-icon" id="modal-icon">👋</div>
+    </div>
+
+    <div class="modal-title" id="modal-title">Xin chào Pika!</div>
+    <div class="modal-time">
+      <span class="modal-time-badge" id="modal-time">⏱️ 5 phút</span>
+    </div>
+    <div class="modal-desc" id="modal-desc">Bé làm quen với Pika qua 3 câu hỏi đơn giản.</div>
+
+    <div class="modal-tasks" id="modal-tasks">
+      <div class="tasks-title">🎯 Nhiệm vụ của con:</div>
+      <!-- Tasks will be rendered by JS -->
+    </div>
+
+    <div class="modal-actions">
+      <div class="btn-wrapper">
+        <button class="btn-3d btn-yellow btn-small" onclick="closeModal()" style="width: 100%;">
+          <div class="btn-3d-outer">
+            <div class="btn-3d-inner">Để sau</div>
+          </div>
+        </button>
+      </div>
+      <div class="btn-wrapper-large">
+        <button class="btn-3d btn-green btn-small" onclick="assignLesson()" style="width: 100%;">
+          <div class="btn-3d-outer">
+            <div class="btn-3d-inner">📚 Giao bài</div>
+          </div>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast">
+  <div class="toast-inner success" id="toast-inner">
+    <span class="toast-star toast-star-left">⭐</span>
+    <span class="toast-star toast-star-right">⭐</span>
+    <div class="toast-icon" id="toast-icon">🎉</div>
+    <div class="toast-text">
+      <div class="toast-title" id="toast-title">Tuyệt vời!</div>
+      <div class="toast-message" id="toast-message">Đã giao bài thành công!</div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ==================== STATE ====================
+const state = {
+  isLoggedIn: false,
+  currentScreen: 'welcome',
+  stars: 0,
+  selectedPlay: 'story',
+  selectedZone: 1,
+  isMusicOn: true,
+  activeActivity: 'story',
+  activeFeature: 'send',
+  expandedFaq: 'price',
+  currentLesson: null
+};
+
+const TAB_ORDER = ['play', 'topics', 'journey', 'parents', 'faq'];
+
+// ==================== DATA ====================
+const PLAY_CARDS = [
+  { id: 'story', title: 'Kể chuyện', desc: 'Pika kể, con chọn diễn biến tiếp theo.', icon: '📖', image: 'assets/story.png', stageImage: 'assets/pika-story.png', bubbleTitle: 'Bắt đầu bằng một câu chuyện 📖', bubbleText: 'Pika rủ con chọn nhân vật, rồi để con quyết định diễn biến tiếp theo bằng câu rất ngắn.' },
+  { id: 'song', title: 'Hát', desc: 'Hát bài quen, lặp lại 1 từ thật dễ.', icon: '🎵', image: 'assets/song.png', stageImage: 'assets/pika-song.png', bubbleTitle: 'Cùng hát trước, nói sau 🎵', bubbleText: 'Pika dùng nhịp điệu quen thuộc để con vui trước, rồi mời con lặp lại 1 từ hoặc 1 câu thật dễ.' },
+  { id: 'english', title: 'Nói tiếng Anh', desc: 'Câu "thần chú" nhỏ giúp con dám nói.', icon: '💬', image: 'assets/speak.png', stageImage: 'assets/pika-wave.png', bubbleTitle: 'Thử nói một câu tiếng Anh 💬', bubbleText: 'Pika không kiểm tra bài. Pika biến câu tiếng Anh thành nhiệm vụ nhỏ để con dám mở miệng.' },
+  { id: 'guess', title: 'Chơi game', desc: 'Vừa học vừa chơi, tư duy sáng ngời', icon: '🎮', image: 'assets/explore.png', stageImage: 'assets/pika-explore.png', bubbleTitle: 'Chơi game cùng Pika 🎮', bubbleText: 'Cùng Pika tham gia những trò chơi hấp dẫn, vừa học hỏi vừa khám phá thế giới lạ kì.' }
+];
+
+const ZONES = [
+  { id: 1, title: 'Làm quen với Pika', zone: 'Khu 1 · Làm quen', icon: '👋', image: 'assets/zone-1.png', gradient: ['#F5A623', '#CC7A00'], lessons: [
+    { id: 'z1a', ico: '👋', title: 'Xin chào Pika!', desc: 'Bé làm quen với Pika qua 3 câu hỏi đơn giản.', time: '5 phút', tasks: [['🎤', 'Nói "Hello Pika!"'], ['👂', 'Nghe Pika giới thiệu'], ['🗣️', 'Trả lời tên của con']] },
+    { id: 'z1b', ico: '🏠', title: 'Gia đình của con', desc: 'Kể cho Pika nghe về gia đình.', time: '8 phút', tasks: [['👨‍👩‍👧', 'Giới thiệu các thành viên'], ['💕', 'Nói điều con yêu thích'], ['🎵', 'Hát bài về gia đình']] },
+    { id: 'z1c', ico: '🎨', title: 'Màu sắc yêu thích', desc: 'Học các màu sắc cơ bản cùng Pika.', time: '7 phút', tasks: [['🌈', 'Gọi tên các màu'], ['🖍️', 'Chọn màu yêu thích'], ['🎯', 'Tìm đồ vật cùng màu']] }
+  ]},
+  { id: 2, title: 'Học tiếng Anh (Pre-A1)', zone: 'Khu 2 · Pre-A1', icon: '📚', image: 'assets/zone-2.png', gradient: ['#3B82F6', '#1D4ED8'], lessons: [
+    { id: 'z2a', ico: '🔤', title: 'ABC Song', desc: 'Học bảng chữ cái qua bài hát.', time: '6 phút', tasks: [['🎵', 'Hát theo Pika'], ['👆', 'Chỉ các chữ cái'], ['✏️', 'Viết tên con']] },
+    { id: 'z2b', ico: '🔢', title: 'Đếm 1-10', desc: 'Học đếm số cùng Pika.', time: '5 phút', tasks: [['🔢', 'Đếm từ 1-10'], ['👀', 'Tìm số quanh nhà'], ['🎲', 'Chơi game đếm']] },
+    { id: 'z2c', ico: '🐕', title: 'Con vật', desc: 'Học tên các con vật.', time: '8 phút', tasks: [['🐱', 'Gọi tên con vật'], ['🔊', 'Bắt chước tiếng kêu'], ['❓', 'Đoán con vật']] }
+  ]},
+  { id: 3, title: 'Học tiếng Anh (A1/A2)', zone: 'Khu 3 · A1/A2', icon: '🌟', image: 'assets/zone-3.png', gradient: ['#10B981', '#047857'], lessons: [
+    { id: 'z3a', ico: '🏫', title: 'Ở trường học', desc: 'Học từ vựng về trường học.', time: '10 phút', tasks: [['📚', 'Gọi tên đồ dùng học tập'], ['🎒', 'Mô tả cặp sách'], ['👩‍🏫', 'Đóng vai thầy cô']] },
+    { id: 'z3b', ico: '🍎', title: 'Đi chợ', desc: 'Học mua bán đơn giản.', time: '10 phút', tasks: [['🛒', 'Liệt kê đồ cần mua'], ['💰', 'Hỏi giá bằng tiếng Anh'], ['🍌', 'Mô tả thực phẩm']] }
+  ]},
+  { id: 4, title: 'Mở rộng cùng Pika', zone: 'Khu 4 · Mở rộng', icon: '🚀', image: 'assets/zone-4.png', gradient: ['#8B5CF6', '#6D28D9'], lessons: [
+    { id: 'z4a', ico: '🌍', title: 'Du lịch thế giới', desc: 'Khám phá các quốc gia.', time: '12 phút', tasks: [['🗺️', 'Chỉ quốc gia trên bản đồ'], ['🏰', 'Mô tả địa danh nổi tiếng'], ['✈️', 'Kể chuyến đi mơ ước']] },
+    { id: 'z4b', ico: '🔬', title: 'Nhà khoa học nhí', desc: 'Thí nghiệm vui với Pika.', time: '15 phút', tasks: [['🧪', 'Quan sát thí nghiệm'], ['📝', 'Mô tả kết quả'], ['💡', 'Đặt câu hỏi khoa học']] }
+  ]},
+  { id: 5, title: 'Dịp đặc biệt', zone: 'Khu 5 · Dịp đặc biệt', icon: '🎉', image: 'assets/zone-5.png', gradient: ['#EC4899', '#BE185D'], lessons: [
+    { id: 'z5a', ico: '🎄', title: 'Giáng sinh vui vẻ', desc: 'Học về lễ Giáng sinh.', time: '10 phút', tasks: [['🎅', 'Kể về Santa Claus'], ['🎁', 'Mô tả món quà mơ ước'], ['🎵', 'Hát Jingle Bells']] },
+    { id: 'z5b', ico: '🎃', title: 'Halloween', desc: 'Khám phá lễ Halloween.', time: '10 phút', tasks: [['👻', 'Mô tả trang phục'], ['🍬', 'Nói "Trick or Treat"'], ['🎭', 'Đóng vai nhân vật']] }
+  ]}
+];
+
+const STAGES = [
+  { id: 0, icon: '🌱', title: 'Hôm nay', subtitle: 'Pika hạ áp lực, giúp con dám phản hồi', quote: '"Im lặng, chỉ gật đầu..."', color: '#F5A623', image: 'assets/journey-1.png' },
+  { id: 1, icon: '🗣️', title: 'Tháng 1-3', subtitle: '15 phút/ngày, nói câu 2-5 từ', quote: '"Hello! I like cats!"', color: '#3B82F6', image: 'assets/journey-2.png' },
+  { id: 2, icon: '⭐', title: 'Tháng 4-12', subtitle: 'Hỏi đáp về mình, gia đình · ~500 từ', quote: '"I have a red bike!"', color: '#10B981', image: 'assets/journey-3.png' },
+  { id: 3, icon: '🚀', title: 'Năm 2', subtitle: 'Role-play, kể chuyện · ~1.000 từ', quote: '"Yesterday I went to the zoo!"', color: '#8B5CF6', image: 'assets/journey-4.png' },
+  { id: 4, icon: '🏆', title: 'Flyers A2', subtitle: 'Nêu ý kiến, sẵn sàng chứng chỉ thật', quote: '"I think robots are cool!"', color: '#EC4899', image: 'assets/journey-5.png' }
+];
+
+const ACTIVITY_TABS = [
+  { id: 'story', label: 'Kể chuyện', icon: '📖', color: '#F5A623' },
+  { id: 'vocabulary', label: 'Học từ', icon: '📝', color: '#3B82F6' },
+  { id: 'roleplay', label: 'Đóng vai', icon: '🎭', color: '#8B5CF6' },
+  { id: 'song', label: 'Hát', icon: '🎵', color: '#EC4899' }
+];
+
+const DEMO_CHATS = {
+  story: [{ speaker: 'Pika', text: 'Con muốn nghe chuyện gì?' }, { speaker: 'Con', text: 'Công chúa và robot!' }, { speaker: 'Pika', text: 'Once upon a time, in a magic kingdom...' }],
+  vocabulary: [{ speaker: 'Pika', text: 'Hôm nay học từ "butterfly" nhé!' }, { speaker: 'Con', text: 'Butter... fly?' }, { speaker: 'Pika', text: 'Đúng rồi! Con bướm xinh đẹp 🦋' }],
+  roleplay: [{ speaker: 'Pika', text: 'Con đóng vai bác sĩ, Pika là bệnh nhân!' }, { speaker: 'Con', text: 'Hello! What is your name?' }, { speaker: 'Pika', text: 'I am Pika. My tummy hurts!' }],
+  song: [{ speaker: 'Pika', text: '🎵 Twinkle twinkle little star...' }, { speaker: 'Con', text: 'How I wonder what you are!' }, { speaker: 'Pika', text: 'Tuyệt vời! Con hát hay quá! ⭐' }]
+};
+
+const FEATURES = [
+  { id: 'send', icon: '📤', title: 'Giao bài 1 chạm', desc: 'Chọn chủ đề, gửi xuống robot ngay lập tức.', color: '#3B82F6' },
+  { id: 'report', icon: '📊', title: 'Theo dõi tiến độ', desc: 'Xem con nói bao lâu, học từ nào mỗi ngày.', color: '#10B981' },
+  { id: 'safety', icon: '🛡️', title: 'An toàn tuyệt đối', desc: 'Kiểm soát chủ đề, lọc nội dung, xem trí nhớ.', color: '#8B5CF6' }
+];
+
+const PHONE_DATA = {
+  send: ['🧒 Bé 7 tuổi', '🦸 Chủ đề: siêu anh hùng', '🔊 Bài: luyện phát âm', '▶️ Gửi sang Pika'],
+  report: ['⏱️ Hôm nay: nói 12 phút', '🆕 7 từ mới học', '📈 Tiến bộ 72%', '🎯 Kế tiếp: âm "sh"'],
+  safety: ['✅ Chủ đề an toàn: BẬT', '🖼️ Lọc hình ảnh: BẬT', '🧠 Xem trí nhớ Pika', '🗑️ Xoá lịch sử']
+};
+
+const FAQS = [
+  { id: 'price', icon: '💳', q: 'Chi phí sử dụng?', a: 'Gói Cơ bản:\n• 3.420.000đ cho 6 tháng sử dụng phần mềm\n• 4.140.000đ cho 12 tháng + tặng thêm 2 tháng\n\nGồm robot và phần mềm.', color: '#EF4444' },
+  { id: 'share', icon: '👨‍👩‍👧‍👦', q: 'Nhiều bạn nhỏ dùng chung 1 Pika được không?', a: 'Hiện tại không.\n\nPika được thiết kế để cá nhân hoá hành trình học và theo dõi tiến bộ cho một bé duy nhất.', color: '#6366F1' },
+  { id: 'reset', icon: '🔄', q: 'Pika có thể reset cho người dùng khác không?', a: 'Có. Pika có thể reset để chuyển lượt sử dụng cho bạn nhỏ thứ 2, tối đa 2 bé/gia đình.', color: '#14B8A6' },
+  { id: 'warranty', icon: '🛡️', q: 'Chính sách bảo hành và hỗ trợ kỹ thuật?', a: '• Bảo hành chính hãng 12 tháng cho lỗi kỹ thuật\n• Đổi mới 1-1 trong 15 ngày nếu robot gặp lỗi nghiêm trọng', color: '#F59E0B' },
+  { id: 'age', icon: '👶', q: 'Độ tuổi phù hợp?', a: 'Pika lý tưởng cho trẻ 4-10 tuổi.\n\nGiao diện và cách nói chuyện được thiết kế riêng cho từng độ tuổi.', color: '#F5A623' },
+  { id: 'screen', icon: '📺', q: 'Có cần dùng màn hình không?', a: 'Pika hoạt động hoàn toàn bằng giọng nói.\n\nKhông cần điện thoại hay TV.', color: '#3B82F6' }
+];
+
+// ==================== FUNCTIONS ====================
+function handleLogin() {
+  const phone = document.getElementById('phone').value;
+  const password = document.getElementById('password').value;
+  const errorEl = document.getElementById('login-error');
+  const errorText = document.getElementById('error-text');
+
+  if (!phone.trim()) {
+    errorEl.style.display = 'block';
+    errorText.textContent = 'Nhập số điện thoại nào! 📱';
+    return;
+  }
+  if (!password.trim()) {
+    errorEl.style.display = 'block';
+    errorText.textContent = 'Quên mật khẩu rồi! 🔑';
+    return;
+  }
+
+  errorEl.style.display = 'none';
+  state.isLoggedIn = true;
+  document.getElementById('screen-login').style.display = 'none';
+  const mainApp = document.getElementById('main-app');
+  mainApp.style.display = 'flex';
+  mainApp.style.flex = '1';
+  navigateTo('welcome');
+  renderAll();
+}
+
+function handleLogout() {
+  state.isLoggedIn = false;
+  state.stars = 0;
+  document.getElementById('screen-login').style.display = 'flex';
+  document.getElementById('main-app').style.display = 'none';
+  document.getElementById('phone').value = '';
+  document.getElementById('password').value = '';
+}
+
+function navigateTo(screen) {
+  state.currentScreen = screen;
+  updateScreens();
+  updateNavTabs();
+  updateNavArrows();
+  addStars(1);
+}
+
+function navigatePrev() {
+  const idx = TAB_ORDER.indexOf(state.currentScreen);
+  if (idx > 0) navigateTo(TAB_ORDER[idx - 1]);
+}
+
+function navigateNext() {
+  const idx = TAB_ORDER.indexOf(state.currentScreen);
+  if (idx < TAB_ORDER.length - 1 && idx >= 0) navigateTo(TAB_ORDER[idx + 1]);
+}
+
+function updateScreens() {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  const target = document.getElementById('screen-' + state.currentScreen);
+  if (target) target.classList.add('active');
+}
+
+function updateNavTabs() {
+  document.querySelectorAll('.nav-tab-outer').forEach(tab => {
+    tab.classList.toggle('active', tab.dataset.tab === state.currentScreen);
+  });
+}
+
+function updateNavArrows() {
+  const idx = TAB_ORDER.indexOf(state.currentScreen);
+  const showArrows = state.currentScreen !== 'welcome';
+  document.getElementById('nav-prev').style.display = showArrows && idx > 0 ? 'flex' : 'none';
+  document.getElementById('nav-next').style.display = showArrows && idx < TAB_ORDER.length - 1 && idx >= 0 ? 'flex' : 'none';
+}
+
+function addStars(n = 1) {
+  state.stars += n;
+  document.getElementById('star-count').textContent = state.stars;
+}
+
+function toggleMusic() {
+  state.isMusicOn = !state.isMusicOn;
+  document.getElementById('music-btn').textContent = state.isMusicOn ? '🔊' : '🔇';
+}
+
+function selectPlayCard(id) {
+  state.selectedPlay = id;
+  renderPlayCards();
+  addStars(1);
+}
+
+function handlePlay() {
+  showToast('success', `Đã chọn "${PLAY_CARDS.find(c => c.id === state.selectedPlay).title}"! Pika sẵn sàng rồi!`);
+  addStars(2);
+}
+
+function renderPlayCards() {
+  const container = document.getElementById('play-cards-grid');
+  container.innerHTML = PLAY_CARDS.map(card => `
+    <div class="play-card-item ${state.selectedPlay === card.id ? 'selected' : ''}" onclick="selectPlayCard('${card.id}')">
+      <div class="play-card-check">✓</div>
+      <div class="play-card-img"><img src="${card.image}" alt="${card.title}"></div>
+      <div class="play-card-bottom">
+        <div class="play-card-name">${card.title}</div>
+        <div class="play-card-desc">${card.desc}</div>
+      </div>
+    </div>
+  `).join('');
+
+  const selected = PLAY_CARDS.find(c => c.id === state.selectedPlay);
+  document.getElementById('bubble-title').textContent = selected.bubbleTitle;
+  document.getElementById('bubble-text').textContent = selected.bubbleText;
+  document.getElementById('stage-pika').innerHTML = `<img src="${selected.stageImage}" alt="Pika">`;
+}
+
+function renderZones() {
+  const container = document.getElementById('zones-row');
+  container.innerHTML = ZONES.map((zone, idx) => `
+    <div class="zone-card-outer ${state.selectedZone === zone.id ? 'selected' : ''}" style="background: ${zone.gradient[1]};" onclick="selectZone(${zone.id})">
+      <div class="zone-card" style="border-color: ${zone.gradient[0]};">
+        <div class="zone-check">✓</div>
+        <div class="zone-image"><img src="${zone.image}" alt="${zone.title}"></div>
+        <div class="zone-title-bar" style="background: linear-gradient(90deg, ${zone.gradient[0]}, ${zone.gradient[1]});">
+          <div class="zone-num">${zone.id}</div>
+          <div class="zone-title-text">${zone.title}</div>
+        </div>
+        <div class="zone-lessons">
+          ${zone.lessons.map(l => `<div class="lesson-btn" style="border-color: ${zone.gradient[0]};" onclick="event.stopPropagation(); openLesson('${l.id}', ${zone.id})">${l.title}</div>`).join('')}
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function selectZone(id) {
+  state.selectedZone = id;
+  renderZones();
+  addStars(1);
+}
+
+function openLesson(lessonId, zoneId) {
+  const zone = ZONES.find(z => z.id === zoneId);
+  const lesson = zone.lessons.find(l => l.id === lessonId);
+  state.currentLesson = { lesson, zone };
+
+  document.getElementById('modal-ribbon').textContent = zone.zone;
+  document.getElementById('modal-ribbon').style.backgroundColor = zone.gradient[0];
+  document.getElementById('modal-icon').textContent = lesson.ico;
+  document.getElementById('modal-icon').style.backgroundColor = zone.gradient[0] + '30';
+  document.getElementById('modal-icon').style.borderColor = zone.gradient[0];
+  document.getElementById('modal-title').textContent = lesson.title;
+  document.getElementById('modal-time').textContent = '⏱️ ' + lesson.time;
+  document.getElementById('modal-desc').textContent = lesson.desc;
+
+  document.getElementById('modal-tasks').innerHTML = `
+    <div class="tasks-title">🎯 Nhiệm vụ của con:</div>
+    ${lesson.tasks.map((t, i) => `
+      <div class="task-row" style="border-left-color: ${zone.gradient[0]};">
+        <div class="task-bullet" style="background: ${zone.gradient[0]};">${i + 1}</div>
+        <div class="task-content">
+          <span class="task-icon">${t[0]}</span>
+          <span class="task-text">${t[1]}</span>
+        </div>
+      </div>
+    `).join('')}
+  `;
+
+  document.getElementById('lesson-modal').classList.add('active');
+}
+
+function closeModal() {
+  document.getElementById('lesson-modal').classList.remove('active');
+}
+
+function assignLesson() {
+  closeModal();
+  showToast('success', `Đã giao "${state.currentLesson.lesson.title}" thành công!`);
+  addStars(2);
+}
+
+function renderStages() {
+  const container = document.getElementById('stages-scroll');
+  container.innerHTML = STAGES.map(stage => `
+    <div class="stage-card">
+      <div class="stage-image"><img src="${stage.image}" alt="${stage.title}"></div>
+      <div class="stage-badge" style="background: linear-gradient(135deg, ${stage.color}, ${stage.color}CC);">${stage.icon}</div>
+      <div class="stage-content">
+        <div class="stage-title" style="color: ${stage.color};">${stage.title}</div>
+        <div class="stage-subtitle">${stage.subtitle}</div>
+        <div class="quote-box" style="background: ${stage.color}15;">
+          <div class="quote-text" style="color: ${stage.color};">${stage.quote}</div>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderActivityTabs() {
+  const container = document.getElementById('activity-tabs');
+  container.innerHTML = ACTIVITY_TABS.map(tab => `
+    <button class="activity-tab ${state.activeActivity === tab.id ? 'active' : ''}" style="${state.activeActivity === tab.id ? 'background: ' + tab.color : ''}" onclick="setActiveActivity('${tab.id}')">
+      <span class="tab-icon">${tab.icon}</span>
+      <span class="tab-label">${tab.label}</span>
+    </button>
+  `).join('');
+
+  const chat = DEMO_CHATS[state.activeActivity];
+  document.getElementById('demo-chat').innerHTML = chat.map(line => `
+    <div class="chat-line ${line.speaker === 'Con' ? 'right' : 'left'}">
+      <div class="chat-bubble ${line.speaker === 'Con' ? 'user' : 'pika'}">
+        <div class="chat-speaker">${line.speaker}:</div>
+        <div class="chat-text">${line.text}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function setActiveActivity(id) {
+  state.activeActivity = id;
+  renderActivityTabs();
+}
+
+function renderFeatures() {
+  const container = document.getElementById('features-col');
+  container.innerHTML = FEATURES.map(f => `
+    <div class="feature-card ${state.activeFeature === f.id ? 'active' : ''}" onclick="setActiveFeature('${f.id}')">
+      <div class="feature-icon" style="background: ${f.color};">${f.icon}</div>
+      <div class="feature-text">
+        <div class="feature-title">${f.title}</div>
+        <div class="feature-desc">${f.desc}</div>
+      </div>
+      ${state.activeFeature === f.id ? '<div class="active-indicator"></div>' : ''}
+    </div>
+  `).join('');
+
+  document.getElementById('phone-screen').innerHTML = PHONE_DATA[state.activeFeature].map(row => `
+    <div class="phone-row"><div class="phone-row-text">${row}</div></div>
+  `).join('');
+}
+
+function setActiveFeature(id) {
+  state.activeFeature = id;
+  renderFeatures();
+}
+
+function renderFaqs() {
+  const container = document.getElementById('faq-grid');
+  container.innerHTML = FAQS.map(faq => `
+    <div class="faq-card ${state.expandedFaq === faq.id ? 'expanded' : ''}" onclick="toggleFaq('${faq.id}')">
+      <div class="faq-header-row">
+        <div class="faq-icon" style="background: ${faq.color};">${faq.icon}</div>
+        <div class="faq-question">${faq.q}</div>
+        <div class="expand-icon">▼</div>
+      </div>
+      <div class="faq-answer">
+        <div class="answer-text">${faq.a}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function toggleFaq(id) {
+  state.expandedFaq = state.expandedFaq === id ? null : id;
+  renderFaqs();
+}
+
+function showToast(type, message) {
+  const toast = document.getElementById('toast');
+  const inner = document.getElementById('toast-inner');
+
+  inner.className = 'toast-inner ' + type;
+  document.getElementById('toast-icon').textContent = type === 'success' ? '🎉' : '😢';
+  document.getElementById('toast-title').textContent = type === 'success' ? 'Tuyệt vời!' : 'Ối!';
+  document.getElementById('toast-message').textContent = message;
+
+  toast.classList.add('visible');
+  setTimeout(() => toast.classList.remove('visible'), 2500);
+}
+
+function renderAll() {
+  renderPlayCards();
+  renderZones();
+  renderStages();
+  renderActivityTabs();
+  renderFeatures();
+  renderFaqs();
+  updateNavArrows();
+}
+
+// Initialize
+document.addEventListener('DOMContentLoaded', renderAll);
+</script>

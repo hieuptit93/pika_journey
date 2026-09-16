@@ -1,8 +1,8 @@
-import React, { memo, useMemo } from 'react';
-import { View, ActivityIndicator, StyleSheet, Pressable, Text, Dimensions } from 'react-native';
+import React, { memo, useRef } from 'react';
+import { View, ActivityIndicator, StyleSheet, Dimensions, PanResponder } from 'react-native';
 import { useApp, AppScreen } from './context/AppContext';
 import { useAuth } from './context/AuthContext';
-import { Colors } from './constants/colors';
+import { FaunaColors } from './constants/theme';
 import { AppTopBar } from './components/AppTopBar';
 import { ScreenLogin } from './screens/ScreenLogin';
 import { ScreenWelcome } from './screens/ScreenWelcome';
@@ -13,8 +13,14 @@ import { ScreenParents } from './screens/ScreenParents';
 import { ScreenFAQ } from './screens/ScreenFAQ';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
-const isCompact = SCREEN_WIDTH / SCREEN_HEIGHT < 1.5;
+const STAGE_RATIO = 952 / 1269;
+const screenRatio = SCREEN_WIDTH / SCREEN_HEIGHT;
+const scale = screenRatio > STAGE_RATIO
+  ? SCREEN_HEIGHT / 1269
+  : SCREEN_WIDTH / 952;
+const s = (v: number) => v * scale;
 
+const SWIPE_THRESHOLD = 50;
 const TAB_ORDER: AppScreen[] = ['play', 'topics', 'journey', 'parents', 'faq'];
 
 const MemoizedScreenWelcome = memo(ScreenWelcome);
@@ -45,31 +51,41 @@ export const Navigator: React.FC = () => {
   const { currentScreen, setCurrentScreen } = useApp();
   const { isLoggedIn, isLoading } = useAuth();
 
-  const currentIndex = useMemo(
-    () => TAB_ORDER.indexOf(currentScreen as AppScreen),
-    [currentScreen]
-  );
+  const currentScreenRef = useRef(currentScreen);
+  currentScreenRef.current = currentScreen;
 
-  const showNavArrows = currentScreen !== 'welcome';
-  const canGoPrev = currentIndex > 0;
-  const canGoNext = currentIndex < TAB_ORDER.length - 1 && currentIndex >= 0;
+  const setCurrentScreenRef = useRef(setCurrentScreen);
+  setCurrentScreenRef.current = setCurrentScreen;
 
-  const handlePrev = () => {
-    if (canGoPrev) {
-      setCurrentScreen(TAB_ORDER[currentIndex - 1]);
-    }
-  };
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => false,
+      onMoveShouldSetPanResponder: (_, gestureState) => {
+        const { dx, dy } = gestureState;
+        return Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 10;
+      },
+      onPanResponderRelease: (_, gestureState) => {
+        const { dx } = gestureState;
+        const screen = currentScreenRef.current;
 
-  const handleNext = () => {
-    if (canGoNext) {
-      setCurrentScreen(TAB_ORDER[currentIndex + 1]);
-    }
-  };
+        if (screen === 'welcome') return;
+
+        const currentIndex = TAB_ORDER.indexOf(screen);
+        if (currentIndex === -1) return;
+
+        if (dx < -SWIPE_THRESHOLD && currentIndex < TAB_ORDER.length - 1) {
+          setCurrentScreenRef.current(TAB_ORDER[currentIndex + 1]);
+        } else if (dx > SWIPE_THRESHOLD && currentIndex > 0) {
+          setCurrentScreenRef.current(TAB_ORDER[currentIndex - 1]);
+        }
+      },
+    })
+  ).current;
 
   if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={Colors.primary} />
+        <ActivityIndicator size="large" color={FaunaColors.amber} />
       </View>
     );
   }
@@ -78,10 +94,12 @@ export const Navigator: React.FC = () => {
     return <ScreenLogin />;
   }
 
+  const showTopBar = currentScreen !== 'welcome';
+
   return (
     <View style={styles.container}>
-      <AppTopBar />
-      <View style={styles.screenContainer}>
+      {showTopBar && <AppTopBar />}
+      <View style={styles.screenContainer} {...panResponder.panHandlers}>
         <CachedScreen isActive={currentScreen === 'welcome'}>
           <MemoizedScreenWelcome />
         </CachedScreen>
@@ -105,21 +123,6 @@ export const Navigator: React.FC = () => {
         <CachedScreen isActive={currentScreen === 'faq'}>
           <MemoizedScreenFAQ />
         </CachedScreen>
-
-        {showNavArrows && (
-          <>
-            {canGoPrev && (
-              <Pressable style={[styles.navArrow, styles.navArrowLeft]} onPress={handlePrev}>
-                <Text style={styles.navArrowText}>{'<'}</Text>
-              </Pressable>
-            )}
-            {canGoNext && (
-              <Pressable style={[styles.navArrow, styles.navArrowRight]} onPress={handleNext}>
-                <Text style={styles.navArrowText}>{'>'}</Text>
-              </Pressable>
-            )}
-          </>
-        )}
       </View>
     </View>
   );
@@ -130,11 +133,11 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: Colors.background,
+    backgroundColor: FaunaColors.night0,
   },
   container: {
     flex: 1,
-    backgroundColor: '#FFFDF7',
+    backgroundColor: FaunaColors.night0,
   },
   screenContainer: {
     flex: 1,
@@ -148,31 +151,5 @@ const styles = StyleSheet.create({
   },
   hiddenScreen: {
     opacity: 0,
-  },
-  navArrow: {
-    position: 'absolute',
-    top: '50%',
-    marginTop: -24,
-    width: isCompact ? 40 : 48,
-    height: isCompact ? 40 : 48,
-    backgroundColor: 'rgba(0,0,0,0.25)',
-    borderRadius: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 100,
-  },
-  navArrowLeft: {
-    left: isCompact ? 6 : 10,
-  },
-  navArrowRight: {
-    right: isCompact ? 6 : 10,
-  },
-  navArrowText: {
-    fontSize: isCompact ? 26 : 32,
-    fontWeight: '300',
-    color: '#fff',
-    textAlign: 'center',
-    includeFontPadding: false,
-    textAlignVertical: 'center',
   },
 });

@@ -6,19 +6,14 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider } from './src/context/AuthContext';
 import { AppProvider } from './src/context/AppContext';
 import { Navigator } from './src/Navigator';
-import { Colors } from './src/constants/colors';
+import { FaunaColors } from './src/constants/theme';
 import { ResponsiveContainer } from './src/components';
-import { initSounds, playBackgroundMusic, cleanupSounds } from './src/utils/sounds';
+import { initSounds, cleanupSounds } from './src/utils/sounds';
 import { endSession } from './src/services/tracking';
 
 export default function App() {
   useEffect(() => {
-    const setupSounds = async () => {
-      await initSounds();
-      await playBackgroundMusic();
-    };
-    setupSounds();
-
+    initSounds().catch(() => {});
     return () => {
       cleanupSounds();
     };
@@ -40,7 +35,7 @@ export default function App() {
           <View style={styles.outer}>
             <ResponsiveContainer style={styles.container}>
               <Navigator />
-              <StatusBar style="dark" />
+              <StatusBar style="light" />
             </ResponsiveContainer>
           </View>
         </AppProvider>
@@ -52,10 +47,10 @@ export default function App() {
 const styles = StyleSheet.create({
   outer: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: FaunaColors.night0,
   },
   container: {
     flex: 1,
-    backgroundColor: '#FFFDF7',
+    backgroundColor: FaunaColors.night0,
   },
 });

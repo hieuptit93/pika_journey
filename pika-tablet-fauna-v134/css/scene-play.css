@@ -1,0 +1,83 @@
+/* ==========================================================================
+   SCENE 1 · PLAY — lưới 4 thẻ trò chơi.
+   Hierarchy: chưa chọn thẻ nào → mọi pill là nút cấp 2 (ghost).
+   Chọn 1 thẻ → CHỈ pill của thẻ đó thành amber + pulse (1 đèn/màn).
+   ========================================================================== */
+.p-title{position:absolute; left:0; right:0; top:96px; font-size:var(--fs-5xl); line-height:1.16;}
+
+.play-grid{position:absolute; left:114px; top:246px; width:724px;
+  display:grid; grid-template-columns:1fr 1fr; gap:24px;}
+
+.pcard{
+  position:relative; height:438px; border-radius:var(--r-lg); will-change:transform;
+  padding:var(--s6) var(--s6) 22px; text-align:left;
+  border:1.5px solid var(--line); overflow:visible; color:#fff;
+  box-shadow:0 20px 44px rgba(0,0,0,.42), inset 0 1px 0 rgba(255,255,255,.06);
+  transition:transform .18s ease, box-shadow var(--t-med), border-color var(--t-med);
+  display:flex; flex-direction:column;
+}
+.pcard[data-play="story"]{background:linear-gradient(152deg,#1D3271 0%,#0A1B4A 100%);}
+.pcard[data-play="song"]{background:linear-gradient(152deg,#3B2F62 0%,#191E55 100%);}
+.pcard[data-play="english"]{background:linear-gradient(152deg,#332A6B 0%,#141C4C 100%);}
+.pcard[data-play="guess"]{background:linear-gradient(152deg,#1A2A63 0%,#111F4C 100%);}
+.play-grid:has(.pcard.is-selected) .pcard:not(.is-selected){transform:scale(.94); opacity:.72; filter:saturate(.85);}
+.pcard.is-selected{z-index:5; transform:scale(1.06); border-color:rgba(245,185,78,.9);
+  box-shadow:0 0 0 2px rgba(245,185,78,.6), 0 26px 54px rgba(0,0,0,.5), 0 0 60px rgba(245,185,78,.38);}
+.pcard[data-play="story"].is-selected{transform-origin:left top;}
+.pcard[data-play="song"].is-selected{transform-origin:right top;}
+.pcard[data-play="english"].is-selected{transform-origin:left bottom;}
+.pcard[data-play="guess"].is-selected{transform-origin:right bottom;}
+
+.pc-top{display:flex; align-items:center; justify-content:space-between;}
+.pc-kicker{font-size:var(--fs-xs); font-weight:700; letter-spacing:.18em; color:var(--t-3); text-transform:uppercase;}
+.pc-time{font-size:var(--fs-xs); font-weight:800; letter-spacing:.12em; color:var(--t-2);}
+.pc-name{margin:12px 0 0; font-family:var(--f-disp); font-weight:800; font-size:var(--fs-3xl); letter-spacing:-.01em;}
+
+/* minh hoạ: chỉ thẻ ĐANG CHỌN mới bay — các thẻ khác đứng yên cho đỡ nhiễu */
+.pc-art{flex:1; display:grid; place-items:center; position:relative; min-height:0;}
+.pc-art img{max-height:212px; width:auto; transform-origin:50% 92%;
+  filter:drop-shadow(0 18px 26px rgba(0,0,0,.45));}
+.pcard.is-selected .pc-art img{animation:artPerk 2.9s ease-in-out infinite;}
+@keyframes artPerk{0%,100%{transform:translateY(0) rotate(-1.6deg) scale(1)}
+  30%{transform:translateY(-11px) rotate(1.4deg) scale(1.02)}
+  60%{transform:translateY(-4px) rotate(-1deg) scale(1.01)}}
+.pc-art::after{content:""; position:absolute; left:50%; bottom:6px; margin-left:-95px;
+  width:190px; height:26px; border-radius:50%;
+  background:radial-gradient(ellipse, rgba(245,185,78,.14), rgba(245,185,78,0) 70%);}
+.pcard.is-selected .pc-art::after{animation:artShadow 2.9s ease-in-out infinite;
+  background:radial-gradient(ellipse, rgba(245,185,78,.22), rgba(245,185,78,0) 70%);}
+@keyframes artShadow{0%,100%{transform:scaleX(1); opacity:1}50%{transform:scaleX(.86); opacity:.7}}
+
+.pc-foot{border-top:1px solid var(--line); padding-top:14px; display:flex; align-items:center; justify-content:space-between; gap:12px;}
+.pc-foot p{margin:0; font-size:var(--fs-sm); font-weight:600; line-height:1.45; color:#C6D2EB; max-width:168px;}
+
+/* pill CTA: mặc định cấp 2 (ghost) — thành cấp 1 khi thẻ được chọn */
+.pill-amber{
+  height:var(--tap-cta); padding:0 22px; border-radius:var(--r-pill); flex:none;
+  display:inline-flex; align-items:center; justify-content:center; line-height:1; text-align:center;
+  background:rgba(167,196,234,.10); border:1px solid var(--line-2); color:var(--t-2);
+  font-weight:700; font-size:var(--fs-base);
+  transition:transform var(--t-fast), filter .18s, background var(--t-med), color var(--t-med), box-shadow var(--t-med);
+}
+.pill-amber:active{transform:scale(.95);}
+.pcard.is-selected .pill-amber{
+  background:linear-gradient(180deg,var(--amber-hi),var(--amber)); color:#26200A; border-color:rgba(255,240,205,.85);
+  box-shadow:0 10px 24px rgba(245,185,78,.3);
+  animation:ctaPulse 1.9s ease-in-out infinite;
+}
+@keyframes ctaPulse{0%,100%{transform:scale(1); box-shadow:0 10px 24px rgba(245,185,78,.3)}
+  50%{transform:scale(1.05); box-shadow:0 12px 30px rgba(245,185,78,.45), 0 0 26px rgba(245,185,78,.45)}}
+
+/* tick "đã chọn" */
+.pick{position:absolute; left:50%; top:-15px; margin-left:-15px; width:30px; height:30px; border-radius:50%;
+  background:linear-gradient(180deg,var(--amber-hi),var(--amber)); color:#26200A; display:grid; place-items:center;
+  font-size:15px; font-weight:800; opacity:0; transform:scale(.6); transition:.22s cubic-bezier(.2,.9,.3,1.4);
+  box-shadow:0 0 20px rgba(245,185,78,.6);}
+.is-selected > .pick{opacity:1; transform:none;}
+
+@media (hover:hover){
+  .pcard:hover{transform:translateY(-4px) scale(1.01);}
+  .play-grid:has(.pcard.is-selected) .pcard:not(.is-selected):hover{transform:scale(.96); opacity:.9;}
+  .pcard.is-selected:hover{transform:scale(1.075) translateY(-3px);}
+  .pill-amber:hover{filter:brightness(1.12);}
+}

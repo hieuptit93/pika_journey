@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover" />
+<title>Robot Pika — Góc trải nghiệm (Fauna) v1.3.4</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=Cormorant+Garamond:wght@500;600;700&display=swap" rel="stylesheet">
+
+<!-- CSS: tokens trước, base + chrome, rồi từng màn, modals cuối -->
+<link rel="stylesheet" href="css/tokens.css">
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/chrome.css">
+<link rel="stylesheet" href="css/scene-welcome.css">
+<link rel="stylesheet" href="css/scene-play.css">
+<link rel="stylesheet" href="css/scene-learn.css">
+<link rel="stylesheet" href="css/scene-journey.css">
+<link rel="stylesheet" href="css/scene-parents.css">
+<link rel="stylesheet" href="css/scene-faq.css">
+<link rel="stylesheet" href="css/modals.css">
+</head>
+<body>
+<div id="viewport">
+<div id="stage">
+
+  <!-- ===== backgrounds ===== -->
+  <div class="plate plate-welcome" id="plateWelcome"></div>
+  <div class="plate plate-land" id="plateLand"></div>
+  <div class="plate flat" id="plateFlat"><div class="dots-field"></div></div>
+  <div class="moon" id="moon"></div>
+  <div id="twinkles"></div>
+
+  <!-- ===== nav tabs ===== -->
+  <nav class="tabs hide" id="tabs" aria-label="Điều hướng chính">
+    <button class="tab" data-go="play"><span class="ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M10 8.5l6 3.5-6 3.5z" fill="currentColor" stroke="none"/></svg></span>Chơi</button>
+    <button class="tab" data-go="learn"><span class="ic"><svg viewBox="0 0 24 24"><path d="M4 5.5h6.5v13H4zM13.5 5.5H20v13h-6.5zM12 6v12"/></svg></span>Học tập</button>
+    <button class="tab" data-go="journey"><span class="ic"><svg viewBox="0 0 24 24"><path d="M6 3.5v17M6 5h10l-2.2 3.4L16 12H6"/></svg></span>Lộ trình</button>
+    <button class="tab" data-go="parents"><span class="ic"><svg viewBox="0 0 24 24"><circle cx="9" cy="9" r="3"/><path d="M3.5 19c.6-3.2 2.8-4.8 5.5-4.8S14 15.8 14.6 19"/><circle cx="16.5" cy="10" r="2.3"/><path d="M15 19c.4-2.2 1.3-3.4 3-3.4 1.4 0 2.3.8 2.8 2.2"/></svg></span>Ba mẹ</button>
+    <button class="tab" data-go="faq"><span class="ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.4c.2-1.4 1.2-2.2 2.5-2.2 1.4 0 2.4.9 2.4 2.1 0 1.5-1.6 1.8-2.3 2.8-.3.4-.3.9-.3 1.4"/><circle cx="12" cy="17" r=".9" fill="currentColor" stroke="none"/></svg></span>Hỏi đáp</button>
+  </nav>
+
+  <!-- ===== kiosk cluster (giữ 1.2s mới mở — chống trẻ bấm nhầm) ===== -->
+  <div id="kiosk">
+    <button class="round-btn ghost" id="kioskBtn" aria-label="Cài đặt lượt thử (giữ để mở)">
+      <svg viewBox="0 0 24 24"><path d="M12 8.6a3.4 3.4 0 100 6.8 3.4 3.4 0 000-6.8zm8.4 3.4c0-.5 0-1-.1-1.5l2-1.5-1.9-3.3-2.4.9c-.8-.6-1.6-1.1-2.6-1.4L15 2.5H11l-.4 2.7c-1 .3-1.8.8-2.6 1.4l-2.4-.9L3.7 9l2 1.5c-.1.5-.1 1-.1 1.5s0 1 .1 1.5l-2 1.5 1.9 3.3 2.4-.9c.8.6 1.6 1.1 2.6 1.4l.4 2.7h4l.4-2.7c1-.3 1.8-.8 2.6-1.4l2.4.9 1.9-3.3-2-1.5c.1-.5.1-1 .1-1.5z"/></svg>
+      <span class="badge" id="starBadge">0</span>
+    </button>
+    <div id="kioskPanel">
+      <div class="kp-row"><span>Sao bé kiếm được</span><b id="starCount">0</b></div>
+      <div class="kp-row tap" id="soundRow"><span>Âm thanh</span><b id="soundState">BẬT</b></div>
+      <button id="kpResult">🏁 Xem kết quả lượt chơi</button>
+      <button class="kp-reset" id="resetBtn">Reset lượt thử</button>
+      <p class="kp-note">Giữ nút bánh răng 1 giây để mở bảng này. Tự về màn chào sau 90 giây không ai chạm.</p>
+    </div>
+  </div>
+
+  <!-- ===== scenes ===== -->
+  <div id="scenes">
+
+    <!-- ---------- 0 · WELCOME ---------- -->
+    <section class="scene active" data-scene="welcome">
+      <!-- Giao diện màn chào là ảnh thiết kế gốc (bg-welcome.webp).
+           Bên trên chỉ là các vùng chạm trong suốt + hiệu ứng ánh sáng cộng thêm. -->
+      <button class="hit" id="brandHome" style="left:24px; top:18px; width:330px; height:76px"
+        aria-label="Về màn hình chào"></button>
+      <button class="hit" id="soundBtn" style="left:833px; top:26px; width:64px; height:64px; border-radius:50%"
+        aria-label="Bật tắt âm thanh"><span class="mute-badge" id="muteBadge">✕</span></button>
+
+      <span class="hero-spark" style="left:292px; top:396px">✦</span>
+      <span class="hero-spark" style="left:648px; top:436px">✦</span>
+      <span class="hero-spark" style="left:300px; top:706px; font-size:14px">✦</span>
+      <div class="stage-light"></div>
+      <button class="w-hero" id="heroPika" aria-label="Chạm vào Pika">
+        <img src="assets/img/hero-pika.webp" alt="Robot Pika đang vẫy tay chào" />
+      </button>
+      <div class="hero-bubble" id="heroBubble"><span id="heroBubbleText"></span></div>
+
+      <button class="hit cta-hit" id="startBtn" style="left:308px; top:795px; width:335px; height:118px"
+        aria-label="Chơi ngay"></button>
+      <img class="w-qr-img" src="assets/img/qr-zalo.png" alt="Mã QR Zalo OA của Pika" />
+    </section>
+
+    <!-- ---------- 1 · PLAY (không pre-select — khách tự chọn) ---------- -->
+    <section class="scene" data-scene="play">
+      <h1 class="h-round p-title">Con muốn chơi gì<br/><span class="amber">với Pika?</span></h1>
+      <div class="play-grid" id="playGrid">
+
+        <article class="pcard" data-play="story" role="button" tabindex="0"
+          data-title="Bắt đầu bằng một câu chuyện"
+          data-text="Pika rủ con chọn nhân vật, rồi để con quyết định diễn biến tiếp theo bằng câu rất ngắn.">
+          <span class="pick">✓</span>
+          <div class="pc-top"><span class="pc-kicker">01 · Cùng sáng tạo</span><span class="pc-time">5–7 PHÚT</span></div>
+          <h3 class="pc-name">Kể chuyện</h3>
+          <div class="pc-art"><img src="assets/img/play-story.webp" alt="Pika hoá phù thuỷ kể chuyện" /></div>
+          <div class="pc-foot"><p>Pika kể, con chọn diễn biến tiếp theo.</p><button class="pill-amber" data-start="story">Chơi ngay</button></div>
+        </article>
+
+        <article class="pcard" data-play="song" role="button" tabindex="0"
+          data-title="Cùng hát trước, nói sau"
+          data-text="Pika dùng nhịp điệu quen thuộc để con vui trước, rồi mời con lặp lại 1 từ hoặc 1 câu thật dễ.">
+          <span class="pick">✓</span>
+          <div class="pc-top"><span class="pc-kicker">02 · Cùng ca hát</span><span class="pc-time">3–5 PHÚT</span></div>
+          <h3 class="pc-name">Hát</h3>
+          <div class="pc-art"><img src="assets/img/play-song.webp" alt="Pika quàng khăn hát theo" /></div>
+          <div class="pc-foot"><p>Hát bài quen, lặp lại một từ thật dễ.</p><button class="pill-amber" data-start="song">Chơi ngay</button></div>
+        </article>
+
+        <article class="pcard" data-play="english" role="button" tabindex="0"
+          data-title="Thử nói một câu tiếng Anh"
+          data-text="Pika không kiểm tra bài. Pika biến câu tiếng Anh thành nhiệm vụ nhỏ để con dám mở miệng.">
+          <span class="pick">✓</span>
+          <div class="pc-top"><span class="pc-kicker">03 · Cùng trò chuyện</span><span class="pc-time">5 PHÚT</span></div>
+          <h3 class="pc-name">Nói tiếng Anh</h3>
+          <div class="pc-art"><img src="assets/img/play-english.webp" alt="Pika đeo tai nghe trò chuyện" /></div>
+          <div class="pc-foot"><p>Câu “thần chú” nhỏ giúp con dám nói.</p><button class="pill-amber" data-start="english">Chơi ngay</button></div>
+        </article>
+
+        <article class="pcard" data-play="guess" role="button" tabindex="0"
+          data-title="Đố Pika đoán nhân vật"
+          data-text="Con chọn Doraemon, Elsa hoặc siêu anh hùng. Pika bám theo nhân vật đó để trò chuyện dài hơn.">
+          <span class="pick">✓</span>
+          <div class="pc-top"><span class="pc-kicker">04 · Cùng khám phá</span><span class="pc-time">5 PHÚT</span></div>
+          <h3 class="pc-name">Đoán nhân vật</h3>
+          <div class="pc-art"><img src="assets/img/play-guess.webp" alt="Pika đội mũ khám phá cầm tên lửa" /></div>
+          <div class="pc-foot"><p>Doraemon, Elsa hay siêu anh hùng?</p><button class="pill-amber" data-start="guess">Chơi ngay</button></div>
+        </article>
+      </div>
+    </section>
+
+    <!-- ---------- 2 · LEARN (không pre-select) ---------- -->
+    <section class="scene" data-scene="learn">
+      <h1 class="h-round l-title">Ốc đảo tri thức</h1>
+      <p class="l-sub">Con muốn khám phá ốc đảo nào hôm nay?</p>
+      <div id="zoneWrap">
+
+        <article class="zone z1" data-zone="1" role="button" tabindex="0"
+          data-info="Ốc đảo Làm quen nè! Pika chào con, mình khám phá âm thanh và trò chuyện đầu tiên nhé!">
+          <div class="z1-head"><span class="z-badge">1</span><span class="z1-kicker">CHÀO PIKA</span></div>
+          <h3 class="z1-name">Làm quen với Pika</h3>
+          <p class="z1-desc">Bắt đầu bằng những cuộc trò chuyện thật vui.</p>
+          <div class="chips">
+            <button class="chip" data-lesson="z1a">Khám phá cùng Pika</button>
+            <button class="chip" data-lesson="z1b">Trò chuyện cùng Pika</button>
+            <button class="chip" data-lesson="z1c">Làm quen âm thanh</button>
+          </div>
+          <div class="z1-art"><img src="assets/img/isl-meet.webp" alt="Pika và bé gặp nhau ở cổng vòm" /></div>
+        </article>
+
+        <article class="zone z2" data-zone="2" role="button" tabindex="0"
+          data-info="Ốc đảo Pre-A1 nè! Con học từ vựng, nạp cụm và hát cùng Pika — vui lắm đó!">
+          <div class="z-art"><img src="assets/img/isl-prea1.webp" alt="Ốc đảo lớp học Pre-A1" /></div>
+          <div class="z-name-row"><span class="z-badge">2</span><span class="z-name">Tiếng Anh Pre-A1</span></div>
+          <div class="z-chips">
+            <button class="chip" data-lesson="z2a">Khám phá cùng Pika</button>
+            <button class="chip" data-lesson="z2b">Nạp cụm từ</button>
+            <button class="chip" data-lesson="z2c">Hát cùng Pika</button>
+            <button class="chip" data-lesson="z2d">Luyện tập</button>
+          </div>
+        </article>
+
+        <article class="zone z3" data-zone="3" role="button" tabindex="0"
+          data-info="Ốc đảo A1–A2, thử thách hơn nè! Role-play, luyện nói và sửa phát âm cùng Pika!">
+          <div class="z-art"><img src="assets/img/isl-castle.webp" alt="Ốc đảo lâu đài A1 A2" /></div>
+          <div class="z-name-row"><span class="z-badge">3</span><span class="z-name">Tiếng Anh A1–A2</span></div>
+          <div class="z-chips">
+            <button class="chip" data-lesson="z3a">Nạp cụm nâng cao</button>
+            <button class="chip" data-lesson="z3b">Role-play</button>
+            <button class="chip" data-lesson="z3c">Luyện tập nói</button>
+            <button class="chip" data-lesson="z3d">Sửa phát âm</button>
+          </div>
+        </article>
+
+        <article class="zone z4" data-zone="4" role="button" tabindex="0"
+          data-info="Ốc đảo Mở rộng — khám phá kiến thức, đọc hiểu và thảo luận đủ điều thú vị!">
+          <div class="z-art"><img src="assets/img/isl-explore.webp" alt="Ốc đảo khám phá kiến thức" /></div>
+          <div class="z-name-row"><span class="z-badge">4</span><span class="z-name">Mở rộng cùng Pika</span></div>
+          <div class="z-chips">
+            <button class="chip" data-lesson="z4a">Khám phá kiến thức</button>
+            <button class="chip" data-lesson="z4b">Đọc hiểu &amp; trả lời</button>
+            <button class="chip" data-lesson="z4c">Thảo luận</button>
+            <button class="chip" data-lesson="z4d">Từ vựng nâng cao</button>
+          </div>
+        </article>
+
+        <article class="zone z5" data-zone="5" role="button" tabindex="0"
+          data-info="Ốc đảo Dịp đặc biệt — lễ hội, sinh nhật, sự kiện! Cùng Pika mở tiệc nào!">
+          <div class="z-art"><img src="assets/img/isl-party.webp" alt="Ốc đảo tiệc sinh nhật" /></div>
+          <div class="z-name-row"><span class="z-badge">5</span><span class="z-name">Dịp đặc biệt</span></div>
+          <div class="z-chips">
+            <button class="chip" data-lesson="z5a">Lễ hội &amp; sự kiện</button>
+            <button class="chip" data-lesson="z5b">Từ vựng theo chủ đề</button>
+            <button class="chip" data-lesson="z5c">Trò chuyện chủ đề</button>
+            <button class="chip" data-lesson="z5d">Dự án nhỏ</button>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <!-- ---------- 3 · JOURNEY ---------- -->
+    <section class="scene" data-scene="journey">
+      <p class="eyebrow">Lộ trình 24 tháng · Chuẩn Cambridge YLE</p>
+      <h1 class="h-serif j-title">Con nói được gì sau từng chặng?</h1>
+      <p class="sub">Mỗi mốc là một bước nhỏ để con tự tin nói tiếng Anh cùng Pika.</p>
+
+      <div class="j-path"></div>
+      <button class="j-node current" id="jn0" style="top:272px" aria-label="Chặng 1">1</button>
+      <button class="j-node" id="jn1" style="top:424px" aria-label="Chặng 2">2</button>
+      <button class="j-node" id="jn2" style="top:576px" aria-label="Chặng 3">3</button>
+      <button class="j-node" id="jn3" style="top:728px" aria-label="Chặng 4">4</button>
+      <button class="j-node" id="jn4" style="top:880px" aria-label="Chặng 5">5</button>
+
+      <article class="jcard left current" data-step="0" role="button" tabindex="0" style="top:218px"
+        data-jlong="Nhiều bé hiểu bài nhưng chưa dám nói thành lời. Pika bắt đầu từ đây — không ép, không chấm điểm, chỉ rủ bé chơi để bé dám mở miệng phản hồi.">
+        <span class="jc-kicker">Hôm nay · Khởi động</span>
+        <h3 class="jc-name">Con dám phản hồi</h3>
+        <p class="jc-desc">Pika tạo môi trường an toàn, con bớt áp lực khi nói.</p>
+        <span class="jc-quote">“Im lặng, chỉ gật đầu…”</span>
+        <span class="jc-crys"></span>
+        <div class="jc-art"><img src="assets/img/isl-meet.webp" alt="" /></div>
+      </article>
+
+      <article class="jcard right" data-step="1" role="button" tabindex="0" style="top:370px"
+        data-jlong="Pika biến việc nói thành thói quen vui: mỗi ngày 15 phút, bé dám bật âm và nói câu 2–5 từ mà không sợ sai. Đây là giai đoạn Pre-A1 theo chuẩn Cambridge.">
+        <span class="jc-kicker">Tháng 1–3 · Bật âm</span>
+        <h3 class="jc-name">Nói câu 2–5 từ</h3>
+        <p class="jc-desc">15 phút mỗi ngày qua trò chơi micro và hội thoại ngắn.</p>
+        <span class="jc-quote">“Hello! I like cats!”</span>
+        <span class="jc-crys"></span>
+        <div class="jc-art"><img src="assets/img/isl-prea1.webp" alt="" /></div>
+      </article>
+
+      <article class="jcard left" data-step="2" role="button" tabindex="0" style="top:522px"
+        data-jlong="Đạt mốc Starters (Pre-A1). Bé hỏi đáp tự nhiên về bản thân, gia đình, đồ vật quen thuộc với vốn khoảng 500 từ, qua trò chuyện hằng ngày cùng Pika.">
+        <span class="jc-kicker">Tháng 4–12 · Starters</span>
+        <h3 class="jc-name">Hỏi đáp tự nhiên</h3>
+        <p class="jc-desc">Nói về bản thân, gia đình, đồ vật quen thuộc · ~500 từ.</p>
+        <span class="jc-quote">“I have a red bike!”</span>
+        <span class="jc-crys"></span>
+        <div class="jc-art"><img src="assets/img/isl-explore.webp" alt="" /></div>
+      </article>
+
+      <article class="jcard right" data-step="3" role="button" tabindex="0" style="top:674px"
+        data-jlong="Năm thứ hai — mốc Movers (A1). Bé kể lại chuyện đã xảy ra, giữ hội thoại 5 phút liên tục, dùng role-play và tranh trình tự với vốn khoảng 1.000 từ.">
+        <span class="jc-kicker">Năm 2 · Movers</span>
+        <h3 class="jc-name">Kể chuyện ngắn</h3>
+        <p class="jc-desc">Role-play và tranh trình tự giúp con sử dụng ~1.000 từ.</p>
+        <span class="jc-quote">“Yesterday I went to the zoo!”</span>
+        <span class="jc-crys"></span>
+        <div class="jc-art"><img src="assets/img/isl-castle.webp" alt="" /></div>
+      </article>
+
+      <article class="jcard left" data-step="4" role="button" tabindex="0" style="top:826px"
+        data-jlong="Đích đến Flyers (A2). Bé tự tin trò chuyện, nêu ý kiến riêng, phản biện và sẵn sàng chinh phục kỳ thi chứng chỉ Cambridge YLE thật.">
+        <span class="jc-kicker">Flyers · A2</span>
+        <h3 class="jc-name">Tự tin nêu ý kiến</h3>
+        <p class="jc-desc">Con chủ động kể, phản biện, sẵn sàng chinh phục A2.</p>
+        <span class="jc-quote">“I think robots are cool!”</span>
+        <span class="jc-crys"></span>
+        <div class="jc-art"><img src="assets/img/isl-party.webp" alt="" /></div>
+      </article>
+
+      <!-- panel tổng kết: 1 khối gộp (kicker + stats + nhiệm vụ ngày + note) -->
+      <div class="j-panel">
+        <strong class="jp-head">Sau 24 tháng, con tích luỹ được gì?</strong>
+        <div class="j-stats">
+          <div class="stat"><b>15 phút/ngày</b><span>90+ giờ nói mỗi năm</span></div>
+          <div class="stat"><b>3.195 lượt nói</b><span>Trong tháng đầu tiên</span></div>
+          <div class="stat"><b>115 từ/tháng</b><span>Nhớ qua trò chuyện</span></div>
+          <div class="stat hi"><b>Cambridge YLE</b><span>Starters → Movers → Flyers</span></div>
+        </div>
+        <div class="j-panel-top">
+          <strong>Mỗi ngày 1 nhiệm vụ · 15 phút</strong>
+          <div class="crys-row" id="crysRow">
+            <span class="crys"></span><span class="crys"></span><span class="crys"></span><span class="crys"></span><span class="crys"></span>
+          </div>
+        </div>
+        <div class="demo-chips" id="demoChips">
+          <button class="dchip active" data-demo="story">Kể chuyện</button>
+          <button class="dchip" data-demo="structured">Học từ</button>
+          <button class="dchip" data-demo="roleplay">Đóng vai</button>
+          <button class="dchip" data-demo="song">Hát</button>
+        </div>
+        <p class="jp-note">Pika tự điều chỉnh nhịp độ theo từng bé — nhanh hơn hay chậm hơn đều được.</p>
+      </div>
+
+      <!-- demo chat: bottom-sheet trượt từ đáy màn -->
+      <div id="demoPop">
+        <div class="dp-top"><span id="dpLabel">Thử một nhiệm vụ</span><button class="dp-x" id="dpClose" aria-label="Đóng">✕</button></div>
+        <div id="demoChat"></div>
+      </div>
+    </section>
+
+    <!-- ---------- 4 · PARENTS ---------- -->
+    <section class="scene" data-scene="parents">
+      <p class="eyebrow">App phụ huynh · Đồng hành cùng con</p>
+      <h1 class="h-round pa-title">Ba mẹ cầm lái từ một app</h1>
+      <p class="sub">Giao bài, xem tiến độ và kiểm soát trải nghiệm của con.</p>
+
+      <div class="ben-row" id="benRow">
+        <button class="ben active" data-benefit="send">
+          <span class="ben-ic"><svg viewBox="0 0 24 24"><path d="M4 12l16-7-7 16-2.2-6.8z"/></svg></span>
+          <strong>Giao bài 1 chạm</strong><span>Chọn chủ đề, gửi xuống robot.</span>
+          <i class="ben-bar"></i>
+        </button>
+        <button class="ben" data-benefit="report">
+          <span class="ben-ic"><svg viewBox="0 0 24 24"><path d="M4 20V9M10 20V4M16 20v-7M22 20H2"/></svg></span>
+          <strong>Tiến độ mỗi ngày</strong><span>Con nói bao lâu, học từ nào.</span>
+          <i class="ben-bar"></i>
+        </button>
+        <button class="ben" data-benefit="safety">
+          <span class="ben-ic"><svg viewBox="0 0 24 24"><path d="M12 3.2l7 2.6v5.6c0 4.3-2.9 7.6-7 9.4-4.1-1.8-7-5.1-7-9.4V5.8z"/><path d="M9 12.2l2.2 2.2L15.4 10"/></svg></span>
+          <strong>An toàn trong tay</strong><span>Chủ đề, memory, lọc nội dung.</span>
+          <i class="ben-bar"></i>
+        </button>
+      </div>
+
+      <div class="pa-panel">
+        <span class="pa-kicker" id="paKicker">01 · Giao bài</span>
+        <button class="pa-pill" id="paPill">Giao bài thử</button>
+        <h3 class="pa-h" id="paTitle">Một chạm là Pika sẽ nhận bài ngay</h3>
+        <div class="phone"><div class="phone-screen" id="phoneScreen"></div></div>
+        <div class="pa-cap">
+          <strong id="paCapTitle">Ba mẹ chọn bài, Pika nhận ngay</strong>
+          <p id="paCapText">Không cần cài đặt lại trên robot,<br/>không làm gián đoạn cuộc chơi.</p>
+        </div>
+        <div class="pa-dots" id="paDots"><i class="on"></i><i></i><i></i></div>
+      </div>
+      <p class="pa-foot">Vuốt để xem tính năng tiếp theo</p>
+    </section>
+
+    <!-- ---------- 5 · FAQ ---------- -->
+    <section class="scene" data-scene="faq">
+      <p class="eyebrow">Hỏi đáp · Ba mẹ quan tâm</p>
+      <h1 class="h-serif f-title">Câu hỏi thường gặp</h1>
+      <p class="sub">Những điều ba mẹ hay hỏi Pika nhất tại quầy trải nghiệm.</p>
+      <div class="faq-list" id="faqList">
+        <article class="faq open"><button class="faq-q">Có phần mềm đi kèm không?<span class="faq-tg">+</span></button>
+          <div class="faq-a">Có. Pika đi kèm ứng dụng di động dành cho phụ huynh để giao bài, theo dõi tiến độ và quản lý các thiết lập an toàn cho con.</div></article>
+        <article class="faq"><button class="faq-q">Hết 6 tháng, gia hạn ở đâu?<span class="faq-tg">+</span></button>
+          <div class="faq-a">Ba mẹ có thể gia hạn trực tiếp trên app phụ huynh hoặc liên hệ các điểm bán Pika để mua mã kích hoạt gói phần mềm mới.</div></article>
+        <article class="faq"><button class="faq-q">Hết hạn phần mềm, Pika ra sao?<span class="faq-tg">+</span></button>
+          <div class="faq-a">Khi hết hạn Pika Pass, các tính năng AI nâng cao và kết nối app sẽ tạm dừng. Pika vẫn thực hiện được các lệnh cơ bản ngoại tuyến, nhưng để luyện nói thông minh thì ba mẹ cần gia hạn gói.</div></article>
+        <article class="faq"><button class="faq-q">Có bảo hành không?<span class="faq-tg">+</span></button>
+          <div class="faq-a">Pika được bảo hành chính hãng 12 tháng cho các lỗi từ nhà sản xuất. Ba mẹ có thể mang đến bất kỳ điểm bán chính thức nào để được hỗ trợ kỹ thuật.</div></article>
+        <article class="faq"><button class="faq-q">Pika có an toàn cho trẻ không?<span class="faq-tg">+</span></button>
+          <div class="faq-a">Pika có lớp lọc nội dung, ưu tiên chủ đề phù hợp với trẻ, sửa nhẹ theo tuổi và có app để phụ huynh theo dõi mọi lượt chơi.</div></article>
+        <article class="faq"><button class="faq-q">Nếu con chỉ muốn chơi thì sao?<span class="faq-tg">+</span></button>
+          <div class="faq-a">Pika có thể bắt đầu từ chơi, truyện, bài hát hoặc nhân vật con thích. Khi phù hợp, Pika gợi ý một câu tiếng Anh ngắn để con nói theo.</div></article>
+        <article class="faq"><button class="faq-q">Ba mẹ không giỏi tiếng Anh, dùng được không?<span class="faq-tg">+</span></button>
+          <div class="faq-a">Có. Ba mẹ chỉ cần chọn tuổi, sở thích và kiểu bài. Pika lo phần dẫn dắt, nghe con nói, khen và sửa nhẹ.</div></article>
+        <article class="faq"><button class="faq-q">Reset tablet cho khách tiếp theo?<span class="faq-tg">+</span></button>
+          <div class="faq-a">Giữ nút bánh răng ở góc trên khoảng 1 giây rồi bấm “Reset lượt thử” để xoá lựa chọn, sao thưởng và đưa tablet về màn hình chào ban đầu.</div></article>
+        <article class="faq"><button class="faq-q">Mua xong, app dùng để làm gì?<span class="faq-tg">+</span></button>
+          <div class="faq-a">App dùng để giao bài, xem tiến độ, đặt giờ học, chọn nội dung theo sách và quản lý các thiết lập an toàn.</div></article>
+      </div>
+      <div class="faq-qr">
+        <img src="assets/img/qr-zalo.png" alt="Mã QR Zalo OA của Pika" />
+        <div class="faq-qr-txt">
+          <strong>Còn thắc mắc khác? Nhắn Pika trên Zalo nhé!</strong>
+          <p>Quét mã để kết nối Zalo OA — ba mẹ được tư vấn, giao bài và hỗ trợ nhanh chóng.</p>
+        </div>
+      </div>
+      <button class="f-cta" data-go="play">Cho con chơi lại</button>
+    </section>
+  </div>
+
+  <!-- ===== chrome ===== -->
+  <button class="arrow prev hidden" id="prevBtn" aria-label="Màn trước"><svg viewBox="0 0 24 24"><path d="M15.5 4.5L7 12l8.5 7.5z"/></svg></button>
+  <button class="arrow next" id="nextBtn" aria-label="Màn sau"><svg viewBox="0 0 24 24"><path d="M8.5 4.5L17 12l-8.5 7.5z"/></svg></button>
+  <div id="sceneDots" role="tablist" aria-label="Các màn hình"></div>
+
+  <!-- ===== dock ===== -->
+  <div id="dock">
+    <img src="assets/img/play-english.webp" alt="" aria-hidden="true" />
+    <div id="dockText"></div>
+  </div>
+
+  <!-- ===== overlays ===== -->
+  <div id="toast">Đã reset lượt thử</div>
+  <canvas id="confetti"></canvas>
+  <button id="sessionBar" class="hidden">🏁 Xem kết quả lượt chơi</button>
+
+  <div class="ov" id="lessonOv">
+    <div class="modal">
+      <button class="m-x" id="lessonX" aria-label="Đóng">✕</button>
+      <div class="m-head">
+        <span class="m-ic char"><img src="assets/img/pika-lesson.webp" alt="" /></span>
+        <div><span class="m-kicker" id="lessonZone"></span><h3 class="m-title" id="lessonTitle"></h3></div>
+      </div>
+      <p class="m-desc" id="lessonDesc"></p>
+      <div class="tasks" id="lessonTasks"></div>
+      <div class="m-meta"><span>⏱️ <b id="lessonTime" style="font-size:14px"></b></span><span>🎯 1 nhiệm vụ nói</span><span>⭐ +1 sao</span></div>
+      <div class="m-acts">
+        <button class="btn-a" id="lessonAssign">Giao cho Pika</button>
+        <button class="btn-g" id="lessonCancel">Để sau</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="ov" id="chOv">
+    <div class="modal">
+      <button class="m-x" id="chX" aria-label="Đóng">✕</button>
+      <div class="m-head">
+        <span class="m-ic" id="chIco">✨</span>
+        <div><span class="m-kicker">Thử thách tiếng Anh siêu ngắn</span><h3 class="m-title" id="chTitle"></h3></div>
+      </div>
+      <div class="char-chips" id="charChips" hidden>
+        <button class="char-chip active" data-char="elsa">❄️ Elsa</button>
+        <button class="char-chip" data-char="doraemon">🔵 Doraemon</button>
+        <button class="char-chip" data-char="hero">🦸 Siêu anh hùng</button>
+      </div>
+      <div class="spell"><span id="chSpell"></span><small>Câu thần chú của bé</small></div>
+      <div class="tasks" style="margin-top:14px">
+        <div class="t-row"><span class="t-ic">1️⃣</span>Pika chơi với bé 1–3 phút theo trò bé chọn</div>
+        <div class="t-row"><span class="t-ic">2️⃣</span>Pika khéo léo dẫn bé nói câu thần chú</div>
+        <div class="t-row"><span class="t-ic">3️⃣</span>Khen, tặng huy hiệu và mời ba mẹ xem kết quả</div>
+      </div>
+      <div class="c-steps" id="connectSteps"></div>
+      <div class="m-acts">
+        <button class="btn-a" id="chAssign">Giao cho Pika</button>
+        <button class="btn-g" id="chCancel">Để sau</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="ov" id="rsOv">
+    <div class="modal">
+      <button class="m-x" id="rsX" aria-label="Đóng">✕</button>
+      <div class="m-head">
+        <span class="m-ic char"><img src="assets/img/pika-result.webp" alt="" /></span>
+        <div><span class="m-kicker">Mini-result · Gọi ba mẹ xem nè</span><h3 class="m-title">Bé vừa làm được gì?</h3></div>
+      </div>
+      <div class="tasks">
+        <div class="t-row"><span class="t-ic">🎯</span>Trò bé chọn:<b id="rsTopic"></b></div>
+        <div class="t-row"><span class="t-ic">🗣️</span>Bé đã nói<b id="rsTurns"></b><span>&nbsp;lượt cùng Pika</span></div>
+        <div class="t-row" id="rsSentenceRow"><span class="t-ic">🇬🇧</span>Câu tiếng Anh mới:<b id="rsSentence"></b></div>
+      </div>
+      <div class="r-badge"><span class="em" id="rsBadgeEmoji">🏅</span><span><strong id="rsBadgeName"></strong><span>Huy hiệu bé nhận được</span></span></div>
+      <p class="voucher" id="rsVoucher">🎟️ Bé nói được từ 5 câu — nhận voucher nhỏ tại quầy nhé!</p>
+      <div class="m-acts">
+        <button class="btn-a" id="rsParents">Ba mẹ xem thêm</button>
+        <button class="btn-g" id="rsAgain">Chơi tiếp</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="ov" id="jOv">
+    <div class="modal jmodal">
+      <button class="m-x" id="jX" aria-label="Đóng">✕</button>
+      <div class="jm-art"><img id="jmImg" src="" alt="" /></div>
+      <span class="m-kicker" id="jmKicker"></span>
+      <h3 class="m-title" id="jmTitle"></h3>
+      <p class="jm-long" id="jmLong"></p>
+      <div class="jm-quote-row"><span class="jm-quote" id="jmQuote"></span></div>
+      <div class="jm-foot">
+        <span class="jm-step" id="jmStep"></span>
+        <button class="btn-a" id="jmNext">Chặng tiếp theo →</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="ov" id="rewardOv">
+    <div class="modal reward">
+      <span class="trophy">🏆</span>
+      <h3 id="rewardTitle">Con sẽ làm được!</h3>
+      <p id="rewardText">Từ <strong>ngại nói</strong> đến <strong>tự tin thi Cambridge YLE</strong> — mỗi ngày chỉ 15 phút cùng Pika. Bé nhận <strong>5 tinh thể Pika</strong>!</p>
+      <div class="rs-qr center">
+        <img src="assets/img/qr-zalo.png" alt="Mã QR Zalo OA của Pika" />
+        <div>
+          <strong>Ba mẹ muốn đồng hành cùng con?</strong>
+          <p>Quét mã Zalo OA để nhận lộ trình 24 tháng và được Pika hỗ trợ.</p>
+        </div>
+      </div>
+      <button class="btn-a" id="rewardClose">Yeah! Nhận quà</button>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<div id="rotate"><div><span class="em">📱</span><strong>Dựng máy dọc nhé!</strong><p>Góc trải nghiệm Pika được thiết kế cho tablet dựng dọc.</p></div></div>
+
+<!-- JS: config → core → scenes → play → learn → journey → parents → misc (init) -->
+<script src="js/config.js"></script>
+<script src="js/core.js"></script>
+<script src="js/scenes.js"></script>
+<script src="js/play.js"></script>
+<script src="js/learn.js"></script>
+<script src="js/journey.js"></script>
+<script src="js/parents.js"></script>
+<script src="js/misc.js"></script>
+</body>
+</html>

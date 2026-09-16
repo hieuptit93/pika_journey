@@ -11,7 +11,14 @@ export type UsageEventType =
   | 'select_play_card'
   | 'assign_by_play_type'
   | 'select_lesson'
-  | 'assign_lesson';
+  | 'assign_lesson'
+  | 'start_play'
+  | 'select_zone'
+  | 'select_journey_card'
+  | 'complete_journey'
+  | 'select_benefit'
+  | 'open_faq'
+  | 'tap_pika';
 
 const COLLECTION = 'usage_events';
 // Giữ đồng bộ tay với app.json > expo.version — không có expo-constants trong deps.
