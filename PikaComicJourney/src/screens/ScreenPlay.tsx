@@ -10,6 +10,7 @@ import {
   Modal,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useTranslation, Trans } from 'react-i18next';
 import { useApp } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
 import { FaunaColors, FaunaFontSize, FaunaRadius, FaunaTouchTarget } from '../constants/theme';
@@ -35,56 +36,32 @@ const PLAY_TYPE_MAP: Record<string, PlayType> = {
 const PLAY_CARDS = [
   {
     id: 'story',
-    kicker: '01 · Cùng sáng tạo',
-    time: '5–7 PHÚT',
-    title: 'Kể chuyện',
-    desc: 'Pika kể, con chọn diễn biến tiếp theo.',
     image: require('../../assets/fauna/play-story.webp'),
     gradient: FaunaColors.playStory as [string, string],
-    challengeTitle: 'Bắt đầu bằng một câu chuyện',
-    challengeText: 'Pika rủ con chọn nhân vật, rồi để con quyết định diễn biến tiếp theo bằng câu rất ngắn.',
     ico: '📖',
     sentence: 'Tell me a story, please.',
     badge: { e: '📖', name: 'Story Starter' },
   },
   {
     id: 'song',
-    kicker: '02 · Cùng ca hát',
-    time: '3–5 PHÚT',
-    title: 'Hát',
-    desc: 'Hát bài quen, lặp lại một từ thật dễ.',
     image: require('../../assets/fauna/play-song.webp'),
     gradient: FaunaColors.playSong as [string, string],
-    challengeTitle: 'Cùng hát trước, nói sau',
-    challengeText: 'Pika dùng nhịp điệu quen thuộc để con vui trước, rồi mời con lặp lại 1 từ hoặc 1 câu thật dễ.',
     ico: '🎵',
     sentence: "Let's sing together!",
     badge: { e: '🎵', name: 'Music Star' },
   },
   {
     id: 'english',
-    kicker: '03 · Cùng trò chuyện',
-    time: '5 PHÚT',
-    title: 'Nói tiếng Anh',
-    desc: 'Câu "thần chú" nhỏ giúp con dám nói.',
     image: require('../../assets/fauna/play-english.webp'),
     gradient: FaunaColors.playEnglish as [string, string],
-    challengeTitle: 'Thử nói một câu tiếng Anh',
-    challengeText: 'Pika không kiểm tra bài. Pika biến câu tiếng Anh thành nhiệm vụ nhỏ để con dám mở miệng.',
     ico: '💬',
     sentence: 'I can speak English!',
     badge: { e: '✨', name: 'Magic Speaker' },
   },
   {
     id: 'guess',
-    kicker: '04 · Cùng khám phá',
-    time: '5 PHÚT',
-    title: 'Đoán nhân vật',
-    desc: 'Doraemon, Elsa hay siêu anh hùng?',
     image: require('../../assets/fauna/play-guess.webp'),
     gradient: FaunaColors.playGuess as [string, string],
-    challengeTitle: 'Đố Pika đoán nhân vật',
-    challengeText: 'Con chọn Doraemon, Elsa hoặc siêu anh hùng. Pika bám theo nhân vật đó để trò chuyện dài hơn.',
     ico: '🦸',
     sentence: 'I am ready.',
     badge: { e: '🦸', name: 'Brave Hero' },
@@ -97,18 +74,15 @@ const CHAR_SPELLS = {
   hero: { sentence: 'I am ready.', badge: { e: '🦸', name: 'Brave Hero' } },
 };
 
-const CONNECT_STEPS = [
-  '📡 Đang kết nối với Pika…',
-  '📦 Gửi thử thách sang Pika…',
-  '🤖 Pika sẵn sàng! Bé quay sang chơi với Pika nha!',
-];
-
 export const ScreenPlay: React.FC = () => {
+  const { t, i18n } = useTranslation();
   const { selectedPlay, setSelectedPlay, addStars } = useApp();
   const { user } = useAuth();
   const [showModal, setShowModal] = useState(false);
   const [connecting, setConnecting] = useState(false);
-  const [connectSteps, setConnectSteps] = useState<string[]>([]);
+  const connectStepTexts = t('play.connectSteps', { returnObjects: true }) as string[];
+  // Đếm số bước đã hiện thay vì lưu chữ, để đổi ngôn ngữ vẫn đúng.
+  const [connectStepCount, setConnectStepCount] = useState(0);
   const [selectedChar, setSelectedChar] = useState('elsa');
 
   const cardScales = useRef(PLAY_CARDS.map(() => new Animated.Value(1))).current;
@@ -163,7 +137,7 @@ export const ScreenPlay: React.FC = () => {
     if (selectedPlay) {
       const card = PLAY_CARDS.find(c => c.id === selectedPlay);
       if (card) {
-        const fullText = `${card.challengeTitle} — ${card.challengeText}`;
+        const fullText = `${t(`play.cards.${card.id}.challengeTitle`)} — ${t(`play.cards.${card.id}.challengeText`)}`;
         setTypedText('');
 
         // Animate bottom bar in
@@ -196,7 +170,7 @@ export const ScreenPlay: React.FC = () => {
     return () => {
       if (typewriterRef.current) clearInterval(typewriterRef.current);
     };
-  }, [selectedPlay]);
+  }, [selectedPlay, i18n.language]);
 
   const handleCardPress = (id: string, index: number) => {
     if (id === selectedPlay) return;
@@ -279,15 +253,15 @@ export const ScreenPlay: React.FC = () => {
   const handleAssign = async () => {
     if (connecting) return;
     setConnecting(true);
-    setConnectSteps([]);
+    setConnectStepCount(0);
 
     const card = PLAY_CARDS.find(c => c.id === selectedPlay) || PLAY_CARDS[0];
     const isGuess = card.id === 'guess';
     const spell = isGuess ? CHAR_SPELLS[selectedChar as keyof typeof CHAR_SPELLS] : card;
 
-    for (let i = 0; i < CONNECT_STEPS.length; i++) {
+    for (let i = 0; i < connectStepTexts.length; i++) {
       await new Promise(resolve => setTimeout(resolve, 500));
-      setConnectSteps(prev => [...prev, CONNECT_STEPS[i]]);
+      setConnectStepCount(i + 1);
       buttonFeedback();
     }
 
@@ -300,7 +274,8 @@ export const ScreenPlay: React.FC = () => {
         await apiService.assignByPlayType(playType);
         successFeedback();
         addStars(1);
-        logEvent('assign_by_play_type', 'play', { playType, playTitle: card.title });
+        // Tracking luôn ghi tên tiếng Việt để số liệu không bị tách theo ngôn ngữ.
+        logEvent('assign_by_play_type', 'play', { playType, playTitle: i18n.t(`play.cards.${card.id}.title`, { lng: 'vi' }) });
       } catch (err) {
         console.error('Failed to assign play:', err);
       }
@@ -323,8 +298,7 @@ export const ScreenPlay: React.FC = () => {
     >
       {/* Title */}
       <Text style={styles.title}>
-        Con muốn chơi gì{'\n'}
-        <Text style={styles.titleAmber}>với Pika?</Text>
+        <Trans t={t} i18nKey="play.title" components={{ amber: <Text style={styles.titleAmber} /> }} />
       </Text>
 
       {/* Play Grid */}
@@ -387,8 +361,8 @@ export const ScreenPlay: React.FC = () => {
                   {/* Card Top */}
                   <View style={styles.cardTop}>
                     <View style={styles.cardTopLeft}>
-                      <Text style={styles.cardKicker}>{card.kicker}</Text>
-                      <Text style={styles.cardTime}>{card.time}</Text>
+                      <Text style={styles.cardKicker}>{t(`play.cards.${card.id}.kicker`)}</Text>
+                      <Text style={styles.cardTime}>{t(`play.cards.${card.id}.time`)}</Text>
                     </View>
                     {isSelected && (
                       <View style={styles.checkBadge}>
@@ -398,7 +372,7 @@ export const ScreenPlay: React.FC = () => {
                   </View>
 
                   {/* Card Name */}
-                  <Text style={styles.cardName}>{card.title}</Text>
+                  <Text style={styles.cardName}>{t(`play.cards.${card.id}.title`)}</Text>
 
                   {/* Card Art */}
                   <View style={styles.cardArt}>
@@ -430,13 +404,13 @@ export const ScreenPlay: React.FC = () => {
 
                   {/* Card Footer */}
                   <View style={styles.cardFoot}>
-                    <Text style={styles.cardDesc}>{card.desc}</Text>
+                    <Text style={styles.cardDesc}>{t(`play.cards.${card.id}.desc`)}</Text>
                     <Pressable
                       style={[styles.pillButton, isSelected && styles.pillButtonActive]}
                       onPress={handlePlayPress}
                     >
                       <Text style={[styles.pillText, isSelected && styles.pillTextActive]}>
-                        Chơi ngay
+                        {t('play.playNow')}
                       </Text>
                     </Pressable>
                   </View>
@@ -476,7 +450,7 @@ export const ScreenPlay: React.FC = () => {
       )}
 
       {/* Challenge Modal */}
-      <Modal visible={showModal} transparent animationType="fade">
+      <Modal visible={showModal} transparent animationType="fade" supportedOrientations={['portrait', 'landscape']}>
         <Pressable style={styles.overlay} onPress={() => !connecting && setShowModal(false)}>
           <Pressable style={styles.modal} onPress={e => e.stopPropagation()}>
             {/* Close Button */}
@@ -493,8 +467,8 @@ export const ScreenPlay: React.FC = () => {
                 <Text style={styles.modalIconText}>{selectedCard.ico}</Text>
               </View>
               <View style={styles.modalHeadText}>
-                <Text style={styles.modalKicker}>Thử thách tiếng Anh siêu ngắn</Text>
-                <Text style={styles.modalTitle}>{selectedCard.title}</Text>
+                <Text style={styles.modalKicker}>{t('play.modalKicker')}</Text>
+                <Text style={styles.modalTitle}>{t(`play.cards.${selectedCard.id}.title`)}</Text>
               </View>
             </View>
 
@@ -504,7 +478,7 @@ export const ScreenPlay: React.FC = () => {
                 {[
                   { id: 'elsa', label: '❄️ Elsa' },
                   { id: 'doraemon', label: '🔵 Doraemon' },
-                  { id: 'hero', label: '🦸 Siêu anh hùng' },
+                  { id: 'hero', label: `🦸 ${t('play.charHero')}` },
                 ].map(char => (
                   <Pressable
                     key={char.id}
@@ -522,29 +496,23 @@ export const ScreenPlay: React.FC = () => {
             {/* Spell */}
             <View style={styles.spellBox}>
               <Text style={styles.spellText}>"{currentSpell.sentence}"</Text>
-              <Text style={styles.spellLabel}>Câu thần chú của bé</Text>
+              <Text style={styles.spellLabel}>{t('play.spellLabel')}</Text>
             </View>
 
             {/* Tasks */}
             <View style={styles.tasks}>
-              <View style={styles.taskRow}>
-                <Text style={styles.taskIcon}>1️⃣</Text>
-                <Text style={styles.taskText}>Pika chơi với bé 1–3 phút theo trò bé chọn</Text>
-              </View>
-              <View style={styles.taskRow}>
-                <Text style={styles.taskIcon}>2️⃣</Text>
-                <Text style={styles.taskText}>Pika khéo léo dẫn bé nói câu thần chú</Text>
-              </View>
-              <View style={styles.taskRow}>
-                <Text style={styles.taskIcon}>3️⃣</Text>
-                <Text style={styles.taskText}>Khen, tặng huy hiệu và mời ba mẹ xem kết quả</Text>
-              </View>
+              {(t('play.tasks', { returnObjects: true }) as string[]).map((task, i) => (
+                <View key={i} style={styles.taskRow}>
+                  <Text style={styles.taskIcon}>{['1️⃣', '2️⃣', '3️⃣'][i]}</Text>
+                  <Text style={styles.taskText}>{task}</Text>
+                </View>
+              ))}
             </View>
 
             {/* Connect Steps */}
-            {connectSteps.length > 0 && (
+            {connectStepCount > 0 && (
               <View style={styles.connectSteps}>
-                {connectSteps.map((step, i) => (
+                {connectStepTexts.slice(0, connectStepCount).map((step, i) => (
                   <Text key={i} style={styles.connectStep}>{step}</Text>
                 ))}
               </View>
@@ -558,7 +526,7 @@ export const ScreenPlay: React.FC = () => {
                 disabled={connecting}
               >
                 <Text style={styles.btnAmberText}>
-                  {connecting ? 'Đang kết nối...' : 'Giao cho Pika'}
+                  {connecting ? t('play.connecting') : t('common.assignToPika')}
                 </Text>
               </Pressable>
               <Pressable
@@ -566,7 +534,7 @@ export const ScreenPlay: React.FC = () => {
                 onPress={() => !connecting && setShowModal(false)}
                 disabled={connecting}
               >
-                <Text style={styles.btnGhostText}>Để sau</Text>
+                <Text style={styles.btnGhostText}>{t('common.later')}</Text>
               </Pressable>
             </View>
           </Pressable>

@@ -12,6 +12,7 @@ import {
   Image,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useTranslation } from 'react-i18next';
 import { useApp } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
 import { buttonFeedback, successFeedback } from '../utils/sounds';
@@ -41,10 +42,6 @@ const ZONES = [
   {
     id: 1,
     badge: '1',
-    kicker: 'CHÀO PIKA',
-    title: 'Làm quen với Pika',
-    desc: 'Bắt đầu bằng những cuộc trò chuyện thật vui.',
-    info: 'Ốc đảo Làm quen nè! Pika chào con, mình khám phá âm thanh và trò chuyện đầu tiên nhé!',
     image: require('../../assets/fauna/isl-meet.webp'),
     lessons: ['z1a', 'z1b', 'z1c'],
     isHero: true,
@@ -53,8 +50,6 @@ const ZONES = [
   {
     id: 2,
     badge: '2',
-    title: 'Tiếng Anh Pre-A1',
-    info: 'Ốc đảo Pre-A1 nè! Con học từ vựng, nạp cụm và hát cùng Pika — vui lắm đó!',
     image: require('../../assets/fauna/isl-prea1.webp'),
     lessons: ['z2a', 'z2b', 'z2c', 'z2d'],
     isHero: false,
@@ -63,8 +58,6 @@ const ZONES = [
   {
     id: 3,
     badge: '3',
-    title: 'Tiếng Anh A1–A2',
-    info: 'Ốc đảo A1–A2, thử thách hơn nè! Role-play, luyện nói và sửa phát âm cùng Pika!',
     image: require('../../assets/fauna/isl-castle.webp'),
     lessons: ['z3a', 'z3b', 'z3c', 'z3d'],
     isHero: false,
@@ -73,8 +66,6 @@ const ZONES = [
   {
     id: 4,
     badge: '4',
-    title: 'Mở rộng cùng Pika',
-    info: 'Ốc đảo Mở rộng — khám phá kiến thức, đọc hiểu và thảo luận đủ điều thú vị!',
     image: require('../../assets/fauna/isl-explore.webp'),
     lessons: ['z4a', 'z4b', 'z4c', 'z4d'],
     isHero: false,
@@ -83,8 +74,6 @@ const ZONES = [
   {
     id: 5,
     badge: '5',
-    title: 'Dịp đặc biệt',
-    info: 'Ốc đảo Dịp đặc biệt — lễ hội, sinh nhật, sự kiện! Cùng Pika mở tiệc nào!',
     image: require('../../assets/fauna/isl-party.webp'),
     lessons: ['z5a', 'z5b', 'z5c', 'z5d'],
     isHero: false,
@@ -92,29 +81,8 @@ const ZONES = [
   },
 ];
 
-const CHIP_LABELS: Record<string, string> = {
-  z1a: 'Khám phá cùng Pika',
-  z1b: 'Trò chuyện cùng Pika',
-  z1c: 'Làm quen âm thanh',
-  z2a: 'Khám phá cùng Pika',
-  z2b: 'Nạp cụm từ',
-  z2c: 'Hát cùng Pika',
-  z2d: 'Luyện tập',
-  z3a: 'Nạp cụm nâng cao',
-  z3b: 'Role-play',
-  z3c: 'Luyện tập nói',
-  z3d: 'Sửa phát âm',
-  z4a: 'Khám phá kiến thức',
-  z4b: 'Đọc hiểu & trả lời',
-  z4c: 'Thảo luận',
-  z4d: 'Từ vựng nâng cao',
-  z5a: 'Lễ hội & sự kiện',
-  z5b: 'Từ vựng theo chủ đề',
-  z5c: 'Trò chuyện chủ đề',
-  z5d: 'Dự án nhỏ',
-};
-
 export const ScreenTopics: React.FC = () => {
+  const { t, i18n } = useTranslation();
   const { selectedZone, setSelectedZone, addStars } = useApp();
   const { user } = useAuth();
   const [selectedLesson, setSelectedLesson] = useState<string | null>(null);
@@ -196,7 +164,8 @@ export const ScreenTopics: React.FC = () => {
     if (id !== selectedZone) {
       setSelectedZone(id);
       addStars(1);
-      logEvent('select_zone', 'topics', { zoneId: id, zoneTitle: ZONES[zoneIndex].title });
+      // Tracking luôn ghi tên tiếng Việt để số liệu không bị tách theo ngôn ngữ.
+      logEvent('select_zone', 'topics', { zoneId: id, zoneTitle: i18n.t(`topics.zones.zone${id}.title`, { lng: 'vi' }) });
 
       // Get zone position for sparkles
       const zone = ZONES[zoneIndex];
@@ -248,7 +217,7 @@ export const ScreenTopics: React.FC = () => {
     if (selectedZone) {
       const zone = ZONES.find(z => z.id === selectedZone);
       if (zone) {
-        const fullText = zone.info;
+        const fullText = t(`topics.zones.zone${zone.id}.info`);
         setTypedText('');
 
         Animated.spring(bottomBarAnim, {
@@ -279,7 +248,7 @@ export const ScreenTopics: React.FC = () => {
     return () => {
       if (typewriterRef.current) clearInterval(typewriterRef.current);
     };
-  }, [selectedZone]);
+  }, [selectedZone, i18n.language]);
 
   const handleLessonPress = (lessonId: string, zone: typeof ZONES[0]) => {
     buttonFeedback();
@@ -292,20 +261,20 @@ export const ScreenTopics: React.FC = () => {
   const handleAssign = async () => {
     if (!selectedLesson) return;
 
-    const lessonTitle = lessons[selectedLesson]?.title || 'Bài học';
+    const lessonTitle = lessons[selectedLesson]?.title || t('topics.lessonFallback');
 
     try {
       const response = await apiService.assignLesson(selectedLesson);
       if (response.status === 200) {
         successFeedback();
         addStars(2);
-        setToastMessage(`Đã giao "${lessonTitle}" thành công!`);
+        setToastMessage(t('topics.assignSuccess', { title: lessonTitle }));
         setToastVisible(true);
         logEvent('assign_lesson', 'topics', { lessonId: selectedLesson, lessonTitle });
       }
     } catch (err) {
       console.error('Failed to assign lesson:', err);
-      const errorMessage = err instanceof Error ? err.message : 'Không thể giao bài. Thử lại nhé!';
+      const errorMessage = err instanceof Error ? err.message : t('topics.assignFailed');
       setToastMessage(errorMessage);
       setToastVisible(true);
     } finally {
@@ -322,7 +291,7 @@ export const ScreenTopics: React.FC = () => {
       >
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={FaunaColors.amber} />
-          <Text style={styles.loadingText}>Đang tải ốc đảo...</Text>
+          <Text style={styles.loadingText}>{t('topics.loading')}</Text>
         </View>
       </ImageBackground>
     );
@@ -337,8 +306,8 @@ export const ScreenTopics: React.FC = () => {
       resizeMode="cover"
     >
       {/* Title */}
-      <Text style={styles.title}>Ốc đảo tri thức</Text>
-      <Text style={styles.subtitle}>Con muốn khám phá ốc đảo nào hôm nay?</Text>
+      <Text style={styles.title}>{t('topics.title')}</Text>
+      <Text style={styles.subtitle}>{t('topics.subtitle')}</Text>
 
       {/* Zones */}
       {ZONES.map((zone, index) => {
@@ -362,12 +331,12 @@ export const ScreenTopics: React.FC = () => {
                   <View style={styles.badge}>
                     <Text style={styles.badgeText}>{zone.badge}</Text>
                   </View>
-                  <Text style={styles.heroKicker}>{zone.kicker}</Text>
+                  <Text style={styles.heroKicker}>{t(`topics.zones.zone${zone.id}.kicker`)}</Text>
                 </View>
 
                 {/* Title */}
-                <Text style={styles.heroTitle}>{zone.title}</Text>
-                <Text style={styles.heroDesc}>{zone.desc}</Text>
+                <Text style={styles.heroTitle}>{t(`topics.zones.zone${zone.id}.title`)}</Text>
+                <Text style={styles.heroDesc}>{t(`topics.zones.zone${zone.id}.desc`)}</Text>
 
                 {/* Chips */}
                 <View style={styles.heroChips}>
@@ -377,7 +346,7 @@ export const ScreenTopics: React.FC = () => {
                       style={styles.chip}
                       onPress={() => handleLessonPress(lessonId, zone)}
                     >
-                      <Text style={styles.chipText}>{CHIP_LABELS[lessonId]}</Text>
+                      <Text style={styles.chipText}>{t(`topics.chips.${lessonId}`)}</Text>
                     </Pressable>
                   ))}
                 </View>
@@ -455,7 +424,7 @@ export const ScreenTopics: React.FC = () => {
                 <View style={styles.badgeSmall}>
                   <Text style={styles.badgeTextSmall}>{zone.badge}</Text>
                 </View>
-                <Text style={styles.zoneName}>{zone.title}</Text>
+                <Text style={styles.zoneName}>{t(`topics.zones.zone${zone.id}.title`)}</Text>
               </View>
 
               {/* Chips Grid */}
@@ -466,7 +435,7 @@ export const ScreenTopics: React.FC = () => {
                     style={styles.zoneChip}
                     onPress={() => handleLessonPress(lessonId, zone)}
                   >
-                    <Text style={styles.zoneChipText}>{CHIP_LABELS[lessonId]}</Text>
+                    <Text style={styles.zoneChipText}>{t(`topics.chips.${lessonId}`)}</Text>
                   </Pressable>
                 ))}
               </View>
@@ -529,7 +498,7 @@ export const ScreenTopics: React.FC = () => {
       )}
 
       {/* Lesson Modal */}
-      <Modal visible={modalVisible} transparent animationType="fade">
+      <Modal visible={modalVisible} transparent animationType="fade" supportedOrientations={['portrait', 'landscape']}>
         <Pressable style={styles.overlay} onPress={() => setModalVisible(false)}>
           <Pressable style={styles.modal} onPress={e => e.stopPropagation()}>
             <Pressable style={styles.closeBtn} onPress={() => setModalVisible(false)}>
@@ -545,7 +514,7 @@ export const ScreenTopics: React.FC = () => {
                 />
               </View>
               <View style={styles.modalHeadText}>
-                <Text style={styles.modalKicker}>{currentZone?.title}</Text>
+                <Text style={styles.modalKicker}>{currentZone ? t(`topics.zones.zone${currentZone.id}.title`) : ''}</Text>
                 <Text style={styles.modalTitle}>{lesson?.title}</Text>
               </View>
             </View>
@@ -563,16 +532,16 @@ export const ScreenTopics: React.FC = () => {
 
             <View style={styles.modalMeta}>
               <Text style={styles.metaItem}>⏱️ {lesson?.time}</Text>
-              <Text style={styles.metaItem}>🎯 1 nhiệm vụ nói</Text>
-              <Text style={styles.metaItem}>⭐ +1 sao</Text>
+              <Text style={styles.metaItem}>🎯 {t('topics.metaSpeakingTask')}</Text>
+              <Text style={styles.metaItem}>⭐ {t('topics.metaStar')}</Text>
             </View>
 
             <View style={styles.modalActions}>
               <Pressable style={styles.btnAmber} onPress={handleAssign}>
-                <Text style={styles.btnAmberText}>Giao cho Pika</Text>
+                <Text style={styles.btnAmberText}>{t('common.assignToPika')}</Text>
               </Pressable>
               <Pressable style={styles.btnGhost} onPress={() => setModalVisible(false)}>
-                <Text style={styles.btnGhostText}>Để sau</Text>
+                <Text style={styles.btnGhostText}>{t('common.later')}</Text>
               </Pressable>
             </View>
           </Pressable>

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, Pressable, Image, Dimensions } from 'react-native';
 import { Svg, Path, Circle } from 'react-native-svg';
+import { useTranslation } from 'react-i18next';
 import { useApp, AppScreen } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
 import { buttonFeedback, toggleBackgroundMusic, getIsMusicPlaying } from '../utils/sounds';
@@ -14,12 +15,12 @@ const scale = screenRatio > STAGE_RATIO
   : SCREEN_WIDTH / 952;
 const s = (v: number) => v * scale;
 
-const TABS: { id: AppScreen; icon: string; label: string }[] = [
-  { id: 'play', icon: 'play', label: 'Chơi' },
-  { id: 'topics', icon: 'book', label: 'Học tập' },
-  { id: 'journey', icon: 'flag', label: 'Lộ trình' },
-  { id: 'parents', icon: 'parents', label: 'Ba mẹ' },
-  { id: 'faq', icon: 'help', label: 'Hỏi đáp' },
+const TABS: { id: AppScreen; icon: string }[] = [
+  { id: 'play', icon: 'play' },
+  { id: 'topics', icon: 'book' },
+  { id: 'journey', icon: 'flag' },
+  { id: 'parents', icon: 'parents' },
+  { id: 'faq', icon: 'help' },
 ];
 
 const TabIcon = ({ type, active }: { type: string; active: boolean }) => {
@@ -68,6 +69,7 @@ const TabIcon = ({ type, active }: { type: string; active: boolean }) => {
 };
 
 export const AppTopBar: React.FC = () => {
+  const { t } = useTranslation();
   const { currentScreen, setCurrentScreen } = useApp();
   const { logout } = useAuth();
   const [isMusicOn, setIsMusicOn] = useState(() => getIsMusicPlaying());
@@ -116,7 +118,7 @@ export const AppTopBar: React.FC = () => {
                   <TabIcon type={tab.icon} active={isActive} />
                 </View>
                 <Text style={[styles.tabLabel, isActive && styles.tabLabelActive]}>
-                  {tab.label}
+                  {t(`tabs.${tab.id}`)}
                 </Text>
               </Pressable>
             );

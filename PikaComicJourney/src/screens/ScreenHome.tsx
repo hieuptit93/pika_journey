@@ -6,11 +6,12 @@ import Animated, { useAnimatedStyle, withSpring, useSharedValue } from 'react-na
 import { Colors, Radius, Spacing } from '../constants/colors';
 import { s, isTablet } from '../constants/responsive';
 import { useAuth } from '../context/AuthContext';
+import { ROBOT_API_URL } from '../services/api';
 
 const { width, height } = Dimensions.get('window');
 
-const API_URL = 'https://robot-api.hacknao.edu.vn/robot/api/v1/temp-session/experience-map';
-const ASSIGN_LESSON_URL = 'https://robot-api.hacknao.edu.vn/robot/api/v1/temp-session/assign-lesson';
+const API_URL = `${ROBOT_API_URL}/temp-session/experience-map`;
+const ASSIGN_LESSON_URL = `${ROBOT_API_URL}/temp-session/assign-lesson`;
 
 interface ApiLesson {
   id: string;

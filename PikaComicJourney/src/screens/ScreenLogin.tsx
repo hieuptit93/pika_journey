@@ -15,7 +15,10 @@ import {
   Animated,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useTranslation } from 'react-i18next';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../context/AuthContext';
+import { LanguageSwitcher } from '../components/LanguageSwitcher';
 import { buttonFeedback } from '../utils/sounds';
 import { FaunaColors, FaunaFontSize, FaunaRadius } from '../constants/theme';
 
@@ -28,11 +31,14 @@ const scale = screenRatio > STAGE_RATIO
 const s = (v: number) => v * scale;
 
 export const ScreenLogin: React.FC = () => {
+  const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
   const { login } = useAuth();
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
+  // Lưu key (hoặc chữ server trả về) thay vì chữ đã dịch, để đổi ngôn ngữ vẫn đúng.
+  const [error, setError] = useState<{ key?: string; message?: string } | null>(null);
 
   const floatAnim = useRef(new Animated.Value(0)).current;
   const glowAnim = useRef(new Animated.Value(0)).current;
@@ -72,22 +78,22 @@ export const ScreenLogin: React.FC = () => {
   const handleLogin = async () => {
     buttonFeedback();
     if (!phone.trim()) {
-      setError('Nhập số điện thoại nào!');
+      setError({ key: 'login.phoneRequired' });
       return;
     }
     if (!password.trim()) {
-      setError('Quên mật khẩu rồi!');
+      setError({ key: 'login.passwordRequired' });
       return;
     }
 
-    setError('');
+    setError(null);
     setIsLoading(true);
 
     const result = await login(phone, password);
 
     setIsLoading(false);
     if (!result.success) {
-      setError(result.error || 'Ôi không! Thử lại nhé');
+      setError(result.message ? { message: result.message } : { key: result.errorKey || 'login.retry' });
     }
   };
 
@@ -139,9 +145,9 @@ export const ScreenLogin: React.FC = () => {
                   </View>
                 </LinearGradient>
               </View>
-              <Text style={styles.welcomeText}>Xin chào!</Text>
+              <Text style={styles.welcomeText}>{t('login.greeting')}</Text>
               <Text style={styles.brandName}>Pika World</Text>
-              <Text style={styles.tagline}>Cùng học và chơi với Pika nào!</Text>
+              <Text style={styles.tagline}>{t('login.tagline')}</Text>
             </Animated.View>
 
             {/* Form */}
@@ -152,16 +158,16 @@ export const ScreenLogin: React.FC = () => {
                   style={styles.formCardGradient}
                 >
                   <View style={styles.formHeader}>
-                    <Text style={styles.formTitle}>Đăng nhập</Text>
-                    <Text style={styles.formSubtitle}>Nhập thông tin để vào chơi</Text>
+                    <Text style={styles.formTitle}>{t('login.formTitle')}</Text>
+                    <Text style={styles.formSubtitle}>{t('login.formSubtitle')}</Text>
                   </View>
 
                   <View style={styles.inputGroup}>
-                    <Text style={styles.inputLabel}>Số điện thoại</Text>
+                    <Text style={styles.inputLabel}>{t('login.phoneLabel')}</Text>
                     <View style={styles.inputWrapper3D}>
                       <TextInput
                         style={styles.input}
-                        placeholder="VD: 0962367123"
+                        placeholder={t('login.phonePlaceholder')}
                         placeholderTextColor={FaunaColors.t4}
                         value={phone}
                         onChangeText={setPhone}
@@ -173,11 +179,11 @@ export const ScreenLogin: React.FC = () => {
                   </View>
 
                   <View style={styles.inputGroup}>
-                    <Text style={styles.inputLabel}>Mật khẩu</Text>
+                    <Text style={styles.inputLabel}>{t('login.passwordLabel')}</Text>
                     <View style={styles.inputWrapper3D}>
                       <TextInput
                         style={styles.input}
-                        placeholder="Nhập mật khẩu bí mật"
+                        placeholder={t('login.passwordPlaceholder')}
                         placeholderTextColor={FaunaColors.t4}
                         value={password}
                         onChangeText={setPassword}
@@ -189,7 +195,7 @@ export const ScreenLogin: React.FC = () => {
 
                   {error ? (
                     <View style={styles.errorBubble}>
-                      <Text style={styles.errorText}>{error}</Text>
+                      <Text style={styles.errorText}>{error.message ?? t(error.key!)}</Text>
                     </View>
                   ) : null}
 
@@ -210,15 +216,13 @@ export const ScreenLogin: React.FC = () => {
                         {isLoading ? (
                           <ActivityIndicator color={FaunaColors.night0} />
                         ) : (
-                          <Text style={styles.buttonText}>Vào chơi thôi!</Text>
+                          <Text style={styles.buttonText}>{t('login.submit')}</Text>
                         )}
                       </LinearGradient>
                     </View>
                   </Pressable>
 
-                  <Text style={styles.helpText}>
-                    Chưa có tài khoản? Nhờ ba mẹ gọi hotline nhé!
-                  </Text>
+                  <Text style={styles.helpText}>{t('login.help')}</Text>
                 </LinearGradient>
               </View>
             </View>
@@ -239,6 +243,9 @@ export const ScreenLogin: React.FC = () => {
       <Animated.View style={[styles.sparkle, styles.sparkleBR, { opacity: glowOpacity }]}>
         <Text style={styles.sparkleText}>✧</Text>
       </Animated.View>
+
+      {/* Đẩy xuống dưới vùng an toàn để không bị đồng hồ/pin của hệ thống che. */}
+      <LanguageSwitcher style={[styles.languageBtn, { top: Math.max(s(40), insets.top + s(12)) }]} />
     </ImageBackground>
   );
 };
@@ -440,6 +447,18 @@ const styles = StyleSheet.create({
   },
   sparkle: {
     position: 'absolute',
+  },
+  languageBtn: {
+    position: 'absolute',
+    right: s(28),
+    width: s(62),
+    height: s(62),
+    borderRadius: s(31),
+    backgroundColor: 'rgba(167,196,234,0.14)',
+    borderWidth: 2,
+    borderColor: 'rgba(167,196,234,0.4)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   sparkleTL: { top: s(60), left: s(40) },
   sparkleTR: { top: s(100), right: s(50) },

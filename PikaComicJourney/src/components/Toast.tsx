@@ -5,6 +5,7 @@ import Animated, {
   useAnimatedStyle,
   withSpring,
 } from 'react-native-reanimated';
+import { useTranslation } from 'react-i18next';
 import { Colors, Radius, Spacing } from '../constants/colors';
 
 const { width } = Dimensions.get('window');
@@ -24,19 +25,16 @@ const TOAST_CONFIG = {
     icon: '🎉',
     backgroundColor: '#4ADE80',
     borderColor: '#22C55E',
-    title: 'Tuyệt vời!',
   },
   error: {
     icon: '😢',
     backgroundColor: '#FB7185',
     borderColor: '#F43F5E',
-    title: 'Ối!',
   },
   info: {
     icon: '✨',
     backgroundColor: '#60A5FA',
     borderColor: '#3B82F6',
-    title: 'Thông báo',
   },
 };
 
@@ -47,6 +45,7 @@ export const Toast: React.FC<ToastProps> = ({
   onHide,
   duration = 2500,
 }) => {
+  const { t } = useTranslation();
   const translateY = useSharedValue(-150);
   const config = TOAST_CONFIG[type];
 
@@ -95,7 +94,7 @@ export const Toast: React.FC<ToastProps> = ({
         </View>
 
         <View style={styles.textContainer}>
-          <Text style={styles.title}>{config.title}</Text>
+          <Text style={styles.title}>{t(`toast.${type}`)}</Text>
           <Text style={styles.message}>{message}</Text>
         </View>
 

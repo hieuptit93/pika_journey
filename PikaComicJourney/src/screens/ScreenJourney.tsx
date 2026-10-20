@@ -10,6 +10,7 @@ import {
   Image,
   Animated,
 } from 'react-native';
+import { useTranslation, Trans } from 'react-i18next';
 import { useApp } from '../context/AppContext';
 import { FaunaColors, FaunaFontSize, FaunaTouchTarget } from '../constants/theme';
 import { buttonFeedback, successFeedback } from '../utils/sounds';
@@ -26,76 +27,43 @@ const s = (v: number) => v * scale;
 const JOURNEY_CARDS = [
   {
     step: 0,
-    kicker: 'Hôm nay · Khởi động',
-    title: 'Con dám phản hồi',
-    desc: 'Pika tạo môi trường an toàn, con bớt áp lực khi nói.',
-    quote: '"Im lặng, chỉ gật đầu…"',
-    longDesc: 'Nhiều bé hiểu bài nhưng chưa dám nói thành lời. Pika bắt đầu từ đây — không ép, không chấm điểm, chỉ rủ bé chơi để bé dám mở miệng phản hồi.',
     image: require('../../assets/fauna/isl-meet.webp'),
     position: 'left',
     top: s(180),
   },
   {
     step: 1,
-    kicker: 'Tháng 1–3 · Bật âm',
-    title: 'Nói câu 2–5 từ',
-    desc: '15 phút mỗi ngày qua trò chơi micro và hội thoại ngắn.',
-    quote: '"Hello! I like cats!"',
-    longDesc: 'Pika biến việc nói thành thói quen vui: mỗi ngày 15 phút, bé dám bật âm và nói câu 2–5 từ mà không sợ sai. Đây là giai đoạn Pre-A1 theo chuẩn Cambridge.',
     image: require('../../assets/fauna/isl-prea1.webp'),
     position: 'right',
     top: s(315),
   },
   {
     step: 2,
-    kicker: 'Tháng 4–12 · Starters',
-    title: 'Hỏi đáp tự nhiên',
-    desc: 'Nói về bản thân, gia đình, đồ vật quen thuộc · ~500 từ.',
-    quote: '"I have a red bike!"',
-    longDesc: 'Đạt mốc Starters (Pre-A1). Bé hỏi đáp tự nhiên về bản thân, gia đình, đồ vật quen thuộc với vốn khoảng 500 từ, qua trò chuyện hằng ngày cùng Pika.',
     image: require('../../assets/fauna/isl-explore.webp'),
     position: 'left',
     top: s(450),
   },
   {
     step: 3,
-    kicker: 'Năm 2 · Movers',
-    title: 'Kể chuyện ngắn',
-    desc: 'Role-play và tranh trình tự giúp con sử dụng ~1.000 từ.',
-    quote: '"Yesterday I went to the zoo!"',
-    longDesc: 'Năm thứ hai — mốc Movers (A1). Bé kể lại chuyện đã xảy ra, giữ hội thoại 5 phút liên tục, dùng role-play và tranh trình tự với vốn khoảng 1.000 từ.',
     image: require('../../assets/fauna/isl-castle.webp'),
     position: 'right',
     top: s(585),
   },
   {
     step: 4,
-    kicker: 'Flyers · A2',
-    title: 'Tự tin nêu ý kiến',
-    desc: 'Con chủ động kể, phản biện, sẵn sàng chinh phục A2.',
-    quote: '"I think robots are cool!"',
-    longDesc: 'Đích đến Flyers (A2). Bé tự tin trò chuyện, nêu ý kiến riêng, phản biện và sẵn sàng chinh phục kỳ thi chứng chỉ Cambridge YLE thật.',
     image: require('../../assets/fauna/isl-party.webp'),
     position: 'left',
     top: s(720),
   },
 ];
 
-const STATS = [
-  { value: '15 phút/ngày', label: '90+ giờ nói mỗi năm' },
-  { value: '3.195 lượt nói', label: 'Trong tháng đầu tiên' },
-  { value: '115 từ/tháng', label: 'Nhớ qua trò chuyện' },
-  { value: 'Cambridge YLE', label: 'Starters → Movers → Flyers', highlight: true },
-];
+// Ô cuối (Cambridge YLE) được làm nổi bật.
+const HIGHLIGHT_STAT_INDEX = 3;
 
-const DEMOS = {
-  story: { label: 'Kể chuyện', lines: ['Pika: Con muốn nghe chuyện gì?', 'Con: Công chúa và robot!', 'Pika: Once upon a time, a brave princess met a tiny robot ✨'] },
-  structured: { label: 'Học từ', lines: ['Pika: Hôm nay mình có nhiệm vụ 3 phút.', 'Con: Nhiệm vụ gì?', 'Pika: Learn 3 words, then save the city in English! 🦸'] },
-  roleplay: { label: 'Đóng vai', lines: ['Pika: Hôm nay mình mở cửa hàng sách nhé.', 'Con: Con là người bán hàng!', 'Pika: Perfect! Say: "Welcome to my bookstore." 📚'] },
-  song: { label: 'Hát', lines: ['Pika: Mình hát một bài tiếng Anh nhé.', 'Con: Baby Shark!', 'Pika: Great! Sing with me: Baby shark, doo doo doo 🎵'] },
-};
+const DEMO_KEYS = ['story', 'structured', 'roleplay', 'song'] as const;
 
 export const ScreenJourney: React.FC = () => {
+  const { t, i18n } = useTranslation();
   const { addStars } = useApp();
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedCard, setSelectedCard] = useState<typeof JOURNEY_CARDS[0] | null>(null);
@@ -112,7 +80,8 @@ export const ScreenJourney: React.FC = () => {
     setSelectedCard(card);
     setCurrentStep(card.step);
     setModalVisible(true);
-    logEvent('select_journey_card', 'journey', { step: card.step, title: card.title });
+    // Tracking luôn ghi tên tiếng Việt để số liệu không bị tách theo ngôn ngữ.
+    logEvent('select_journey_card', 'journey', { step: card.step, title: i18n.t(`journey.cards.step${card.step}.title`, { lng: 'vi' }) });
 
     if (!doneSteps.has(card.step)) {
       setDoneSteps(prev => new Set([...prev, card.step]));
@@ -153,9 +122,9 @@ export const ScreenJourney: React.FC = () => {
       resizeMode="cover"
     >
       {/* Header */}
-      <Text style={styles.eyebrow}>Lộ trình 24 tháng · Chuẩn Cambridge YLE</Text>
-      <Text style={styles.title}>Con nói được gì sau từng chặng?</Text>
-      <Text style={styles.subtitle}>Mỗi mốc là một bước nhỏ để con tự tin nói tiếng Anh cùng Pika.</Text>
+      <Text style={styles.eyebrow}>{t('journey.eyebrow')}</Text>
+      <Text style={styles.title}>{t('journey.title')}</Text>
+      <Text style={styles.subtitle}>{t('journey.subtitle')}</Text>
 
       {/* Timeline Path */}
       <View style={styles.timeline} />
@@ -193,10 +162,10 @@ export const ScreenJourney: React.FC = () => {
           ]}
           onPress={() => handleOpenCard(card)}
         >
-          <Text style={[styles.jcKicker, card.position === 'right' && styles.textRight]}>{card.kicker}</Text>
-          <Text style={[styles.jcName, card.position === 'right' && styles.textRight]} numberOfLines={2}>{card.title}</Text>
+          <Text style={[styles.jcKicker, card.position === 'right' && styles.textRight]}>{t(`journey.cards.step${card.step}.kicker`)}</Text>
+          <Text style={[styles.jcName, card.position === 'right' && styles.textRight]} numberOfLines={2}>{t(`journey.cards.step${card.step}.title`)}</Text>
           <View style={[styles.jcQuoteBox, card.position === 'right' && styles.alignRight]}>
-            <Text style={styles.jcQuote}>{card.quote}</Text>
+            <Text style={styles.jcQuote}>{t(`journey.cards.step${card.step}.quote`)}</Text>
           </View>
           <View
             style={[
@@ -216,12 +185,12 @@ export const ScreenJourney: React.FC = () => {
 
       {/* Panel */}
       <View style={styles.panel}>
-        <Text style={styles.panelHead}>Sau 24 tháng, con tích luỹ được gì?</Text>
+        <Text style={styles.panelHead}>{t('journey.panelHead')}</Text>
 
         {/* Stats */}
         <View style={styles.statsRow}>
-          {STATS.map((stat, i) => (
-            <View key={i} style={[styles.stat, stat.highlight && styles.statHi]}>
+          {(t('journey.stats', { returnObjects: true }) as { value: string; label: string }[]).map((stat, i) => (
+            <View key={i} style={[styles.stat, i === HIGHLIGHT_STAT_INDEX && styles.statHi]}>
               <Text style={styles.statValue}>{stat.value}</Text>
               <Text style={styles.statLabel}>{stat.label}</Text>
             </View>
@@ -230,7 +199,7 @@ export const ScreenJourney: React.FC = () => {
 
         {/* Mission Row */}
         <View style={styles.missionRow}>
-          <Text style={styles.missionTitle}>Mỗi ngày 1 nhiệm vụ · 15 phút</Text>
+          <Text style={styles.missionTitle}>{t('journey.missionTitle')}</Text>
           <View style={styles.crysRow}>
             {JOURNEY_CARDS.map((_, i) => (
               <Animated.View
@@ -254,26 +223,24 @@ export const ScreenJourney: React.FC = () => {
 
         {/* Demo Chips */}
         <View style={styles.demoChips}>
-          {Object.entries(DEMOS).map(([key, demo]) => (
+          {DEMO_KEYS.map(key => (
             <Pressable
               key={key}
               style={[styles.demoChip, activeDemo === key && styles.demoChipActive]}
               onPress={() => handleDemoChip(key)}
             >
               <Text style={[styles.demoChipText, activeDemo === key && styles.demoChipTextActive]}>
-                {demo.label}
+                {t(`journey.demos.${key}.label`)}
               </Text>
             </Pressable>
           ))}
         </View>
 
-        <Text style={styles.panelNote}>
-          Pika tự điều chỉnh nhịp độ theo từng bé — nhanh hơn hay chậm hơn đều được.
-        </Text>
+        <Text style={styles.panelNote}>{t('journey.panelNote')}</Text>
       </View>
 
       {/* Journey Modal */}
-      <Modal visible={modalVisible} transparent animationType="fade">
+      <Modal visible={modalVisible} transparent animationType="fade" supportedOrientations={['portrait', 'landscape']}>
         <Pressable style={styles.overlay} onPress={() => setModalVisible(false)}>
           <Pressable style={styles.modal} onPress={e => e.stopPropagation()}>
             <Pressable style={styles.closeBtn} onPress={() => setModalVisible(false)}>
@@ -285,19 +252,19 @@ export const ScreenJourney: React.FC = () => {
                 <View style={styles.modalArt}>
                   <Image source={selectedCard.image} style={styles.modalArtImg} resizeMode="contain" />
                 </View>
-                <Text style={styles.modalKicker}>{selectedCard.kicker}</Text>
-                <Text style={styles.modalTitle}>{selectedCard.title}</Text>
-                <Text style={styles.modalLong}>{selectedCard.longDesc}</Text>
+                <Text style={styles.modalKicker}>{t(`journey.cards.step${selectedCard.step}.kicker`)}</Text>
+                <Text style={styles.modalTitle}>{t(`journey.cards.step${selectedCard.step}.title`)}</Text>
+                <Text style={styles.modalLong}>{t(`journey.cards.step${selectedCard.step}.longDesc`)}</Text>
                 <View style={styles.modalQuoteRow}>
-                  <Text style={styles.modalQuote}>{selectedCard.quote}</Text>
+                  <Text style={styles.modalQuote}>{t(`journey.cards.step${selectedCard.step}.quote`)}</Text>
                 </View>
                 <View style={styles.modalFoot}>
                   <Text style={styles.modalStep}>
-                    Chặng {selectedCard.step + 1} / {JOURNEY_CARDS.length}
+                    {t('journey.stepCounter', { current: selectedCard.step + 1, total: JOURNEY_CARDS.length })}
                   </Text>
                   <Pressable style={styles.btnAmber} onPress={handleNextStep}>
                     <Text style={styles.btnAmberText}>
-                      {currentStep < JOURNEY_CARDS.length - 1 ? 'Chặng tiếp theo →' : 'Xem đích đến 🎁'}
+                      {currentStep < JOURNEY_CARDS.length - 1 ? t('journey.nextStep') : t('journey.seeGoal')}
                     </Text>
                   </Pressable>
                 </View>
@@ -308,15 +275,13 @@ export const ScreenJourney: React.FC = () => {
       </Modal>
 
       {/* Reward Modal */}
-      <Modal visible={showReward} transparent animationType="fade">
+      <Modal visible={showReward} transparent animationType="fade" supportedOrientations={['portrait', 'landscape']}>
         <Pressable style={styles.overlay} onPress={() => setShowReward(false)}>
           <Pressable style={styles.rewardModal} onPress={e => e.stopPropagation()}>
             <Text style={styles.trophy}>🏆</Text>
-            <Text style={styles.rewardTitle}>Con sẽ làm được!</Text>
+            <Text style={styles.rewardTitle}>{t('journey.rewardTitle')}</Text>
             <Text style={styles.rewardText}>
-              Từ <Text style={{ fontWeight: '800' }}>ngại nói</Text> đến{' '}
-              <Text style={{ fontWeight: '800' }}>tự tin thi Cambridge YLE</Text> — mỗi ngày chỉ 15 phút cùng Pika.
-              Bé nhận <Text style={{ fontWeight: '800' }}>5 tinh thể Pika</Text>!
+              <Trans t={t} i18nKey="journey.rewardText" components={{ b: <Text style={{ fontWeight: '800' }} /> }} />
             </Text>
             <View style={styles.qrRow}>
               <Image
@@ -325,14 +290,12 @@ export const ScreenJourney: React.FC = () => {
                 resizeMode="contain"
               />
               <View style={styles.qrText}>
-                <Text style={styles.qrTitle}>Ba mẹ muốn đồng hành cùng con?</Text>
-                <Text style={styles.qrDesc}>
-                  Quét mã Zalo OA để nhận lộ trình 24 tháng và được Pika hỗ trợ.
-                </Text>
+                <Text style={styles.qrTitle}>{t('journey.qrTitle')}</Text>
+                <Text style={styles.qrDesc}>{t('journey.qrDesc')}</Text>
               </View>
             </View>
             <Pressable style={styles.btnAmber} onPress={() => setShowReward(false)}>
-              <Text style={styles.btnAmberText}>Yeah! Nhận quà</Text>
+              <Text style={styles.btnAmberText}>{t('journey.rewardCta')}</Text>
             </Pressable>
           </Pressable>
         </Pressable>
@@ -343,14 +306,14 @@ export const ScreenJourney: React.FC = () => {
         <View style={styles.demoSheet}>
           <View style={styles.demoSheetTop}>
             <Text style={styles.demoSheetLabel}>
-              Thử một nhiệm vụ · {DEMOS[activeDemo as keyof typeof DEMOS].label}
+              {t('journey.demoSheetLabel', { label: t(`journey.demos.${activeDemo}.label`) })}
             </Text>
             <Pressable style={styles.demoSheetClose} onPress={() => setShowDemoSheet(false)}>
               <Text style={styles.closeText}>✕</Text>
             </Pressable>
           </View>
           <View style={styles.demoChat}>
-            {DEMOS[activeDemo as keyof typeof DEMOS].lines.map((line, i) => (
+            {(t(`journey.demos.${activeDemo}.lines`, { returnObjects: true }) as string[]).map((line, i) => (
               <View
                 key={i}
                 style={[

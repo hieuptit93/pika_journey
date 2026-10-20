@@ -39,3 +39,9 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+# build artifacts
+*.apk
+*.aab
+*.ipa
+/pika-world-web.zip

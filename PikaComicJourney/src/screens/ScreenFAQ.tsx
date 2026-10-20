@@ -9,6 +9,7 @@ import {
   Image,
   ScrollView,
 } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { useApp } from '../context/AppContext';
 import { FaunaColors, FaunaFontSize, FaunaRadius, FaunaTouchTarget } from '../constants/theme';
 import { buttonFeedback } from '../utils/sounds';
@@ -22,55 +23,20 @@ const scale = screenRatio > STAGE_RATIO
   : SCREEN_WIDTH / 952;
 const s = (v: number) => v * scale;
 
-const FAQS = [
-  {
-    q: 'Có phần mềm đi kèm không?',
-    a: 'Có. Pika đi kèm ứng dụng di động dành cho phụ huynh để giao bài, theo dõi tiến độ và quản lý các thiết lập an toàn cho con.',
-  },
-  {
-    q: 'Hết 6 tháng, gia hạn ở đâu?',
-    a: 'Ba mẹ có thể gia hạn trực tiếp trên app phụ huynh hoặc liên hệ các điểm bán Pika để mua mã kích hoạt gói phần mềm mới.',
-  },
-  {
-    q: 'Hết hạn phần mềm, Pika ra sao?',
-    a: 'Khi hết hạn Pika Pass, các tính năng AI nâng cao và kết nối app sẽ tạm dừng. Pika vẫn thực hiện được các lệnh cơ bản ngoại tuyến, nhưng để luyện nói thông minh thì ba mẹ cần gia hạn gói.',
-  },
-  {
-    q: 'Có bảo hành không?',
-    a: 'Pika được bảo hành chính hãng 12 tháng cho các lỗi từ nhà sản xuất. Ba mẹ có thể mang đến bất kỳ điểm bán chính thức nào để được hỗ trợ kỹ thuật.',
-  },
-  {
-    q: 'Pika có an toàn cho trẻ không?',
-    a: 'Pika có lớp lọc nội dung, ưu tiên chủ đề phù hợp với trẻ, sửa nhẹ theo tuổi và có app để phụ huynh theo dõi mọi lượt chơi.',
-  },
-  {
-    q: 'Nếu con chỉ muốn chơi thì sao?',
-    a: 'Pika có thể bắt đầu từ chơi, truyện, bài hát hoặc nhân vật con thích. Khi phù hợp, Pika gợi ý một câu tiếng Anh ngắn để con nói theo.',
-  },
-  {
-    q: 'Ba mẹ không giỏi tiếng Anh, dùng được không?',
-    a: 'Có. Ba mẹ chỉ cần chọn tuổi, sở thích và kiểu bài. Pika lo phần dẫn dắt, nghe con nói, khen và sửa nhẹ.',
-  },
-  {
-    q: 'Reset tablet cho khách tiếp theo?',
-    a: 'Giữ nút bánh răng ở góc trên khoảng 1 giây rồi bấm "Reset lượt thử" để xoá lựa chọn, sao thưởng và đưa tablet về màn hình chào ban đầu.',
-  },
-  {
-    q: 'Mua xong, app dùng để làm gì?',
-    a: 'App dùng để giao bài, xem tiến độ, đặt giờ học, chọn nội dung theo sách và quản lý các thiết lập an toàn.',
-  },
-];
-
 export const ScreenFAQ: React.FC = () => {
+  const { t, i18n } = useTranslation();
   const { setCurrentScreen } = useApp();
   const [openIndex, setOpenIndex] = useState(0);
+  const faqs = t('faq.items', { returnObjects: true }) as { q: string; a: string }[];
 
   const handleToggle = (index: number) => {
     buttonFeedback();
     const isOpening = openIndex !== index;
     setOpenIndex(openIndex === index ? -1 : index);
     if (isOpening) {
-      logEvent('open_faq', 'faq', { faqIndex: index, question: FAQS[index].q });
+      // Tracking luôn ghi câu hỏi tiếng Việt để số liệu không bị tách theo ngôn ngữ.
+      const viFaqs = i18n.t('faq.items', { lng: 'vi', returnObjects: true }) as { q: string }[];
+      logEvent('open_faq', 'faq', { faqIndex: index, question: viFaqs[index]?.q });
     }
   };
 
@@ -86,9 +52,9 @@ export const ScreenFAQ: React.FC = () => {
       resizeMode="cover"
     >
       {/* Header */}
-      <Text style={styles.eyebrow}>Hỏi đáp · Ba mẹ quan tâm</Text>
-      <Text style={styles.title}>Câu hỏi thường gặp</Text>
-      <Text style={styles.subtitle}>Những điều ba mẹ hay hỏi Pika nhất tại quầy trải nghiệm.</Text>
+      <Text style={styles.eyebrow}>{t('faq.eyebrow')}</Text>
+      <Text style={styles.title}>{t('faq.title')}</Text>
+      <Text style={styles.subtitle}>{t('faq.subtitle')}</Text>
 
       {/* FAQ List */}
       <ScrollView
@@ -96,7 +62,7 @@ export const ScreenFAQ: React.FC = () => {
         contentContainerStyle={styles.faqListContent}
         showsVerticalScrollIndicator={false}
       >
-        {FAQS.map((faq, index) => {
+        {faqs.map((faq, index) => {
           const isOpen = openIndex === index;
           return (
             <View key={index} style={[styles.faq, isOpen && styles.faqOpen]}>
@@ -121,16 +87,14 @@ export const ScreenFAQ: React.FC = () => {
             resizeMode="contain"
           />
           <View style={styles.qrText}>
-            <Text style={styles.qrTitle}>Còn thắc mắc khác? Nhắn Pika trên Zalo nhé!</Text>
-            <Text style={styles.qrDesc}>
-              Quét mã để kết nối Zalo OA — ba mẹ được tư vấn, giao bài và hỗ trợ nhanh chóng.
-            </Text>
+            <Text style={styles.qrTitle}>{t('faq.qrTitle')}</Text>
+            <Text style={styles.qrDesc}>{t('faq.qrDesc')}</Text>
           </View>
         </View>
 
         {/* CTA Button */}
         <Pressable style={styles.ctaButton} onPress={handlePlayAgain}>
-          <Text style={styles.ctaText}>Cho con chơi lại</Text>
+          <Text style={styles.ctaText}>{t('faq.cta')}</Text>
         </Pressable>
       </ScrollView>
     </ImageBackground>

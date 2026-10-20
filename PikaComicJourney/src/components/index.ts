@@ -7,4 +7,5 @@ export { ScenePanel, ComicPanel, Cloud, Star, Sun, Moon } from './ComicPanel';
 export { FieldInput, SegmentedPicker, StarRating, StatBar } from './FormInputs';
 export { ResponsiveContainer } from './ResponsiveContainer';
 export { Toast } from './Toast';
+export { LanguageSwitcher } from './LanguageSwitcher';
 export type { ToastType } from './Toast';

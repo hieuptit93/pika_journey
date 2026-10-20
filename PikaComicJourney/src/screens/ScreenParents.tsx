@@ -9,6 +9,7 @@ import {
   Image,
 } from 'react-native';
 import { Svg, Path } from 'react-native-svg';
+import { useTranslation } from 'react-i18next';
 import { useApp } from '../context/AppContext';
 import { FaunaColors, FaunaFontSize } from '../constants/theme';
 import { buttonFeedback } from '../utils/sounds';
@@ -23,52 +24,10 @@ const scale = screenRatio > STAGE_RATIO
 const s = (v: number) => v * scale;
 
 const BENEFITS = [
-  {
-    id: 'send',
-    icon: 'send',
-    title: 'Giao bài 1 chạm',
-    desc: 'Chọn chủ đề, gửi xuống robot.',
-  },
-  {
-    id: 'report',
-    icon: 'report',
-    title: 'Tiến độ mỗi ngày',
-    desc: 'Con nói bao lâu, học từ nào.',
-  },
-  {
-    id: 'safety',
-    icon: 'safety',
-    title: 'An toàn trong tay',
-    desc: 'Chủ đề, memory, lọc nội dung.',
-  },
+  { id: 'send', icon: 'send' },
+  { id: 'report', icon: 'report' },
+  { id: 'safety', icon: 'safety' },
 ];
-
-const PHONE_DATA = {
-  send: {
-    kicker: '01 · Giao bài',
-    pill: 'Giao bài thử',
-    title: 'Một chạm là Pika sẽ nhận bài ngay',
-    capTitle: 'Ba mẹ chọn bài, Pika nhận ngay',
-    capText: 'Không cần cài đặt lại trên robot,\nkhông làm gián đoạn cuộc chơi.',
-    rows: ['🧒 Bé 7 tuổi', '🦸 Chủ đề: siêu anh hùng', '🔊 Bài: luyện phát âm', '▶️ Gửi sang Pika'],
-  },
-  report: {
-    kicker: '02 · Tiến độ',
-    pill: 'Tuần này +18%',
-    title: 'Mỗi ngày, ba mẹ đều thấy con tiến bộ',
-    capTitle: 'Báo cáo ngắn sau mỗi buổi học',
-    capText: 'Biết con đã nói bao lâu, nhớ từ nào\nvà nên học gì tiếp theo.',
-    rows: ['⏱️ Hôm nay: nói 12 phút', '🆕 7 từ mới', '%72', '🎯 Kế tiếp: âm "sh"'],
-  },
-  safety: {
-    kicker: '03 · An toàn',
-    pill: 'Đang bảo vệ',
-    title: 'Mọi thiết lập đều trong tay ba mẹ',
-    capTitle: 'Ba mẹ kiểm soát mọi thiết lập',
-    capText: 'Chọn chủ đề phù hợp, kiểm tra memory\nvà đặt lại bất cứ lúc nào.',
-    rows: ['✅ Chủ đề an toàn: BẬT', '🖼️ Lọc hình ảnh: BẬT', '🧠 Xem trí nhớ của Pika', '↺ Xoá trí nhớ lượt chơi'],
-  },
-};
 
 const IconSvg = ({ type, active }: { type: string; active: boolean }) => {
   const color = active ? '#2B2208' : FaunaColors.t2;
@@ -96,10 +55,12 @@ const IconSvg = ({ type, active }: { type: string; active: boolean }) => {
 };
 
 export const ScreenParents: React.FC = () => {
+  const { t } = useTranslation();
   const { setCurrentScreen } = useApp();
   const [activeBenefit, setActiveBenefit] = useState('send');
 
-  const data = PHONE_DATA[activeBenefit as keyof typeof PHONE_DATA];
+  const phoneKey = `parents.phone.${activeBenefit}`;
+  const rows = t(`${phoneKey}.rows`, { returnObjects: true }) as string[];
 
   const handleBenefitPress = (id: string) => {
     buttonFeedback();
@@ -121,9 +82,9 @@ export const ScreenParents: React.FC = () => {
       resizeMode="cover"
     >
       {/* Header */}
-      <Text style={styles.eyebrow}>App phụ huynh · Đồng hành cùng con</Text>
-      <Text style={styles.title}>Ba mẹ cầm lái từ một app</Text>
-      <Text style={styles.subtitle}>Giao bài, xem tiến độ và kiểm soát trải nghiệm của con.</Text>
+      <Text style={styles.eyebrow}>{t('parents.eyebrow')}</Text>
+      <Text style={styles.title}>{t('parents.title')}</Text>
+      <Text style={styles.subtitle}>{t('parents.subtitle')}</Text>
 
       {/* Benefits Row */}
       <View style={styles.benRow}>
@@ -138,8 +99,8 @@ export const ScreenParents: React.FC = () => {
               <View style={[styles.benIcon, isActive && styles.benIconActive]}>
                 <IconSvg type={ben.icon} active={isActive} />
               </View>
-              <Text style={styles.benTitle}>{ben.title}</Text>
-              <Text style={styles.benDesc}>{ben.desc}</Text>
+              <Text style={styles.benTitle}>{t(`parents.benefits.${ben.id}.title`)}</Text>
+              <Text style={styles.benDesc}>{t(`parents.benefits.${ben.id}.desc`)}</Text>
             </Pressable>
           );
         })}
@@ -147,17 +108,17 @@ export const ScreenParents: React.FC = () => {
 
       {/* Panel */}
       <View style={styles.panel}>
-        <Text style={styles.panelKicker}>{data.kicker}</Text>
+        <Text style={styles.panelKicker}>{t(`${phoneKey}.kicker`)}</Text>
         <Pressable style={styles.panelPill} onPress={handlePillPress}>
-          <Text style={styles.panelPillText}>{data.pill}</Text>
+          <Text style={styles.panelPillText}>{t(`${phoneKey}.pill`)}</Text>
         </Pressable>
-        <Text style={styles.panelTitle}>{data.title}</Text>
+        <Text style={styles.panelTitle}>{t(`${phoneKey}.title`)}</Text>
 
         {/* Phone Mock */}
         <View style={styles.phone}>
           <View style={styles.phoneScreen}>
             <View style={styles.phoneNotch} />
-            {data.rows.map((row, i) => {
+            {rows.map((row, i) => {
               if (row.startsWith('%')) {
                 const percent = parseInt(row.slice(1));
                 return (
@@ -178,8 +139,8 @@ export const ScreenParents: React.FC = () => {
 
         {/* Caption */}
         <View style={styles.caption}>
-          <Text style={styles.capTitle}>{data.capTitle}</Text>
-          <Text style={styles.capText}>{data.capText}</Text>
+          <Text style={styles.capTitle}>{t(`${phoneKey}.capTitle`)}</Text>
+          <Text style={styles.capText}>{t(`${phoneKey}.capText`)}</Text>
         </View>
 
         {/* Dots */}
@@ -193,7 +154,7 @@ export const ScreenParents: React.FC = () => {
         </View>
       </View>
 
-      <Text style={styles.foot}>Vuốt để xem tính năng tiếp theo</Text>
+      <Text style={styles.foot}>{t('parents.foot')}</Text>
     </ImageBackground>
   );
 };

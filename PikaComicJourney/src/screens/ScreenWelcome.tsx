@@ -10,11 +10,13 @@ import {
   Image,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useTranslation } from 'react-i18next';
 import { useApp } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
 import { FaunaColors, FaunaFontSize, FaunaRadius } from '../constants/theme';
 import { buttonFeedback, toggleBackgroundMusic, getIsMusicPlaying } from '../utils/sounds';
 import { logEvent } from '../services/tracking';
+import { LanguageSwitcher } from '../components/LanguageSwitcher';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const STAGE_RATIO = 952 / 1269;
@@ -25,18 +27,14 @@ const scale = screenRatio > STAGE_RATIO
 
 const s = (v: number) => v * scale;
 
-const HERO_LINES = [
-  'Hi hi! Tớ là Pika — chạm "Chơi Ngay" đi!',
-  'Cậu sẵn sàng nói tiếng Anh với tớ chưa?',
-  'Tớ biết kể chuyện, hát và cả đóng vai nữa!',
-  'Nhột quá! Mình cùng chơi 15 phút nhé?',
-];
-
 export const ScreenWelcome: React.FC = () => {
+  const { t } = useTranslation();
   const { setCurrentScreen, addStars } = useApp();
   const { logout } = useAuth();
   const [isMusicOn, setIsMusicOn] = useState(() => getIsMusicPlaying());
-  const [bubbleText, setBubbleText] = useState('');
+  const heroLines = t('welcome.heroLines', { returnObjects: true }) as string[];
+  // Lưu vị trí câu thoại thay vì chữ đã dịch, để đổi ngôn ngữ vẫn đúng.
+  const [bubbleIndex, setBubbleIndex] = useState(0);
   const [showBubble, setShowBubble] = useState(false);
 
   const heroFloat = useRef(new Animated.Value(0)).current;
@@ -88,8 +86,7 @@ export const ScreenWelcome: React.FC = () => {
   const handlePikaPress = () => {
     buttonFeedback();
     logEvent('tap_pika', 'welcome');
-    const randomLine = HERO_LINES[Math.floor(Math.random() * HERO_LINES.length)];
-    setBubbleText(randomLine);
+    setBubbleIndex(Math.floor(Math.random() * heroLines.length));
     setShowBubble(true);
 
     Animated.sequence([
@@ -134,6 +131,11 @@ export const ScreenWelcome: React.FC = () => {
     logout();
   };
 
+  const handleOpenGames = () => {
+    buttonFeedback();
+    setCurrentScreen('games');
+  };
+
   return (
     <ImageBackground
       source={require('../../assets/fauna/home_bg.png')}
@@ -152,11 +154,12 @@ export const ScreenWelcome: React.FC = () => {
           </View>
           <View>
             <Text style={styles.brandName}>Robot Pika</Text>
-            <Text style={styles.brandSub}>GÓC TRẢI NGHIỆM</Text>
+            <Text style={styles.brandSub}>{t('welcome.brandSub')}</Text>
           </View>
         </View>
 
         <View style={styles.headerControls}>
+          <LanguageSwitcher style={styles.languageBtn} textStyle={styles.languageText} />
           <Pressable style={styles.soundBtn} onPress={handleSoundToggle}>
             {!isMusicOn && <Text style={styles.muteX}>✕</Text>}
             <Text style={styles.soundIcon}>🔊</Text>
@@ -168,12 +171,12 @@ export const ScreenWelcome: React.FC = () => {
       </View>
 
       {/* Eyebrow */}
-      <Text style={styles.eyebrow}>ROBOT BẠN THÂN CỦA BÉ</Text>
+      <Text style={styles.eyebrow}>{t('welcome.eyebrow')}</Text>
 
       {/* Main Title */}
       <View style={styles.titleArea}>
-        <Text style={styles.title}>Chào cậu!</Text>
-        <Text style={styles.titleAccent}>Tớ là Pika!</Text>
+        <Text style={styles.title}>{t('welcome.title')}</Text>
+        <Text style={styles.titleAccent}>{t('welcome.titleAccent')}</Text>
       </View>
 
       {/* Hero Pika */}
@@ -246,7 +249,7 @@ export const ScreenWelcome: React.FC = () => {
             },
           ]}
         >
-          <Text style={styles.bubbleText}>{bubbleText}</Text>
+          <Text style={styles.bubbleText}>{heroLines[bubbleIndex]}</Text>
         </Animated.View>
       )}
 
@@ -259,38 +262,45 @@ export const ScreenWelcome: React.FC = () => {
             end={{ x: 0, y: 1 }}
             style={styles.ctaButton}
           >
-            <Text style={styles.ctaText}>Chơi Ngay</Text>
+            <Text style={styles.ctaText}>{t('welcome.cta')}</Text>
           </LinearGradient>
         </Pressable>
       </Animated.View>
 
       {/* Subtitle */}
-      <Text style={styles.subtitle}>Chạm để bắt đầu hành trình cùng Pika</Text>
+      <Text style={styles.subtitle}>{t('welcome.subtitle')}</Text>
 
       {/* Bottom Section */}
       <View style={styles.bottomSection}>
+        {/* Robot Game entry */}
+        <Pressable style={styles.gamesEntry} onPress={handleOpenGames}>
+          <Text style={styles.gamesEntryIcon}>🎮</Text>
+          <Text style={styles.gamesEntryText}>{t('welcome.gamesEntry')}</Text>
+          <Text style={styles.gamesEntryArrow}>›</Text>
+        </Pressable>
+
         {/* Feature Badges */}
         <View style={styles.badges}>
           <View style={styles.badge}>
             <View style={styles.badgeIcon}>
               <Text style={styles.badgeEmoji}>🛡️</Text>
             </View>
-            <Text style={styles.badgeTitle}>An toàn</Text>
-            <Text style={styles.badgeDesc}>cho trẻ 4-10 tuổi</Text>
+            <Text style={styles.badgeTitle}>{t('welcome.badgeSafeTitle')}</Text>
+            <Text style={styles.badgeDesc}>{t('welcome.badgeSafeDesc')}</Text>
           </View>
           <View style={styles.badge}>
             <View style={styles.badgeIcon}>
               <Text style={styles.badgeEmoji}>🎓</Text>
             </View>
             <Text style={styles.badgeTitle}>Cambridge YLE</Text>
-            <Text style={styles.badgeDesc}>chuẩn quốc tế</Text>
+            <Text style={styles.badgeDesc}>{t('welcome.badgeYleDesc')}</Text>
           </View>
           <View style={styles.badge}>
             <View style={styles.badgeIcon}>
               <Text style={styles.badgeEmoji}>⏰</Text>
             </View>
-            <Text style={styles.badgeTitle}>15 phút</Text>
-            <Text style={styles.badgeDesc}>mỗi ngày là đủ</Text>
+            <Text style={styles.badgeTitle}>{t('welcome.badgeTimeTitle')}</Text>
+            <Text style={styles.badgeDesc}>{t('welcome.badgeTimeDesc')}</Text>
           </View>
         </View>
 
@@ -302,10 +312,8 @@ export const ScreenWelcome: React.FC = () => {
             resizeMode="contain"
           />
           <View style={styles.qrText}>
-            <Text style={styles.qrTitle}>Ba mẹ cần Pika hỗ trợ?</Text>
-            <Text style={styles.qrDesc}>
-              Quét mã để kết nối Zalo OA — tư vấn và hỗ trợ nhanh chóng!
-            </Text>
+            <Text style={styles.qrTitle}>{t('welcome.qrTitle')}</Text>
+            <Text style={styles.qrDesc}>{t('welcome.qrDesc')}</Text>
           </View>
         </View>
       </View>
@@ -325,8 +333,10 @@ const styles = StyleSheet.create({
     left: s(24),
     right: s(24),
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    // Nút điều khiển nằm ngay sau logo, chừa góc phải cho đồng hồ/pin của hệ thống.
+    justifyContent: 'flex-start',
     alignItems: 'center',
+    gap: s(20),
     zIndex: 100,
   },
   brand: {
@@ -360,7 +370,29 @@ const styles = StyleSheet.create({
   },
   headerControls: {
     flexDirection: 'row',
+    alignItems: 'center',
     gap: s(12),
+    paddingLeft: s(20),
+    borderLeftWidth: 1,
+    borderLeftColor: FaunaColors.line,
+  },
+  languageBtn: {
+    width: s(62),
+    height: s(62),
+    borderRadius: s(31),
+    backgroundColor: 'rgba(16,26,59,0.85)',
+    borderWidth: 2,
+    borderColor: FaunaColors.amber,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: FaunaColors.amber,
+    shadowOffset: { width: 0, height: s(4) },
+    shadowOpacity: 0.4,
+    shadowRadius: s(12),
+    elevation: 6,
+  },
+  languageText: {
+    color: FaunaColors.amberHi,
   },
   soundBtn: {
     width: s(62),
@@ -550,15 +582,49 @@ const styles = StyleSheet.create({
     right: s(50),
   },
   // Badges
+  // Lối vào màn gửi game. Chỗ trống giữa phụ đề và huy hiệu rất hẹp trên
+  // tablet 3:4, nên nút gọn và huy hiệu bớt padding để không đè phụ đề.
+  gamesEntry: {
+    alignSelf: 'center',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: s(10),
+    height: s(48),
+    paddingHorizontal: s(26),
+    marginBottom: s(10),
+    borderRadius: FaunaRadius.pill,
+    backgroundColor: 'rgba(16,26,59,0.85)',
+    borderWidth: 2,
+    borderColor: FaunaColors.cyan,
+    shadowColor: FaunaColors.cyan,
+    shadowOffset: { width: 0, height: s(3) },
+    shadowOpacity: 0.35,
+    shadowRadius: s(10),
+    elevation: 5,
+  },
+  gamesEntryIcon: {
+    fontSize: s(22),
+  },
+  gamesEntryText: {
+    fontSize: s(FaunaFontSize.sm),
+    fontWeight: '800',
+    color: FaunaColors.t1,
+  },
+  gamesEntryArrow: {
+    fontSize: s(28),
+    fontWeight: '700',
+    color: FaunaColors.cyan,
+    marginTop: -s(3),
+  },
   badges: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: s(20),
+    marginBottom: s(12),
   },
   badge: {
     flex: 1,
     alignItems: 'center',
-    paddingVertical: s(18),
+    paddingVertical: s(10),
     paddingHorizontal: s(10),
     backgroundColor: 'rgba(20,32,72,0.75)',
     borderRadius: s(22),

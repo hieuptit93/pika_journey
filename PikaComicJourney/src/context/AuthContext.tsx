@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { apiService } from '../services/api';
+import { apiService, API_BASE_URL } from '../services/api';
 import { startSession, endSession, logEvent } from '../services/tracking';
 
 interface User {
@@ -9,18 +9,27 @@ interface User {
   deviceId: string;
 }
 
+// Lỗi đăng nhập: message là chữ server trả về (giữ nguyên), errorKey là key
+// i18n cho lỗi do app tự sinh — để màn Login dịch lúc hiển thị, đổi ngôn ngữ
+// giữa chừng vẫn đúng.
+export interface LoginResult {
+  success: boolean;
+  message?: string;
+  errorKey?: string;
+}
+
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   isLoggedIn: boolean;
-  login: (phone: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  login: (phone: string, password: string) => Promise<LoginResult>;
   logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const AUTH_STORAGE_KEY = '@pika_auth';
-const API_URL = 'https://robot-api.hacknao.edu.vn/robot-user/api/v1/auth/login';
+const API_URL = `${API_BASE_URL}/robot-user/api/v1/auth/login`;
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
@@ -58,7 +67,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
-  const login = async (phone: string, password: string): Promise<{ success: boolean; error?: string }> => {
+  const login = async (phone: string, password: string): Promise<LoginResult> => {
     try {
       const deviceId = `pika_${Date.now()}`;
       const response = await fetch(API_URL, {
@@ -97,14 +106,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           return { success: true };
         } else {
           console.log('No token found in response');
-          return { success: false, error: 'Không tìm thấy token trong response' };
+          return { success: false, errorKey: 'errors.noToken' };
         }
       } else {
-        return { success: false, error: data.message || data.data?.message || 'Đăng nhập thất bại' };
+        const message = data.message || data.data?.message;
+        return message ? { success: false, message } : { success: false, errorKey: 'errors.loginFailed' };
       }
     } catch (error) {
       console.error('Login error:', error);
-      return { success: false, error: 'Không thể kết nối server' };
+      return { success: false, errorKey: 'errors.cannotConnect' };
     }
   };
 

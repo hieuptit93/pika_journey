@@ -9,6 +9,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.pikarobot.comicjourney",
+      "buildNumber": "8",
       "googleServicesFile": "./GoogleService-Info.plist"
     },
     "android": {
@@ -33,11 +34,18 @@
         "expo-build-properties",
         {
           "ios": {
-            "useFrameworks": "dynamic"
+            "useFrameworks": "dynamic",
+            "buildReactNativeFromSource": true,
+            "usePrecompiledModules": false
           }
         }
       ],
-      "./plugins/withFixRnfbEmbedFrameworks.js"
+      "./plugins/withFixRnfbEmbedFrameworks.js",
+      "./plugins/withQuotedRnBundleScript.js",
+      "./plugins/withPodsMinDeploymentTarget.js",
+      "./plugins/withQuotedPodScriptPaths.js",
+      "./plugins/withSceneDelegate.js",
+      "expo-localization"
     ]
   }
 }

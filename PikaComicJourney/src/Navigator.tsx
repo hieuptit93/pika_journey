@@ -11,6 +11,7 @@ import { ScreenTopics } from './screens/ScreenTopics';
 import { ScreenJourney } from './screens/ScreenJourney';
 import { ScreenParents } from './screens/ScreenParents';
 import { ScreenFAQ } from './screens/ScreenFAQ';
+import { ScreenGames } from './screens/ScreenGames';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const STAGE_RATIO = 952 / 1269;
@@ -123,6 +124,13 @@ export const Navigator: React.FC = () => {
         <CachedScreen isActive={currentScreen === 'faq'}>
           <MemoizedScreenFAQ />
         </CachedScreen>
+
+        {/* Không cache: màn này poll trạng thái robot, phải dừng hẳn khi rời màn. */}
+        {currentScreen === 'games' && (
+          <View style={styles.cachedScreen}>
+            <ScreenGames />
+          </View>
+        )}
       </View>
     </View>
   );

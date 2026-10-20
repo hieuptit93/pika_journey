@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { logEvent } from '../services/tracking';
 
-export type AppScreen = 'welcome' | 'play' | 'topics' | 'journey' | 'parents' | 'faq';
+export type AppScreen = 'welcome' | 'play' | 'topics' | 'journey' | 'parents' | 'faq' | 'games';
 
 interface AppContextType {
   currentScreen: AppScreen;
